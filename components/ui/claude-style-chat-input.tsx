@@ -208,6 +208,8 @@ interface ChatInputProps {
   onRemoveAgent?: () => void;
   config?: Record<string, number>;
   previewState?: ChatInputPreviewState;
+  onCreateExpert?: () => void;
+  onCreateTeam?: () => void;
 }
 
 export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ClaudeChatInput({
@@ -219,6 +221,8 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   onRemoveAgent,
   config = CHAT_INPUT_MOTION.defaultConfig,
   previewState,
+  onCreateExpert,
+  onCreateTeam,
 }, ref) {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<AttachedFile[]>([]);
@@ -227,7 +231,7 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState("Agent");
+  const [selectedAgent, setSelectedAgent] = useState("大数据团队");
   const [selectedModel, setSelectedModel] = useState("Claude-Opus-4.6");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -613,28 +617,73 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                     </div>
                   </div>
                   {showAgentMenu && (
-                    <div ref={agentMenuRef} style={popupMenuStyle}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-                        {[
-                          { id: "Agent", icon: "/icons/ai-agent.svg", label: "Agent" },
-                          { id: "Ask", icon: "/icons/ai-ask.svg", label: "Ask" },
-                        ].map((item) => (
-                          <div
-                            key={item.id}
-                            className="ci-menu-item"
-                            onClick={(e) => { e.stopPropagation(); setSelectedAgent(item.id); setShowAgentMenu(false); }}
-                            style={{
-                              ...menuItemStyle,
-                              backgroundColor: selectedAgent === item.id ? "#F2F4F8" : undefined,
-                            }}
-                          >
-                            <div style={{ position: "relative", width: 16, height: 16, flexShrink: 0 }}>
-                              <img src={item.icon} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
-                            </div>
-                            <span style={{ ...menuItemTextStyle, fontFamily: SF_FONT }}>{item.label}</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div ref={agentMenuRef} style={{
+                      position: "absolute",
+                      bottom: "calc(100% + 8px)",
+                      left: 0,
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: 16,
+                      padding: "4px 0",
+                      boxShadow: "0px 8px 12px rgba(0,0,0,0.05), 0px 8px 24px rgba(0,0,0,0.1)",
+                      display: "flex",
+                      flexDirection: "column",
+                      zIndex: 100,
+                      minWidth: 200,
+                      animation: "ci-menu-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
+                    }}>
+                      {/* 主要选项 */}
+                      {[
+                        { id: "bigdata-team", label: "大数据团队" },
+                        { id: "ops-expert", label: "数据运维专家" },
+                        { id: "analysis-expert", label: "数据分析专家" },
+                        { id: "dev-expert", label: "数据开发专家" },
+                        { id: "ops-team", label: "运营协作团队" },
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className="ci-menu-item"
+                          onClick={(e) => { e.stopPropagation(); setSelectedAgent(item.label); setShowAgentMenu(false); }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            height: 44,
+                            padding: "0 20px",
+                            cursor: "pointer",
+                            transition: "background 0.15s ease",
+                            backgroundColor: selectedAgent === item.label ? "#F2F4F8" : undefined,
+                          }}
+                        >
+                          <span style={{ fontSize: 16, fontWeight: 400, lineHeight: "24px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
+                        </div>
+                      ))}
+                      {/* 分割线 */}
+                      <div style={{ height: 1, backgroundColor: "#E6E9EF", margin: "4px 16px" }} />
+                      {/* 创建选项 */}
+                      {[
+                        { id: "create-expert", label: "创建专家" },
+                        { id: "create-team", label: "创建团队" },
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className="ci-menu-item"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowAgentMenu(false);
+                            if (item.id === "create-expert") onCreateExpert?.();
+                            if (item.id === "create-team") onCreateTeam?.();
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            height: 44,
+                            padding: "0 20px",
+                            cursor: "pointer",
+                            transition: "background 0.15s ease",
+                          }}
+                        >
+                          <span style={{ fontSize: 16, fontWeight: 400, lineHeight: "24px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

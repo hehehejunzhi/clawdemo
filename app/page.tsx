@@ -2,13 +2,14 @@
 
 import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import Sidebar from "@/components/ui/sidebar";
 import ClaudeChatInput, { CHAT_INPUT_MOTION, type ChatInputHandle, type ChatInputPreviewState, type SkillChip } from "@/components/ui/claude-style-chat-input";
 import { AgentFanCards, type AgentCardPreviewState, type FanCardsConfig, DEFAULT_FAN_CONFIG, AGENT_CARD_MOTION } from "@/components/ui/agent-card";
 import MotionPanel, { MotionSelectButton, type MotionMode } from "@/components/ui/motion-panel";
 import MotionTargetOverlay from "@/components/ui/motion-target-overlay";
 import { IconCatalog, IconWorkflow, IconSQL, IconOps, IconMLExp } from "@/components/ui/wedata-icons";
 import SecondaryNav from "@/components/ui/secondary-nav";
+import TopNav from "@/components/ui/top-nav";
+import PrimaryNav from "@/components/ui/primary-nav";
 import StudioView from "@/components/ui/studio-view";
 import AiRunningBubble from "@/components/ui/ai-running-bubble";
 import ChatTitlebar from "@/components/ui/chat-titlebar";
@@ -16,6 +17,11 @@ import UserMessageBubble from "@/components/ui/user-message-bubble";
 import Plan from "@/components/ui/agent-plan";
 import ThinkingSummary from "@/components/ui/thinking-summary";
 import ArtifactsPanel from "@/components/ui/artifacts-panel";
+import ExpertReplies from "@/components/ui/expert-replies";
+import CreateExpertDialog from "@/components/ui/create-expert-dialog";
+import CreateTeamDialog from "@/components/ui/create-team-dialog";
+import SkillPlaza from "@/components/ui/skill-plaza";
+import ClawManager from "@/components/ui/claw-manager";
 
 // ── Design tokens ──────────────────────────────────────────────
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -99,6 +105,10 @@ export default function Home() {
   const [conversationTitle, setConversationTitle] = useState<string>("");
   const [artifactsPanelOpen, setArtifactsPanelOpen] = useState(false);
   const [isSecondaryCollapsed, setIsSecondaryCollapsed] = useState(false);
+  const [createExpertOpen, setCreateExpertOpen] = useState(false);
+  const [createTeamOpen, setCreateTeamOpen] = useState(false);
+  const [showSkillPlaza, setShowSkillPlaza] = useState(false);
+  const [showClawManager, setShowClawManager] = useState(false);
   // 对话流分步揭示：0=用户气泡, 1=思考摘要, 2=Plan卡片
   const [revealStep, setRevealStep] = useState(0);
   // 卡片参数配置
@@ -151,12 +161,12 @@ export default function Home() {
     if (!summonedAgent) {
       setSummonedAgent({
         name: "Rigel",
-        title: "数仓工程专家",
+        title: "数据运维专家",
         avatar: "/agents/1a.png",
       });
     }
     setChatPhase("conversation");
-    setConversationTitle(`开发"用户复购率"指标`);
+    setConversationTitle(`华东区过去 7 天的用户活跃度趋势`);
     // 清掉 skills 和 summonedAgent 相关的输入框状态
     setActiveSkills([]);
   }, [summonedAgent]);
@@ -227,20 +237,35 @@ export default function Home() {
   return (
     <div style={{
       display: "flex",
+      flexDirection: "column",
       width: "100vw",
       height: "100vh",
       overflow: "hidden",
       fontFamily: FONT,
     }}>
+      {/* ── 顶部导航 ── */}
+      <TopNav activeId={targetView} onMenuClick={handleMenuClick} />
 
-      {/* ── 左侧导航 ── */}
-      <Sidebar activeId={targetView} onMenuClick={handleMenuClick} />
+      {/* ── 下方内容区（横向 flex） ── */}
+      <div style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
+
+      {/* ── 左侧一级导航 ── */}
+      <PrimaryNav />
 
       {/* ── 二级导航面板 ── */}
-      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={handleNewChat} />}
+      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} />}
 
       {/* ── 右侧内容区 ── */}
-      <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden", position: "relative" }}>
+      {showSkillPlaza ? (
+        <div style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}>
+          <SkillPlaza onBack={() => setShowSkillPlaza(false)} />
+        </div>
+      ) : showClawManager ? (
+        <div style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}>
+          <ClawManager />
+        </div>
+      ) : (
+      <div style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden", position: "relative" }}>
         {/* Studio 背景层：先露出主画布，不提前露出气泡 */}
         <motion.div
           initial={false}
@@ -345,8 +370,7 @@ export default function Home() {
               flexShrink: 0,
               display: "flex",
               alignItems: "center",
-              justifyContent: "flex-end",
-              padding: isSecondaryCollapsed ? "0" : "0 0 0 20px",
+              padding: "0 20px",
               position: "relative",
               backgroundColor: C.rightBg,
             }}
@@ -446,7 +470,7 @@ export default function Home() {
                             lineHeight: "40px",
                             color: "#000",
                             whiteSpace: "nowrap",
-                          }}>WeData</span>
+                          }}>ClawTeam</span>
                           <span style={{
                             fontFamily: FONT,
                             fontSize: 32,
@@ -513,6 +537,17 @@ export default function Home() {
                       transition={{ duration: 0.35, ease: EASE, delay: 0.15 }}
                     >
                       <Plan />
+                    </motion.div>
+                  )}
+
+                  {/* Step 3: 专家回复 — 等 Plan 出现后显示 */}
+                  {revealStep >= 2 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, ease: EASE, delay: 0.8 }}
+                    >
+                      <ExpertReplies />
                     </motion.div>
                   )}
                 </motion.div>
@@ -615,6 +650,52 @@ export default function Home() {
               )}
             </AnimatePresence>
 
+            {/* ── 快捷提问标签：仅 welcome 阶段 + 无 agent 召唤时显示 ── */}
+            <AnimatePresence>
+              {chatPhase === "welcome" && !summonedAgent && activeSkills.length === 0 && (
+                <motion.div
+                  key="quick-prompts"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.25, ease: EASE }}
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    marginBottom: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {["帮我分析存储趋势", "帮我检查集群健康状况"].map((text) => (
+                    <button
+                      key={text}
+                      onClick={() => handleSendMessage({ message: text, files: [] })}
+                      style={{
+                        height: 36,
+                        padding: "0 12px",
+                        background: "#FFFFFF",
+                        borderRadius: 18,
+                        border: "1px solid #E6E9EF",
+                        boxShadow: "0px 2px 3px rgba(0, 18, 97, 0.03)",
+                        cursor: "pointer",
+                        fontFamily: FONT,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: "rgba(0,0,0,0.9)",
+                        whiteSpace: "nowrap",
+                        outline: "none",
+                        transition: "background 100ms",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#F2F4F8"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "#FFFFFF"; }}
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* 输入框：不设 zIndex，避免创建 stacking context，让内部 glow 的负 z-index 能逃逸到父级 */}
             <div style={{ position: "relative" }}>
               <MotionTargetOverlay
@@ -633,6 +714,8 @@ export default function Home() {
                   onSendMessage={handleSendMessage}
                   config={chatInputConfig}
                   previewState={motionMode === "editing" && motionTarget === "chat-input" ? chatInputPreviewState : undefined}
+                  onCreateExpert={() => setCreateExpertOpen(true)}
+                  onCreateTeam={() => setCreateTeamOpen(true)}
                 />
               </MotionTargetOverlay>
             </div>
@@ -667,11 +750,17 @@ export default function Home() {
         </motion.div>
         )}
       </div>
+      )}
 
       {/* Motion 选择模式按钮 - 仅 welcome 阶段显示 */}
       {chatPhase === "welcome" && (
         <MotionSelectButton mode={motionMode} onClick={handleMotionButtonClick} />
       )}
+      </div>{/* 横向 flex end */}
+
+      {/* 创建专家弹窗 */}
+      <CreateExpertDialog open={createExpertOpen} onClose={() => setCreateExpertOpen(false)} />
+      <CreateTeamDialog open={createTeamOpen} onClose={() => setCreateTeamOpen(false)} />
     </div>
   );
 }

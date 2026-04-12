@@ -34,7 +34,7 @@ export default function ChatTitlebar({
         alignItems: "center",
         width: "100%",
         height: "100%",
-        padding: "20px 24px 20px 0",
+        padding: "0 4px",
         fontFamily: FONT_HEADING,
       }}
     >
@@ -45,24 +45,59 @@ export default function ChatTitlebar({
         </ActionButton>
       )}
 
-      {/* ── Center: Title (flex-1, text-center) ── */}
-      <p
-        style={{
-          flex: "1 0 0",
-          fontSize: 18,
-          fontWeight: 600,
-          lineHeight: "26px",
-          color: TEXT_PRIMARY,
-          textAlign: "center",
-          margin: 0,
-          minWidth: 0,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {title}
-      </p>
+      {/* ── Center: Title + 专家团 badge ── */}
+      <div style={{
+        flex: "1 0 0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        minWidth: 0,
+      }}>
+        <p
+          style={{
+            fontSize: 18,
+            fontWeight: 600,
+            lineHeight: "26px",
+            color: TEXT_PRIMARY,
+            margin: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {title}
+        </p>
+
+        {/* 专家团 badge */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          height: 24,
+          background: "#E9ECF1",
+          borderRadius: 100,
+          padding: "0 8px 0 4px",
+          gap: 0,
+          flexShrink: 0,
+          cursor: "pointer",
+        }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <img src="/icons/team-badge/2.svg" alt="" style={{ width: 16, height: 16 }} />
+            <img src="/icons/team-badge/1.svg" alt="" style={{ width: 16, height: 16, marginLeft: -3.6 }} />
+            <img src="/icons/team-badge/3.svg" alt="" style={{ width: 16, height: 16, marginLeft: -3.6 }} />
+          </div>
+          <span style={{
+            fontFamily: "'PingFang SC', sans-serif",
+            fontSize: 12,
+            fontWeight: 400,
+            color: "rgba(0,0,0,0.7)",
+            marginLeft: 2,
+            whiteSpace: "nowrap",
+          }}>
+            专家团
+          </span>
+        </div>
+      </div>
 
       {/* ── Right: 产物 ── */}
       <ActionButton onClick={onArtifacts} label="产物">

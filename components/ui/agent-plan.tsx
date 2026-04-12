@@ -52,121 +52,52 @@ interface Task {
 const initialTasks: Task[] = [
   {
     id: "1",
-    title: "整理分析结果并生成综合报告",
-    description: "汇总调研结论，产出结构化分析报告",
+    title: "@数据分析专家 对数据访问权限做前置合规审查",
+    description: "检查华东区用户行为数据的访问权限与合规性",
     status: "completed",
     dependencies: [],
-    subtasks: [
-      {
-        id: "1.1",
-        title: "访谈关键干系人",
-        description: "与核心干系人进行深度访谈，梳理业务诉求",
-        status: "completed",
-        tools: ["communication-agent", "meeting-scheduler"],
-      },
-      {
-        id: "1.2",
-        title: "梳理现有文档资产",
-        description: "整理全量文档资产，提取结构化需求条目",
-        status: "completed",
-        tools: ["file-system", "browser"],
-      },
-    ],
+    subtasks: [],
   },
   {
     id: "2",
-    title: "检查相关数据表是否存在，评估数据可行性",
-    description: "扫描数仓数据表，验证指标口径覆盖情况",
+    title: "@数据开发专家 确认数据源 dw_user_behavior 华东区分区完整性",
+    description: "验证数据源华东区分区近 7 天数据完整性",
     status: "completed",
     dependencies: [],
-    subtasks: [
-      {
-        id: "2.1",
-        title: "扫描 DWD 层原始表",
-        description: "确认 user_order / user_behavior 等事实表完整性",
-        status: "completed",
-        tools: ["sql-runner", "schema-inspector"],
-      },
-    ],
+    subtasks: [],
   },
   {
     id: "3",
-    title: "设计数据模型，确定建表层（DWD/DWS/ADS）",
-    description: "根据分析目标设计数据分层模型",
+    title: "@数据分析专家 调用\"指标 SQL Copilot\"生成聚合 SQL → 提交 Spark 计算",
+    description: "生成 DAU/WAU 聚合 SQL 并提交 Spark 集群执行",
     status: "completed",
-    dependencies: [],
-    subtasks: [
-      {
-        id: "3.1",
-        title: "规划 DWD 明细层",
-        description: "设计订单事实表结构与粒度",
-        status: "completed",
-        tools: ["schema-designer"],
-      },
-      {
-        id: "3.2",
-        title: "规划 ADS 聚合层",
-        description: "设计面向复购率指标的宽表结构",
-        status: "completed",
-        tools: ["schema-designer"],
-      },
-    ],
+    dependencies: ["1", "2"],
+    subtasks: [],
   },
   {
     id: "4",
-    title: "已确认复购率计算口径，开始编写 ETL SQL",
-    description: "基于确认的业务口径，在 ETL 任务中编写转换逻辑",
-    status: "in-progress",
-    elapsedLabel: "00:24 正在数据加工、聚合逻辑",
-    dependencies: ["1", "2", "3"],
-    subtasks: [
-      {
-        id: "4.1",
-        title: "编写 DWD → DWS 汇聚 SQL",
-        description: "按用户、月份维度聚合复购行为事实",
-        status: "in-progress",
-        tools: ["sql-editor", "shell"],
-      },
-      {
-        id: "4.2",
-        title: "编写 DWS → ADS 指标 SQL",
-        description: "计算各渠道复购率并写入指标宽表",
-        status: "pending",
-        tools: ["sql-editor"],
-      },
-    ],
+    title: "@数据运维专家 监测 Spark 任务资源，必要时弹性扩容",
+    description: "监控 Spark 任务执行资源使用情况，按需扩容",
+    status: "completed",
+    dependencies: ["3"],
+    subtasks: [],
   },
   {
     id: "5",
-    title: "设计数据模型，确定建表层（DWD/DWS/ADS）",
-    description: "为下一指标体系规划数据分层",
-    status: "pending",
-    dependencies: ["4"],
-    subtasks: [
-      {
-        id: "5.1",
-        title: "评估留存指标数据源",
-        description: "调研登录日志表与用户标签覆盖范围",
-        status: "pending",
-        tools: ["schema-inspector"],
-      },
-    ],
+    title: "@数据分析专家 调用\"BI 图表生成\"输出 DAU/WAU 趋势图 + 中文业务结论",
+    description: "生成可视化趋势图和业务分析结论",
+    status: "in-progress",
+    elapsedLabel: "",
+    dependencies: ["3", "4"],
+    subtasks: [],
   },
   {
     id: "6",
-    title: "在指标平台登记指标元数据",
-    description: "将已实现的复购率指标录入指标平台，配置口径与责任人",
+    title: "@数据开发专家 产出物归档，SQL 模板沉淀到知识库",
+    description: "将产出的 SQL 模板和分析报告归档沉淀",
     status: "pending",
-    dependencies: ["4", "5"],
-    subtasks: [
-      {
-        id: "6.1",
-        title: "填写指标定义表单",
-        description: "录入指标名、计算口径、业务负责人等元信息",
-        status: "pending",
-        tools: ["metric-platform"],
-      },
-    ],
+    dependencies: ["5"],
+    subtasks: [],
   },
 ];
 
@@ -349,7 +280,7 @@ export default function Plan() {
               fontSize: 14, fontWeight: 600, lineHeight: "22px", color: T.primary,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
-              任务执行中
+              任务拆解中...
             </span>
           </div>
 

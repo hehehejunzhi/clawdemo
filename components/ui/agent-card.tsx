@@ -556,7 +556,7 @@ const ic = "rgba(0,0,0,0.45)";
 // ── 预设数据：Rigel 名片 ────────────────────────────────────────
 export const RIGEL_DATA: AgentCardProps = {
   name: "Rigel",
-  title: "数据工程专家",
+  title: "数据运维专家",
   avatar: "/agents/1a.png",
   summonText: "今天想开发什么数仓？",
   description:
@@ -620,7 +620,7 @@ export const VEGA_DATA: AgentCardProps = {
 export const ORION_DATA: AgentCardProps = {
   name: "Orion",
   nameColor: "#CC6B3A",
-  title: "数据治理专家",
+  title: "数据开发专家",
   avatar: "/agents/3a.png",
   summonText: "今天想治理哪些数据？",
   description:

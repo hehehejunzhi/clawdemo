@@ -15,8 +15,8 @@ const BG_CARD = "#f7f8fb";
 const BORDER_PANEL = "#e9ecf1";
 const BORDER_CARD = "#e6e9ef";
 const HOVER_BG = "rgba(0,0,0,0.04)";
-const PANEL_WIDTH = 960;
-const HEADER_HEIGHT = 84;
+const PANEL_WIDTH = 636;
+const HEADER_HEIGHT = 50;
 const EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
 const ICON_FILL = "#D3D9E5";
 
@@ -76,6 +76,7 @@ interface ArtifactsPanelProps {
 // ── Component ────────────────────────────────────────────────────
 export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
   const [selectedArtifact, setSelectedArtifact] = React.useState<Artifact | null>(null);
+  const [activeTab, setActiveTab] = React.useState<"artifacts" | "overview" | "logs">("overview");
 
   return (
     <AnimatePresence>
@@ -97,34 +98,63 @@ export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
             position: "relative",
           }}
         >
-          {/* ── 标题栏 84px ── */}
+          {/* ── Tab 标题栏 ── */}
           <div
             style={{
               height: HEADER_HEIGHT,
               flexShrink: 0,
               display: "flex",
-              gap: 8,
               alignItems: "center",
+              justifyContent: "space-between",
               padding: "0 24px",
             }}
           >
-            <div style={{ flex: "1 0 0", display: "flex", alignItems: "center", height: "100%" }}>
-              <span
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  lineHeight: "26px",
-                  color: TEXT_PRIMARY,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                产物
-              </span>
+            {/* Tabs */}
+            <div style={{ display: "flex", alignItems: "center", gap: 24, height: "100%" }}>
+              {([
+                { id: "artifacts", label: "产物" },
+                { id: "overview", label: "任务概览" },
+                { id: "logs", label: "执行日志" },
+              ] as const).map((tab) => (
+                <div
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{ position: "relative", height: 32, display: "flex", alignItems: "center", cursor: "pointer" }}
+                >
+                  <span style={{
+                    fontSize: 14, fontWeight: 500,
+                    color: activeTab === tab.id ? TEXT_PRIMARY : "rgba(0,0,0,0.7)",
+                    transition: "color 150ms",
+                  }}>
+                    {tab.label}
+                  </span>
+                  {activeTab === tab.id && (
+                    <div style={{
+                      position: "absolute",
+                      bottom: 0, left: 0, right: 0,
+                      height: 2,
+                      background: "#00C8D6",
+                      borderRadius: 1,
+                    }} />
+                  )}
+                </div>
+              ))}
             </div>
-            <CloseButton onClick={onClose} />
+
+            {/* Close button */}
+            <div
+              onClick={onClose}
+              style={{
+                width: 32, height: 32, borderRadius: 100,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", overflow: "hidden",
+              }}
+            >
+              <img src="/icons/panel-tabs/2.svg" alt="" style={{ width: 16, height: 16 }} />
+            </div>
           </div>
 
-          {/* ── 产物列表 ── */}
+          {/* ── Tab 内容区 ── */}
           <div
             style={{
               flex: 1,
@@ -138,9 +168,156 @@ export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
               scrollbarWidth: "none",
             }}
           >
-            {MOCK_ARTIFACTS.map((a) => (
-              <ArtifactItem key={a.id} artifact={a} onClick={() => setSelectedArtifact(a)} />
-            ))}
+            {activeTab === "artifacts" && (
+              <>
+                {MOCK_ARTIFACTS.map((a) => (
+                  <ArtifactItem key={a.id} artifact={a} onClick={() => setSelectedArtifact(a)} />
+                ))}
+              </>
+            )}
+            {activeTab === "overview" && (
+              <div style={{ paddingTop: 8 }}>
+                {/* 信息区 */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {/* Row 1 */}
+                  <div style={{ display: "flex" }}>
+                    <div style={{ width: "50%", display: "flex", gap: 16 }}>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>执行 Claw</span>
+                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>大数据团队 (3人)</span>
+                    </div>
+                    <div style={{ width: "50%", display: "flex", gap: 16 }}>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>状态</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <img src="/icons/dag/3.svg" alt="" style={{ width: 6, height: 6 }} />
+                        <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>执行中</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Row 2 */}
+                  <div style={{ display: "flex" }}>
+                    <div style={{ width: "50%", display: "flex", gap: 16 }}>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>开始时间</span>
+                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>2026-04-14 14:42:33</span>
+                    </div>
+                    <div style={{ width: "50%", display: "flex", gap: 16 }}>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>已用时长</span>
+                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>3分24秒</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 执行流程标题 */}
+                <div style={{ marginTop: 16, marginBottom: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: TEXT_PRIMARY }}>执行流程</span>
+                </div>
+
+                {/* DAG 流程图 */}
+                <div style={{
+                  background: "#FAFBFC",
+                  borderRadius: 16,
+                  padding: "40px 24px",
+                  overflow: "hidden",
+                  position: "relative",
+                }}>
+                  <style>{`
+                    @keyframes dag-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+                    @keyframes dag-flow { 0% { stroke-dashoffset: 20; } 100% { stroke-dashoffset: 0; } }
+                  `}</style>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+                    {/* 接收用户需求 */}
+                    <DagNode label="接收用户需求" status="done" />
+                    <DagArrow />
+
+                    {/* 任务解析与调度 */}
+                    <DagNode label="任务解析与调度" status="done" />
+                    <DagArrowFan />
+
+                    {/* 三个专家卡片 */}
+                    <div style={{ display: "flex", gap: 16, width: "100%" }}>
+                      <ExpertCard
+                        name="数据分析专家"
+                        tasks={[
+                          { label: "权限验证", icon: "/icons/dag/6.svg", status: "done" },
+                          { label: "SQL 生成", icon: "/icons/dag/7.svg", status: "active" },
+                          { label: "数据探索", icon: "/icons/dag/8.svg", status: "pending" },
+                        ]}
+                      />
+                      <ExpertCard
+                        name="数据开发专家"
+                        tasks={[
+                          { label: "HDFS 完整性检查", icon: "/icons/dag/12.svg", status: "done" },
+                          { label: "血缘追踪", icon: "/icons/dag/13.svg", status: "pending" },
+                          { label: "质量检查", icon: "/icons/dag/14.svg", status: "pending" },
+                        ]}
+                      />
+                      <ExpertCard
+                        name="数据运维专家"
+                        tasks={[
+                          { label: "资源监控", icon: "/icons/dag/9.svg", status: "pending" },
+                          { label: "自动扩缩容", icon: "/icons/dag/10.svg", status: "pending" },
+                          { label: "故障预警", icon: "/icons/dag/11.svg", status: "pending" },
+                        ]}
+                      />
+                    </div>
+
+                    <DagArrowMerge />
+
+                    {/* 结果融合 */}
+                    <DagNode label="结果融合" status="pending" />
+                    <DagArrow />
+
+                    {/* 报告生成 */}
+                    <DagNode label="报告生成" status="pending" />
+                  </div>
+                </div>
+              </div>
+            )}
+            {activeTab === "logs" && (
+              <div style={{ paddingTop: 8 }}>
+                <div style={{
+                  background: "#FAFBFC",
+                  borderRadius: 16,
+                  padding: 12,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}>
+                  {[
+                    { time: "14:32:05", level: "INFO", agent: "Rigel", msg: "任务启动，开始分析需求..." },
+                    { time: "14:32:08", level: "INFO", agent: "Rigel", msg: "解析用户需求：华东区过去 7 天用户活跃度趋势" },
+                    { time: "14:32:12", level: "INFO", agent: "Rigel", msg: "检查数据源表 dw_user_behavior 可用性..." },
+                    { time: "14:32:54", level: "INFO", agent: "Rigel", msg: "数据源验证通过，共2,847,312 条记录" },
+                    { time: "14:33:05", level: "INFO", agent: "Rigel", msg: "开始设计 DWD 层数据模型" },
+                    { time: "14:38:05", level: "INFO", agent: "Rigel", msg: "模型设计完成，生成建表 SQL" },
+                    { time: "14:40:01", level: "WARN", agent: "Rigel", msg: "检测到字段 order_time 存在 NULL 值（0.3%），已添加过滤逻辑" },
+                    { time: "14:41:40", level: "INFO", agent: "Rigel", msg: "编写 ETL SQL：复购率计算口径确认" },
+                    { time: "14:41:40", level: "INFO", agent: "Rigel", msg: "SQL 编译通过，开始试运行…" },
+                    { time: "14:41:40", level: "ERROR", agent: "Rigel", msg: "试运行警告：分区 dt=2025-06-11 数据量偏低，已标记" },
+                    { time: "14:41:40", level: "INFO", agent: "Rigel", msg: "生成产物 clean_null_value.sql" },
+                    { time: "14:41:40", level: "INFO", agent: "Rigel", msg: "生成产物 read_source_data.sql" },
+                  ].map((log, i) => (
+                    <div key={i} style={{ display: "flex", gap: 0, lineHeight: "20px", fontSize: 12.4 }}>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "rgba(0,0,0,0.5)", flexShrink: 0, width: 64 }}>
+                        {log.time}
+                      </span>
+                      <span style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        flexShrink: 0, width: 50,
+                        color: log.level === "WARN" ? "#FF7800" : log.level === "ERROR" ? "#F64041" : "#0052D9",
+                      }}>
+                        {log.level}
+                      </span>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#000", flexShrink: 0 }}>
+                        [{log.agent}]
+                      </span>
+                      <span style={{ fontFamily: FONT, color: "#000", marginLeft: 4 }}>
+                        {log.msg}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── 产物详情抽屉（覆盖层） ── */}
@@ -349,6 +526,125 @@ function ArtifactItem({ artifact, onClick }: { artifact: Artifact; onClick?: () 
       {/* ── 右侧箭头 ── */}
       <div style={{ flexShrink: 0, overflow: "hidden", width: 16, height: 16 }}>
         <IconArrowRightUp size={16} color={TEXT_TERTIARY} />
+      </div>
+    </div>
+  );
+}
+
+// ── DAG components ──────────────────────────────────────────────
+
+function DagNode({ label, status }: { label: string; status: "done" | "active" | "pending" }) {
+  return (
+    <div style={{
+      width: 140,
+      height: 40,
+      background: "#FFFFFF",
+      borderRadius: 8,
+      border: `1px solid ${status === "active" ? "#00C8D6" : "#D6DBE3"}`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+      boxShadow: status === "active" ? "0 0 8px rgba(0,200,214,0.3)" : "none",
+    }}>
+      {status === "active" && (
+        <div style={{
+          position: "absolute", inset: -2, borderRadius: 10,
+          border: "2px solid #00C8D6",
+          animation: "dag-pulse 2s ease-in-out infinite",
+        }} />
+      )}
+      <span style={{
+        fontSize: 14, fontWeight: 600,
+        color: status === "pending" ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.9)",
+      }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function DagArrow() {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", height: 32 }}>
+      <svg width="2" height="32" viewBox="0 0 2 32">
+        <line x1="1" y1="0" x2="1" y2="28" stroke="#D6DBE3" strokeWidth="2" strokeDasharray="4 3" style={{ animation: "dag-flow 1s linear infinite" }} />
+        <polygon points="0,28 2,28 1,32" fill="#D6DBE3" />
+      </svg>
+    </div>
+  );
+}
+
+function DagArrowFan() {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", height: 40, position: "relative", width: "100%" }}>
+      <svg width="100%" height="40" viewBox="0 0 500 40" preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible" }}>
+        <line x1="250" y1="0" x2="250" y2="16" stroke="#D6DBE3" strokeWidth="2" />
+        <line x1="80" y1="16" x2="420" y2="16" stroke="#D6DBE3" strokeWidth="2" />
+        <line x1="80" y1="16" x2="80" y2="40" stroke="#D6DBE3" strokeWidth="2" />
+        <line x1="250" y1="16" x2="250" y2="40" stroke="#D6DBE3" strokeWidth="2" />
+        <line x1="420" y1="16" x2="420" y2="40" stroke="#D6DBE3" strokeWidth="2" />
+      </svg>
+    </div>
+  );
+}
+
+function DagArrowMerge() {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", height: 40, position: "relative", width: "100%" }}>
+      <svg width="100%" height="40" viewBox="0 0 500 40" preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible" }}>
+        <line x1="80" y1="0" x2="80" y2="24" stroke="#D6DBE3" strokeWidth="2" />
+        <line x1="250" y1="0" x2="250" y2="24" stroke="#D6DBE3" strokeWidth="2" />
+        <line x1="420" y1="0" x2="420" y2="24" stroke="#D6DBE3" strokeWidth="2" />
+        <line x1="80" y1="24" x2="420" y2="24" stroke="#D6DBE3" strokeWidth="2" />
+        <line x1="250" y1="24" x2="250" y2="40" stroke="#D6DBE3" strokeWidth="2" />
+      </svg>
+    </div>
+  );
+}
+
+interface ExpertTask {
+  label: string;
+  icon: string;
+  status: "done" | "active" | "pending";
+}
+
+function ExpertCard({ name, tasks }: { name: string; tasks: ExpertTask[] }) {
+  return (
+    <div style={{
+      flex: 1,
+      background: "#FFFFFF",
+      borderRadius: 8,
+      border: "1px solid #D6DBE3",
+      overflow: "hidden",
+    }}>
+      <div style={{ padding: "10px 12px 8px", fontSize: 14, fontWeight: 600, color: "rgba(0,0,0,0.9)" }}>
+        {name}
+      </div>
+      <div style={{ margin: "0 12px", height: 1, background: "#E6E9EF" }} />
+      <div style={{ padding: "8px 12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+        {tasks.map((t) => (
+          <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 16, height: 16, flexShrink: 0, position: "relative" }}>
+              {t.status === "active" ? (
+                <div style={{ width: 16, height: 16, animation: "dag-pulse 1.5s ease-in-out infinite" }}>
+                  <img src={t.icon} alt="" style={{ width: 16, height: 16 }} />
+                </div>
+              ) : (
+                <img src={t.icon} alt="" style={{ width: 16, height: 16 }} />
+              )}
+            </div>
+            <span style={{
+              fontSize: 14, fontWeight: 400,
+              color: t.status === "pending" ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.9)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}>
+              {t.label}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

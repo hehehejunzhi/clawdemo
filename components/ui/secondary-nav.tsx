@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Design tokens ──────────────────────────────────────────────
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-const FONT_SF = "'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 const C = {
   bg: "#F9FAFC",
@@ -13,12 +12,12 @@ const C = {
   textPrimary: "rgba(0,0,0,0.9)",
   textSecondary: "rgba(0,0,0,0.7)",
   textTertiary: "rgba(0,0,0,0.5)",
-  hoverBg: "#ECEEF2",
-  badgeBg: "#F64041",
-  badgeText: "rgba(255,255,255,0.9)",
-  btnBorderGradient: "linear-gradient(180deg, #EDF0F5 0%, #D6DBE3 100%)",
+  hoverBg: "#F2F4F8",
+  avatarBg: "#EEEEEE",
+  avatarBorder: "#E7E7E7",
   btnShadow: "0px 2px 4px -2px rgba(0,0,0,0.12)",
-  btnGradient: "linear-gradient(180deg, #FFFFFF 4%, #FAFBFC 57%)",
+  btnGradient: "linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 55%)",
+  btnBorderGradient: "linear-gradient(180deg, #EDF0F5 0%, #D6DBE3 100%)",
 } as const;
 
 // ── Animation constants ───────────────────────────────────────
@@ -26,217 +25,9 @@ const COLLAPSE_DURATION = 0.22;
 const COLLAPSE_EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
 const CONTENT_FADE = 0.18;
 const COLLAPSED_WIDTH = 68;
-const EXPANDED_WIDTH = 320;
+const EXPANDED_WIDTH = 260;
 
-// ── Status icon types ──────────────────────────────────────────
-type TaskStatus = "loading" | "pending" | "check";
-
-// ── Icon components (inline SVG with Figma path data) ──────────
-
-function IconLoading({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <style>{`@keyframes sec-nav-spin { to { transform: rotate(360deg); } }`}</style>
-      <g style={{ transformOrigin: "center", animation: "sec-nav-spin 1.2s linear infinite" }}>
-        <path d="M8 1.5C4.41038 1.5 1.5 4.41038 1.5 8C1.5 11.5896 4.41038 14.5 8 14.5V12.875C5.30761 12.875 3.125 10.6924 3.125 8C3.125 5.30761 5.30761 3.125 8 3.125C10.6924 3.125 12.875 5.30761 12.875 8H14.5C14.5 4.41038 11.5896 1.5 8 1.5Z" fill="#00B6C3"/>
-      </g>
-    </svg>
-  );
-}
-
-function IconPending({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <circle cx="8" cy="8" r="5" stroke="#FF7800" strokeWidth="1.2" strokeDasharray="3 2.5" fill="none"/>
-    </svg>
-  );
-}
-
-function IconCheck({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M13.3137 4.943L6.24264 12.014L2 7.771L2.943 6.828L6.243 10.128L12.371 4L13.3137 4.943Z" fill="rgba(0,0,0,0.5)"/>
-    </svg>
-  );
-}
-
-function IconAiNewChat({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <g clipPath="url(#clip-ai-new-chat)">
-        <path d="M5 7.5H8M8 7.5H11M8 7.5V4.5M8 7.5V10.5M8 1C12.0041 1 15.25 4.01408 15.25 7.73214C15.25 11.4502 12.0041 14.4643 8 14.4643C7.80723 14.4643 7.61621 14.4573 7.42722 14.4436C6.44468 14.3725 5.9534 14.337 5.69885 14.3823C5.60769 14.3985 5.58792 14.403 5.49882 14.4282C5.25 14.4985 4.9782 14.6554 4.4346 14.9692L4.27661 15.0604C4.07539 15.1766 3.97478 15.2347 3.89246 15.2351C3.78021 15.2358 3.67635 15.1758 3.62077 15.0783C3.58001 15.0067 3.58001 14.8906 3.58001 14.6582C3.58001 14.1771 3.58001 13.9366 3.54677 13.7533C3.48736 13.4256 3.45186 13.3321 3.27898 13.0475C3.18227 12.8883 2.92112 12.5936 2.39883 12.0044C1.36886 10.8424 0.75 9.35476 0.75 7.73214C0.75 4.01408 3.99594 1 8 1Z" stroke="rgba(0,0,0,0.7)" strokeWidth="1.33" fill="none"/>
-      </g>
-      <defs>
-        <clipPath id="clip-ai-new-chat">
-          <rect width="16" height="16" fill="white"/>
-        </clipPath>
-      </defs>
-    </svg>
-  );
-}
-
-function IconFolder({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <path fillRule="evenodd" clipRule="evenodd" d="M4.358 2C4.736 2 4.99 1.998 5.239 2.034C5.789 2.114 6.312 2.331 6.757 2.664C6.958 2.814 7.137 2.996 7.404 3.263L7.475 3.332H7.577C7.524 3.334 7.497 3.334 7.577 3.334H11.333C11.942 3.334 12.467 3.332 12.884 3.389C13.321 3.447 13.741 3.58 14.081 3.92C14.42 4.26 14.553 4.679 14.612 5.115C14.668 5.533 14.667 6.057 14.667 6.667V8C14.667 9.238 14.668 10.235 14.563 11.016C14.455 11.816 14.225 12.49 13.69 13.025C13.155 13.56 12.481 13.789 11.681 13.897C10.9 14.002 9.905 14 8.667 14H7.333C6.094 14 5.099 14.002 4.318 13.897C3.518 13.789 2.844 13.56 2.309 13.025C1.774 12.49 1.544 11.816 1.436 11.016C1.331 10.235 1.333 9.238 1.333 8V4.782C1.333 4.428 1.332 4.123 1.352 3.873C1.373 3.616 1.418 3.36 1.541 3.112C1.735 2.721 2.053 2.402 2.445 2.208C2.692 2.086 2.948 2.04 3.206 2.02C3.456 2 3.761 2 4.115 2H4.358ZM2.667 7.334V8C2.667 9.276 2.668 10.167 2.758 10.838C2.846 11.49 3.006 11.835 3.252 12.081C3.498 12.327 3.844 12.488 4.496 12.575C5.167 12.666 6.057 12.667 7.333 12.667H8.667C9.942 12.667 10.832 12.666 11.503 12.575C12.156 12.488 12.501 12.327 12.747 12.081C12.993 11.835 13.153 11.49 13.241 10.838C13.331 10.167 13.333 9.276 13.333 8V7.334H2.667ZM4.115 3.334C3.739 3.334 3.497 3.334 3.312 3.349C3.135 3.363 3.069 3.387 3.037 3.403C2.906 3.468 2.801 3.574 2.736 3.704C2.72 3.736 2.695 3.802 2.681 3.98C2.666 4.164 2.667 4.407 2.667 4.782V6H13.328C13.323 5.707 13.315 5.48 13.29 5.293C13.251 5.004 13.188 4.913 13.137 4.862C13.087 4.812 12.996 4.749 12.708 4.71C12.399 4.669 11.98 4.667 11.333 4.667H7.577C7.497 4.667 7.391 4.669 7.285 4.653C7.064 4.622 6.855 4.535 6.677 4.401C6.592 4.337 6.518 4.262 6.461 4.205C6.167 3.911 6.065 3.811 5.959 3.731C5.691 3.532 5.378 3.402 5.047 3.355C4.916 3.336 4.774 3.334 4.358 3.334H4.115Z" fill="rgba(0,0,0,0.9)"/>
-    </svg>
-  );
-}
-
-function IconChevronDown({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M10.242 4.57L7.033 7.778L3.825 4.57L3 5.395L7.033 9.428L11.067 5.395L10.242 4.57Z" fill="rgba(0,0,0,0.5)"/>
-    </svg>
-  );
-}
-
-function IconChevronRight({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M4.57 10.242L7.778 7.033L4.57 3.825L5.395 3L9.428 7.033L5.395 11.067L4.57 10.242Z" fill="rgba(0,0,0,0.5)"/>
-    </svg>
-  );
-}
-
-function IconSidebarPanel({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="-0.335 -1.335 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M5.665 0.665002V12.665M2.165 3.665H4.165M2.165 6.665H4.165M4.665 12.665H10.665C12.5506 12.665 13.4934 12.665 14.0792 12.0792C14.665 11.4934 14.665 10.5506 14.665 8.665V4.665C14.665 2.77938 14.665 1.83657 14.0792 1.25079C13.4934 0.665002 12.5506 0.665002 10.665 0.665002H4.665C2.77938 0.665002 1.83657 0.665002 1.25079 1.25079C0.665002 1.83657 0.665002 2.77938 0.665002 4.665V8.665C0.665002 10.5506 0.665002 11.4934 1.25079 12.0792C1.83657 12.665 2.77938 12.665 4.665 12.665Z" stroke="rgba(0,0,0,0.9)" strokeWidth="1.33"/>
-    </svg>
-  );
-}
-
-// ── Status icon renderer ───────────────────────────────────────
-function StatusIcon({ status }: { status: TaskStatus }) {
-  switch (status) {
-    case "loading": return <IconLoading />;
-    case "pending": return <IconPending />;
-    case "check":   return <IconCheck />;
-  }
-}
-
-// ── Section header ─────────────────────────────────────────────
-function SectionHeader({ label, withTopBorder = false }: { label: string; withTopBorder?: boolean }) {
-  return (
-    <div style={{
-      padding: "24px 12px 8px",
-      width: "100%",
-      borderTop: withTopBorder ? `1px solid ${C.borderColor}` : "none",
-    }}>
-      <span style={{
-        fontFamily: FONT, fontSize: 12, fontWeight: 600,
-        lineHeight: "20px", color: C.textSecondary,
-      }}>
-        {label}
-      </span>
-    </div>
-  );
-}
-
-// ── Task item ──────────────────────────────────────────────────
-function TaskItem({ status, title, indented }: {
-  status: TaskStatus;
-  title: string;
-  indented?: boolean;
-}) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        height: 34, display: "flex", alignItems: "center",
-        paddingLeft: 12, paddingRight: 12,
-        borderRadius: 20, cursor: "pointer",
-        backgroundColor: hovered ? C.hoverBg : "transparent",
-        transition: "background 100ms", width: "100%",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 0 0", minWidth: 0 }}>
-        <StatusIcon status={status} />
-        <span style={{
-          fontFamily: FONT, fontSize: 14, fontWeight: 400,
-          lineHeight: "22px", color: C.textPrimary,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          flex: "1 0 0", minWidth: 0,
-        }}>
-          {title}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ── More link ──────────────────────────────────────────────────
-function MoreLink({ count }: { count: number }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        height: 34, display: "flex", alignItems: "center",
-        paddingLeft: 12, paddingRight: 12, borderRadius: 20,
-        cursor: "pointer", backgroundColor: hovered ? C.hoverBg : "transparent",
-        transition: "background 100ms", width: "100%",
-      }}
-    >
-      <span style={{
-        fontFamily: FONT, fontSize: 14, fontWeight: 400,
-        lineHeight: "20px", color: C.textTertiary,
-      }}>
-        显示更多({count})
-      </span>
-    </div>
-  );
-}
-
-// ── Folder item ────────────────────────────────────────────────
-function FolderItem({ name, expanded, onToggle, children }: {
-  name: string;
-  expanded: boolean;
-  onToggle: () => void;
-  children?: React.ReactNode;
-}) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <>
-      <div
-        onClick={onToggle}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          height: 34, display: "flex", alignItems: "center",
-          paddingLeft: 12, paddingRight: 12, borderRadius: 20,
-          cursor: "pointer", backgroundColor: hovered ? C.hoverBg : "transparent",
-          transition: "background 100ms", width: "100%",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 0 0", minWidth: 0 }}>
-          <IconFolder />
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{
-              fontFamily: FONT, fontSize: 14, fontWeight: 400,
-              lineHeight: "22px", color: C.textPrimary,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {name}
-            </span>
-            {expanded ? <IconChevronDown /> : <IconChevronRight />}
-          </div>
-        </div>
-      </div>
-      {expanded && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "0 0 12px" }}>
-          {children}
-        </div>
-      )}
-    </>
-  );
-}
-
-// ── Icon button for collapsed toolbar ──────────────────────────
+// ── Icon button ────────────────────────────────────────────────
 function ToolbarButton({ onClick, title, children }: {
   onClick?: () => void;
   title: string;
@@ -250,7 +41,7 @@ function ToolbarButton({ onClick, title, children }: {
       onMouseLeave={() => setHovered(false)}
       title={title}
       style={{
-        width: 40, height: 40, borderRadius: 20,
+        width: 32, height: 32, borderRadius: 16,
         border: "none", background: hovered ? C.hoverBg : "transparent",
         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
         padding: 0, transition: "background 100ms", flexShrink: 0,
@@ -261,17 +52,245 @@ function ToolbarButton({ onClick, title, children }: {
   );
 }
 
+// ── Nav menu item ──────────────────────────────────────────────
+function NavMenuItem({ icon, label, onClick }: { icon: string; label: string; onClick?: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        height: 34,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 12px",
+        borderRadius: 20,
+        cursor: "pointer",
+        backgroundColor: hovered ? C.hoverBg : "transparent",
+        transition: "background 100ms",
+        gap: 12,
+      }}
+    >
+      <img src={icon} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
+      <span style={{
+        fontFamily: FONT, fontSize: 14, fontWeight: 400,
+        lineHeight: "22px", color: C.textPrimary,
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ── Status icons (inline SVG) ──────────────────────────────────
+function IconLoading({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <style>{`@keyframes sec-nav-spin { to { transform: rotate(360deg); } }`}</style>
+      <g style={{ transformOrigin: "center", animation: "sec-nav-spin 1s linear infinite" }}>
+        <path d="M8 1.5C4.41038 1.5 1.5 4.41038 1.5 8C1.5 11.5896 4.41038 14.5 8 14.5V12.875C5.30761 12.875 3.125 10.6924 3.125 8C3.125 5.30761 5.30761 3.125 8 3.125C10.6924 3.125 12.875 5.30761 12.875 8H14.5C14.5 4.41038 11.5896 1.5 8 1.5Z" fill="#00B6C3"/>
+      </g>
+    </svg>
+  );
+}
+
+function IconPending({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <style>{`@keyframes sec-nav-pending-spin { to { transform: rotate(360deg); } }`}</style>
+      <g style={{ transformOrigin: "center", animation: "sec-nav-pending-spin 3s linear infinite" }}>
+        <circle cx="8" cy="8" r="5" stroke="#FF7800" strokeWidth="1.2" strokeDasharray="3 2.5" fill="none"/>
+      </g>
+    </svg>
+  );
+}
+
+function IconCheck({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M13.3137 4.943L6.24264 12.014L2 7.771L2.943 6.828L6.243 10.128L12.371 4L13.3137 4.943Z" fill="rgba(0,0,0,0.5)"/>
+    </svg>
+  );
+}
+
+type TaskStatus = "loading" | "pending" | "check";
+
+function StatusIcon({ status }: { status: TaskStatus }) {
+  switch (status) {
+    case "loading": return <IconLoading />;
+    case "pending": return <IconPending />;
+    case "check":   return <IconCheck />;
+  }
+}
+
+// ── Task item (status-based) ──────────────────────────────────
+function TaskItem({ status, title }: { status: TaskStatus; title: string }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        height: 34,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 12px",
+        borderRadius: 20,
+        cursor: "pointer",
+        backgroundColor: hovered ? C.hoverBg : "transparent",
+        transition: "background 100ms",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+        <StatusIcon status={status} />
+        <span style={{
+          fontFamily: FONT, fontSize: 14, fontWeight: 400,
+          lineHeight: "22px", color: C.textPrimary,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          flex: 1, minWidth: 0,
+        }}>
+          {title}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Chevron icon (rotates when expanded) ──────────────────────
+function ChevronIcon({ expanded }: { expanded: boolean }) {
+  return (
+    <motion.div
+      animate={{ rotate: expanded ? 0 : -90 }}
+      transition={{ duration: 0.2 }}
+      style={{ width: 14, height: 14, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M10.242 4.57L7.033 7.778L3.825 4.57L3 5.395L7.033 9.428L11.067 5.395L10.242 4.57Z" fill="rgba(0,0,0,0.4)"/>
+      </svg>
+    </motion.div>
+  );
+}
+
+// ── Collapsible section ───────────────────────────────────────
+const COLLAPSE_ANIM = { duration: 0.25, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] };
+
+function CollapsibleSection({ header, children, defaultOpen = false }: {
+  header: React.ReactNode | ((expanded: boolean) => React.ReactNode);
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div>
+      <div onClick={() => setOpen(v => !v)}>
+        {typeof header === "function" ? header(open) : header}
+      </div>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={COLLAPSE_ANIM}
+            style={{ overflow: "hidden" }}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Expert/Team header ────────────────────────────────────────
+function SectionHeader({ avatar, label, expanded }: {
+  avatar: React.ReactNode;
+  label: string;
+  expanded: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        height: 44,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 12px",
+        borderRadius: 12,
+        cursor: "pointer",
+        backgroundColor: hovered ? C.hoverBg : "transparent",
+        transition: "background 100ms",
+      }}
+    >
+      {avatar}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 8, flex: 1, minWidth: 0 }}>
+        <span style={{
+          fontFamily: FONT, fontSize: 14, fontWeight: 400,
+          lineHeight: "22px", color: C.textPrimary,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {label}
+        </span>
+        <ChevronIcon expanded={expanded} />
+      </div>
+    </div>
+  );
+}
+
+// ── Grid avatar (4-cell team avatar) ──────────────────────────
+function GridAvatar({ imgs }: { imgs: [string, string, string, string] }) {
+  return (
+    <div style={{
+      width: 32, height: 32, borderRadius: 100, flexShrink: 0,
+      background: C.avatarBg, border: `1.6px solid ${C.avatarBorder}`,
+      overflow: "hidden", position: "relative",
+    }}>
+      <div style={{ position: "absolute", width: 16, height: 16, left: 0, top: 0, overflow: "hidden" }}>
+        <img src={imgs[0]} alt="" style={{ width: 16, height: 16, objectFit: "cover" }} />
+      </div>
+      <div style={{ position: "absolute", width: 16, height: 16, left: 16, top: 0, overflow: "hidden" }}>
+        <img src={imgs[1]} alt="" style={{ width: 16, height: 16, objectFit: "cover" }} />
+      </div>
+      <div style={{ position: "absolute", width: 16, height: 16, left: 0, top: 16, overflow: "hidden" }}>
+        <img src={imgs[2]} alt="" style={{ width: 16, height: 16, objectFit: "cover" }} />
+      </div>
+      <div style={{ position: "absolute", width: 16, height: 16, left: 16, top: 16, overflow: "hidden" }}>
+        <img src={imgs[3]} alt="" style={{ width: 16, height: 16, objectFit: "cover" }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Single avatar ─────────────────────────────────────────────
+function SingleAvatar({ src }: { src: string }) {
+  return (
+    <div style={{
+      width: 32, height: 32, borderRadius: 100, flexShrink: 0,
+      background: C.avatarBg, border: `1.6px solid ${C.avatarBorder}`,
+      overflow: "hidden",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <img src={src} alt="" style={{ width: 34, height: 34, objectFit: "cover" }} />
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────
 interface SecondaryNavProps {
   onToggle?: () => void;
   onCollapsedChange?: (collapsed: boolean) => void;
   onNewTask?: () => void;
+  onSkillPlaza?: () => void;
+  onClawManager?: () => void;
 }
 
-export default function SecondaryNav({ onToggle, onCollapsedChange, onNewTask }: SecondaryNavProps) {
+export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager }: SecondaryNavProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [folder1Open, setFolder1Open] = useState(true);
-  const [folder2Open, setFolder2Open] = useState(true);
 
   const contentFade: React.CSSProperties = {
     transition: `opacity ${CONTENT_FADE}s ease`,
@@ -286,7 +305,7 @@ export default function SecondaryNav({ onToggle, onCollapsedChange, onNewTask }:
       animate={{ width: navWidthPx, minWidth: navWidthPx, maxWidth: navWidthPx, flexBasis: navWidthPx }}
       transition={{ duration: COLLAPSE_DURATION, ease: COLLAPSE_EASE }}
       style={{
-        height: "100vh",
+        height: "100%",
         backgroundColor: C.bg,
         borderRight: collapsed ? "none" : `1px solid ${C.borderColor}`,
         display: "flex",
@@ -304,60 +323,67 @@ export default function SecondaryNav({ onToggle, onCollapsedChange, onNewTask }:
         position: "relative",
       }}
     >
-      {/* ── 标题栏 (84px) ── */}
+      {/* ── 标题栏 (50px) ── */}
       <div style={{
-        height: 84, flexShrink: 0,
+        height: 50, flexShrink: 0,
         display: "flex", alignItems: "center",
         overflow: "hidden", position: "relative",
       }}>
-        {/* 展开态标题栏 */}
+        {/* 展开态 */}
         <div style={{
           ...contentFade,
           position: "absolute", inset: 0,
           opacity: collapsed ? 0 : 1,
           pointerEvents: collapsed ? "none" : "auto",
-          display: "flex", flexDirection: "column", justifyContent: "center",
+          display: "flex", alignItems: "center",
           padding: "0 16px",
         }}>
           <div style={{
-            height: 44, display: "flex", alignItems: "center", justifyContent: "space-between",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            width: "100%", height: 44,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "0 8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <img src="/icons/logo-icon.svg" alt="" style={{ width: 20, height: 20, flexShrink: 0 }} />
               <span style={{
-                fontFamily: FONT_SF, fontSize: 18, fontWeight: 600,
+                fontFamily: FONT, fontSize: 18, fontWeight: 600,
                 lineHeight: "26px", color: C.textPrimary, whiteSpace: "nowrap",
               }}>
-                DataBuddy
+                ClawTeam
               </span>
             </div>
-            <ToolbarButton onClick={() => { setCollapsed(true); onCollapsedChange?.(true); }} title="收起面板">
-              <IconSidebarPanel />
-            </ToolbarButton>
+            <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <ToolbarButton onClick={() => {}} title="搜索">
+                <img src="/icons/nav/2.svg" alt="" style={{ width: 16, height: 16 }} />
+              </ToolbarButton>
+              <ToolbarButton onClick={() => { setCollapsed(true); onCollapsedChange?.(true); }} title="收起面板">
+                <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
+              </ToolbarButton>
+            </div>
           </div>
         </div>
 
-        {/* 收起态工具栏：仅展开 */}
+        {/* 收起态 */}
         <div style={{
           ...contentFade,
           position: "absolute", inset: 0,
           opacity: collapsed ? 1 : 0,
           pointerEvents: collapsed ? "auto" : "none",
-          display: "flex", alignItems: "center", justifyContent: "flex-start",
-          padding: "0 0 0 24px",
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <ToolbarButton onClick={() => { setCollapsed(false); onCollapsedChange?.(false); }} title="展开面板">
-            <IconSidebarPanel />
+            <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
           </ToolbarButton>
         </div>
       </div>
 
-      {/* ── 新建任务按钮（展开态） ── */}
+      {/* ── 新建任务按钮 ── */}
       <div style={{
         ...contentFade,
         opacity: collapsed ? 0 : 1,
         pointerEvents: collapsed ? "none" : "auto",
-        padding: collapsed ? "0" : "0 12px 8px", flexShrink: 0,
-        height: collapsed ? 0 : "auto",
+        padding: collapsed ? "0" : "0 12px",
+        flexShrink: 0,
+        height: collapsed ? 0 : 44,
         overflow: "hidden",
       }}>
         <button onClick={onNewTask} style={{
@@ -368,55 +394,117 @@ export default function SecondaryNav({ onToggle, onCollapsedChange, onNewTask }:
           justifyContent: "center", gap: 8, cursor: "pointer",
           padding: "8px 20px", outline: "none",
         }}>
-          <IconAiNewChat />
+          <img src="/icons/nav/4.svg" alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
           <span style={{
             fontFamily: FONT, fontSize: 14, fontWeight: 500,
             lineHeight: "22px", color: C.textPrimary,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            whiteSpace: "nowrap",
           }}>
             新建任务
           </span>
         </button>
       </div>
 
-      {/* ── 可滚动列表区（展开态） ── */}
+      {/* ── 可滚动区域 ── */}
       <div style={{
         ...contentFade,
         flex: 1,
         opacity: collapsed ? 0 : 1,
         pointerEvents: collapsed ? "none" : "auto",
         overflowY: "auto", overflowX: "hidden",
-        padding: collapsed ? "0" : "0 12px", scrollbarWidth: "none",
+        padding: collapsed ? "0" : "0 12px",
+        scrollbarWidth: "none",
       }}>
-        <div style={{ paddingBottom: 24 }}>
-          <SectionHeader label="最近任务" />
-          <TaskItem status="loading" title="ETL 开发_订单数据同步流程项目" />
-          <TaskItem status="pending" title="统计近 7 天各渠道用户支付金额，按天汇总，输出可直接使用的 SQL 与结果" />
-          <TaskItem status="check" title="接入业务库【订单表】数据源：自动识别表结构与数据质量，生成标准数仓模型，配置 T+1 同步任务" />
-          <TaskItem status="check" title="接入业务库【用户表】数据源：自动识别表结构与数据质量，生成标准数仓模型，配置 T+1 同步任务" />
-          <TaskItem status="check" title="猫眼_客户留存指标分析" />
-          <TaskItem status="check" title="T+1调度工作流编排" />
-          <MoreLink count={10} />
+        {/* 上区：菜单项 + 底部分割线 */}
+        <div style={{
+          paddingTop: 24,
+          paddingBottom: 24,
+          borderBottom: `1px solid ${C.borderColor}`,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}>
+          <NavMenuItem icon="/icons/nav/5.svg" label="技能广场" onClick={onSkillPlaza} />
+          <NavMenuItem icon="/icons/nav/6.svg" label="Claw管理" onClick={onClawManager} />
         </div>
 
-        <SectionHeader label="文件空间" withTopBorder />
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <FolderItem name="junyangliu_dev" expanded={folder1Open} onToggle={() => setFolder1Open(v => !v)}>
-            <TaskItem indented status="check" title="基于用户复购、订单、活跃数据，搭建业务监控看板：包含趋势图、明细表、核心指标卡片" />
-            <TaskItem indented status="pending" title="用户复购率指标开发" />
-            <TaskItem indented status="check" title="猫眼_客户留存率指标血缘分析" />
-            <TaskItem indented status="check" title="零售业务_月度库存健康度指标开发" />
-          </FolderItem>
+        {/* 下区：团队 & 专家列表（可折叠） */}
+        <div style={{ display: "flex", flexDirection: "column" }}>
 
-          <FolderItem name="junyangliu_test" expanded={folder2Open} onToggle={() => setFolder2Open(v => !v)}>
-            <TaskItem indented status="check" title="基于用户复购、订单、活跃数据，搭建业务监控看板：包含趋势图、明细表、核心指标卡片" />
-            <TaskItem indented status="pending" title="用户复购率指标开发" />
-            <TaskItem indented status="check" title="猫眼_客户留存率指标血缘分析" />
-          </FolderItem>
+          {/* 大数据团队 */}
+          <CollapsibleSection
+            defaultOpen={true}
+            header={(expanded) => (
+              <SectionHeader
+                avatar={<GridAvatar imgs={["/icons/nav2/1.svg", "/icons/nav2/3.svg", "/icons/nav2/2.svg", "/icons/nav2/3.svg"]} />}
+                label="大数据团队"
+                expanded={expanded}
+              />
+            )}
+          >
+            <TaskItem status="loading" title="ETL 开发_订单数据同步流程项目" />
+            <TaskItem status="pending" title="统计近 7 天各渠道用户支付金额，按天汇总" />
+            <TaskItem status="check" title="接入业务库【订单表】数据源" />
+            <TaskItem status="check" title="接入业务库【用户表】数据源" />
+            <TaskItem status="check" title="猫眼_客户留存指标分析" />
+            <TaskItem status="check" title="T+1调度工作流编排" />
+          </CollapsibleSection>
 
-          <FolderItem name="junyangliu001" expanded={false} onToggle={() => {}} />
-          <FolderItem name="junyangliu002" expanded={false} onToggle={() => {}} />
-          <FolderItem name="junyangliu003" expanded={false} onToggle={() => {}} />
+          {/* Rigel·数据运维专家 */}
+          <CollapsibleSection
+            header={(expanded) => (
+              <SectionHeader
+                avatar={<SingleAvatar src="/icons/nav2/11.svg" />}
+                label="Rigel·数据运维专家"
+                expanded={expanded}
+              />
+            )}
+          >
+            <TaskItem status="loading" title="数仓分层模型搭建" />
+            <TaskItem status="check" title="ODS 层数据接入验证" />
+          </CollapsibleSection>
+
+          {/* Vega·数据分析专家 */}
+          <CollapsibleSection
+            header={(expanded) => (
+              <SectionHeader
+                avatar={<SingleAvatar src="/icons/nav2/13.svg" />}
+                label="Vega·数据分析专家"
+                expanded={expanded}
+              />
+            )}
+          >
+            <TaskItem status="pending" title="用户留存率趋势分析" />
+            <TaskItem status="check" title="GMV 周报数据提取" />
+          </CollapsibleSection>
+
+          {/* Orion·数据开发专家 */}
+          <CollapsibleSection
+            header={(expanded) => (
+              <SectionHeader
+                avatar={<SingleAvatar src="/icons/nav2/15.svg" />}
+                label="Orion·数据开发专家"
+                expanded={expanded}
+              />
+            )}
+          >
+            <TaskItem status="loading" title="元数据血缘扫描" />
+          </CollapsibleSection>
+
+          {/* 运营协作团队 */}
+          <CollapsibleSection
+            header={(expanded) => (
+              <SectionHeader
+                avatar={<GridAvatar imgs={["/icons/nav2/17.svg", "/icons/nav2/20.svg", "/icons/nav2/19.svg", "/icons/nav2/20.svg"]} />}
+                label="运营协作团队"
+                expanded={expanded}
+              />
+            )}
+          >
+            <TaskItem status="check" title="运营周报看板搭建" />
+            <TaskItem status="pending" title="活动效果归因分析" />
+          </CollapsibleSection>
+
         </div>
       </div>
     </motion.div>
