@@ -126,10 +126,11 @@ function StatusIcon({ status }: { status: TaskStatus }) {
 }
 
 // ── Task item (status-based) ──────────────────────────────────
-function TaskItem({ status, title }: { status: TaskStatus; title: string }) {
+function TaskItem({ status, title, active, onClick }: { status: TaskStatus; title: string; active?: boolean; onClick?: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
+      onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -139,14 +140,14 @@ function TaskItem({ status, title }: { status: TaskStatus; title: string }) {
         padding: "0 12px",
         borderRadius: 20,
         cursor: "pointer",
-        backgroundColor: hovered ? C.hoverBg : "transparent",
+        backgroundColor: active ? "#E1E5ED" : hovered ? C.hoverBg : "transparent",
         transition: "background 100ms",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
         <StatusIcon status={status} />
         <span style={{
-          fontFamily: FONT, fontSize: 14, fontWeight: 400,
+          fontFamily: FONT, fontSize: 14, fontWeight: active ? 600 : 400,
           lineHeight: "22px", color: C.textPrimary,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           flex: 1, minWidth: 0,
@@ -287,9 +288,11 @@ interface SecondaryNavProps {
   onNewTask?: () => void;
   onSkillPlaza?: () => void;
   onClawManager?: () => void;
+  onTaskClick?: (task: { id: string; title: string }) => void;
+  activeTaskId?: string | null;
 }
 
-export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager }: SecondaryNavProps) {
+export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId }: SecondaryNavProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   const contentFade: React.CSSProperties = {
@@ -429,7 +432,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
         </div>
 
         {/* 下区：团队 & 专家列表（可折叠） */}
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
 
           {/* 大数据团队 */}
           <CollapsibleSection
@@ -442,12 +445,12 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               />
             )}
           >
-            <TaskItem status="loading" title="ETL 开发_订单数据同步流程项目" />
-            <TaskItem status="pending" title="统计近 7 天各渠道用户支付金额，按天汇总" />
-            <TaskItem status="check" title="接入业务库【订单表】数据源" />
-            <TaskItem status="check" title="接入业务库【用户表】数据源" />
-            <TaskItem status="check" title="猫眼_客户留存指标分析" />
-            <TaskItem status="check" title="T+1调度工作流编排" />
+            <TaskItem status="loading" title="ETL 开发_订单数据同步流程项目" active={activeTaskId === "t1"} onClick={() => onTaskClick?.({ id: "t1", title: "ETL 开发_订单数据同步流程项目" })} />
+            <TaskItem status="pending" title="统计近 7 天各渠道用户支付金额，按天汇总" active={activeTaskId === "t2"} onClick={() => onTaskClick?.({ id: "t2", title: "统计近 7 天各渠道用户支付金额，按天汇总" })} />
+            <TaskItem status="check" title="接入业务库【订单表】数据源" active={activeTaskId === "t3"} onClick={() => onTaskClick?.({ id: "t3", title: "接入业务库【订单表】数据源" })} />
+            <TaskItem status="check" title="接入业务库【用户表】数据源" active={activeTaskId === "t4"} onClick={() => onTaskClick?.({ id: "t4", title: "接入业务库【用户表】数据源" })} />
+            <TaskItem status="check" title="猫眼_客户留存指标分析" active={activeTaskId === "t5"} onClick={() => onTaskClick?.({ id: "t5", title: "猫眼_客户留存指标分析" })} />
+            <TaskItem status="check" title="T+1调度工作流编排" active={activeTaskId === "t6"} onClick={() => onTaskClick?.({ id: "t6", title: "T+1调度工作流编排" })} />
           </CollapsibleSection>
 
           {/* Rigel·数据运维专家 */}
@@ -460,8 +463,8 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               />
             )}
           >
-            <TaskItem status="loading" title="数仓分层模型搭建" />
-            <TaskItem status="check" title="ODS 层数据接入验证" />
+            <TaskItem status="loading" title="数仓分层模型搭建" active={activeTaskId === "t7"} onClick={() => onTaskClick?.({ id: "t7", title: "数仓分层模型搭建" })} />
+            <TaskItem status="check" title="ODS 层数据接入验证" active={activeTaskId === "t8"} onClick={() => onTaskClick?.({ id: "t8", title: "ODS 层数据接入验证" })} />
           </CollapsibleSection>
 
           {/* Vega·数据分析专家 */}
@@ -474,8 +477,8 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               />
             )}
           >
-            <TaskItem status="pending" title="用户留存率趋势分析" />
-            <TaskItem status="check" title="GMV 周报数据提取" />
+            <TaskItem status="pending" title="用户留存率趋势分析" active={activeTaskId === "t9"} onClick={() => onTaskClick?.({ id: "t9", title: "用户留存率趋势分析" })} />
+            <TaskItem status="check" title="GMV 周报数据提取" active={activeTaskId === "t10"} onClick={() => onTaskClick?.({ id: "t10", title: "GMV 周报数据提取" })} />
           </CollapsibleSection>
 
           {/* Orion·数据开发专家 */}
@@ -488,7 +491,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               />
             )}
           >
-            <TaskItem status="loading" title="元数据血缘扫描" />
+            <TaskItem status="loading" title="元数据血缘扫描" active={activeTaskId === "t11"} onClick={() => onTaskClick?.({ id: "t11", title: "元数据血缘扫描" })} />
           </CollapsibleSection>
 
           {/* 运营协作团队 */}
@@ -501,8 +504,8 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               />
             )}
           >
-            <TaskItem status="check" title="运营周报看板搭建" />
-            <TaskItem status="pending" title="活动效果归因分析" />
+            <TaskItem status="check" title="运营周报看板搭建" active={activeTaskId === "t12"} onClick={() => onTaskClick?.({ id: "t12", title: "运营周报看板搭建" })} />
+            <TaskItem status="pending" title="活动效果归因分析" active={activeTaskId === "t13"} onClick={() => onTaskClick?.({ id: "t13", title: "活动效果归因分析" })} />
           </CollapsibleSection>
 
         </div>

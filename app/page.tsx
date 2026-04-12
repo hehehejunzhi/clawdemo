@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import ClaudeChatInput, { CHAT_INPUT_MOTION, type ChatInputHandle, type ChatInputPreviewState, type SkillChip } from "@/components/ui/claude-style-chat-input";
 import { AgentFanCards, type AgentCardPreviewState, type FanCardsConfig, DEFAULT_FAN_CONFIG, AGENT_CARD_MOTION } from "@/components/ui/agent-card";
@@ -17,7 +17,7 @@ import UserMessageBubble from "@/components/ui/user-message-bubble";
 import Plan from "@/components/ui/agent-plan";
 import ThinkingSummary from "@/components/ui/thinking-summary";
 import ArtifactsPanel from "@/components/ui/artifacts-panel";
-import ExpertReplies from "@/components/ui/expert-replies";
+import ExpertReplies, { type ExpertReplyDataType } from "@/components/ui/expert-replies";
 import CreateExpertDialog from "@/components/ui/create-expert-dialog";
 import CreateTeamDialog from "@/components/ui/create-team-dialog";
 import SkillPlaza from "@/components/ui/skill-plaza";
@@ -89,6 +89,362 @@ const STUDIO_REVEAL_DURATION = 0.3;
 const STUDIO_REVEAL_EASE: [number, number, number, number] = [0.22, 0.61, 0.36, 1];
 const BUBBLE_REVEAL_EASE: [number, number, number, number] = [0.23, 0.64, 0.22, 1];
 
+// ── 每个侧边栏任务对应的对话内容 ────────────────────────────────
+interface TaskConversation {
+  title: string;
+  userMsg: string;
+  thinkingText: string;
+  replies: ExpertReplyDataType[];
+}
+
+const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
+  t1: {
+    title: "ETL 开发_订单数据同步流程项目",
+    userMsg: "帮我搭建订单数据从业务库到数仓的 ETL 同步流程",
+    thinkingText: "收到需求，我来作为调度者拆解 ETL 同步任务并分派给团队成员",
+    replies: [
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "已连接业务库 MySQL 实例，扫描到 orders 表共 2,847 万条记录。" },
+          { text: "创建 Sqoop 导入任务，增量同步策略为 modified_time > last_sync_time。", tags: ["orders", "order_items", "order_payments"] },
+          { text: "ODS 层落地表 ods_orders_di 已创建，分区键为 ds（按天），存储格式 ORC + Snappy 压缩。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "数据质量规则已配置：主键唯一性检查、金额字段非负校验、时间戳连续性检测。" },
+          { text: "T+1 数据新鲜度 SLA 设置为每日 06:00 前完成同步。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        lines: [
+          { text: "已注册调度工作流，Cron 表达式 0 2 * * *，每日凌晨 2 点触发。" },
+          { text: "失败告警已绑定飞书群，重试策略为指数退避，最多 3 次。" },
+          { text: "资源预估：单次同步约消耗 4 CU·小时，已预留弹性资源池。" },
+        ],
+      },
+    ],
+  },
+  t2: {
+    title: "统计近 7 天各渠道用户支付金额",
+    userMsg: "统计近 7 天各渠道用户支付金额，按天汇总",
+    thinkingText: "收到需求，我来拆解多渠道支付数据的聚合分析任务",
+    replies: [
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "定位到支付主题表 dws_payment_channel_di，覆盖微信/支付宝/银联/Apple Pay 四个渠道。" },
+          { text: "已生成按天×渠道聚合 SQL，时间范围 CURDATE() - INTERVAL 7 DAY 到 CURDATE()。", tags: ["dws_payment_channel_di", "dim_channel", "fact_payment"] },
+          { text: "汇总结果：7 天累计支付 ¥3,284 万，微信占比 52.3%，支付宝 31.7%，银联 12.4%，Apple Pay 3.6%。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        lines: [
+          { text: "发现趋势异常：第 5 天支付宝渠道下降 18%，关联到支付宝侧临时限流策略。" },
+          { text: "已生成可视化看板：分渠道折线图 + 占比堆叠柱状图，导出为 PNG 和 PDF 格式。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "SQL 模板已沉淀到知识库，标签：多渠道支付、按天汇总、7日趋势。" },
+          { text: "自动创建定时报表任务，每周一 09:00 自动推送到运营群。" },
+        ],
+      },
+    ],
+  },
+  t3: {
+    title: "接入业务库【订单表】数据源",
+    userMsg: "接入业务库的订单表数据源到数仓",
+    thinkingText: "收到需求，我来协调完成订单表数据源接入任务",
+    replies: [
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "已通过 JDBC 探测到 MySQL 5.7 实例 db-order-prod，延迟 2.3ms。" },
+          { text: "orders 表结构：38 个字段，主键 order_id (BIGINT)，日均新增约 42 万条。", tags: ["orders", "order_id", "MySQL 5.7"] },
+          { text: "数据源注册完成，连接池配置：maxPoolSize=20, minIdle=5, connectionTimeout=30s。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "权限审查通过：已获取 SELECT 权限，数据脱敏规则已配置（手机号/身份证中间位掩码）。" },
+          { text: "数据采样完成：随机抽取 1 万条进行字段完整率统计，所有必填字段完整率 > 99.8%。" },
+        ],
+      },
+    ],
+  },
+  t4: {
+    title: "接入业务库【用户表】数据源",
+    userMsg: "接入业务库的用户表数据源到数仓",
+    thinkingText: "收到需求，我来协调完成用户表数据源接入任务",
+    replies: [
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "已探测到 MySQL 实例 db-user-prod，用户表 users 共 1,560 万条记录。" },
+          { text: "表结构：25 个字段，包含 user_id、nickname、phone、register_time 等核心字段。", tags: ["users", "user_profile", "user_extend"] },
+          { text: "增量字段选定 updated_at，Binlog 模式可用，CDC 配置已生成。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "PII 字段检测完成：phone、id_card、email 已标记为敏感字段，脱敏策略已绑定。" },
+          { text: "数据质量基线已建立，空值率、唯一性、格式合规性每日自动校验。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        lines: [
+          { text: "数据源健康探针已部署，每 5 分钟检测连接可用性，异常自动切换备库。" },
+        ],
+      },
+    ],
+  },
+  t5: {
+    title: "猫眼_客户留存指标分析",
+    userMsg: "帮我分析猫眼业务的客户留存指标",
+    thinkingText: "收到需求，我来拆解客户留存分析任务并协调专家团",
+    replies: [
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "定位留存分析数据源：dws_user_retention_di，覆盖次日/3日/7日/30日留存维度。" },
+          { text: "近 30 天整体留存率：次留 45.2%、3留 28.7%、7留 18.3%、月留 9.6%。", tags: ["dws_user_retention_di", "dim_user_cohort", "fact_active_user"] },
+          { text: "按渠道拆解：自然流量次留 52%，付费投放次留 38%，差异显著。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        lines: [
+          { text: "留存漏斗分析：注册→首次观影转化率 67%，首次→二次观影转化率仅 41%，为核心流失节点。" },
+          { text: "建议：优化首次观影后的推荐策略，增加 \"猜你想看\" 推送触达。" },
+          { text: "已生成留存趋势报告（含同环比对比），可在产物面板查看。" },
+        ],
+      },
+    ],
+  },
+  t6: {
+    title: "T+1 调度工作流编排",
+    userMsg: "帮我编排 T+1 数据调度工作流",
+    thinkingText: "收到需求，我来规划 T+1 数据调度的工作流编排方案",
+    replies: [
+      {
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        lines: [
+          { text: "工作流拓扑已生成：ODS 层采集 → DWD 清洗 → DWS 汇总 → ADS 应用，共 23 个节点。" },
+          { text: "关键路径分析：最长执行链 ODS→DWD→DWS_user→ADS_retention，预估耗时 47 分钟。", tags: ["ods_sync", "dwd_clean", "dws_aggregate", "ads_report"] },
+          { text: "并行度优化：DWD 层 8 个表可并行执行，将整体耗时缩短至 32 分钟。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "资源编排：凌晨 2:00 启动，预分配 Spark 集群 16 CU，DWS 阶段动态扩容到 24 CU。" },
+          { text: "SLA 兜底：若 06:00 前未完成，自动触发紧急扩容 + 告警通知值班人员。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "数据质量卡点已配置：DWD→DWS 之间设置行数波动检查（±20% 阈值）。" },
+          { text: "全链路血缘已注册，任意节点失败可快速定位上下游影响范围。" },
+        ],
+      },
+    ],
+  },
+  t7: {
+    title: "数仓分层模型搭建",
+    userMsg: "帮我搭建数仓的分层模型体系",
+    thinkingText: "收到需求，我来规划数仓分层架构并分派搭建任务",
+    replies: [
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "数仓分层方案已设计：ODS（原始层）→ DWD（明细层）→ DWS（汇总层）→ ADS（应用层）。" },
+          { text: "ODS 层：12 张业务源表镜像，保留原始字段，增加 ds 分区和 etl_time 审计字段。", tags: ["ODS", "DWD", "DWS", "ADS"] },
+          { text: "DWD 层：统一编码规范、时区转换、空值填充，输出 8 张主题明细宽表。" },
+          { text: "DWS 层：按用户/订单/支付三大主题构建 5 张聚合表，粒度为天级/小时级。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "ADS 层指标体系已梳理：覆盖 DAU、GMV、客单价、留存率等 28 个核心指标。" },
+          { text: "维度表设计完成：dim_user、dim_product、dim_channel、dim_area 共 6 张维度表。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        lines: [
+          { text: "存储规划：ODS 保留 90 天，DWD 保留 365 天，DWS 永久保留，冷热分层存储已配置。" },
+          { text: "建表 DDL 已生成并提交至 Git 仓库，Code Review 流程已触发。" },
+        ],
+      },
+    ],
+  },
+  t8: {
+    title: "ODS 层数据接入验证",
+    userMsg: "帮我验证 ODS 层数据接入的完整性和准确性",
+    thinkingText: "收到需求，我来协调对 ODS 层数据进行全面验证",
+    replies: [
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "ODS 层 12 张表逐一对账：源端总行数 vs ODS 行数，误差率均 < 0.01%。" },
+          { text: "字段级校验：抽样 10 万条做字段值 MD5 对比，一致率 100%。", tags: ["ods_orders", "ods_users", "ods_payments", "ods_products"] },
+        ],
+      },
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "增量同步验证：模拟业务写入 1000 条测试数据，T+1 后全部正确落入 ODS 对应分区。" },
+          { text: "异常场景测试：源端删除/更新操作，ODS 层 CDC 捕获并正确标记 op_type 字段。" },
+          { text: "验证报告已生成，12/12 张表全部通过，可进入 DWD 开发阶段。" },
+        ],
+      },
+    ],
+  },
+  t9: {
+    title: "用户留存率趋势分析",
+    userMsg: "帮我分析用户留存率的变化趋势",
+    thinkingText: "收到需求，我来拆解用户留存趋势分析任务",
+    replies: [
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "拉取近 60 天用户活跃数据，构建 cohort 留存矩阵。" },
+          { text: "次日留存从月初 43% 上升到月末 48%，主要由新用户引导优化贡献。", tags: ["dws_user_retention", "dim_user_cohort", "fact_daily_active"] },
+          { text: "7 日留存稳定在 18-20% 区间，30 日留存呈缓慢下降趋势（10.2% → 8.8%）。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        lines: [
+          { text: "分群分析：高价值用户（月消费 > ¥500）30 日留存 34%，远高于平均水平。" },
+          { text: "流失预警：识别出 12,350 名高风险用户（7日内未活跃+历史高频），建议推送召回策略。" },
+          { text: "趋势报告含同比/环比数据，已推送至运营周报看板。" },
+        ],
+      },
+    ],
+  },
+  t10: {
+    title: "GMV 周报数据提取",
+    userMsg: "帮我提取本周 GMV 数据并生成周报",
+    thinkingText: "收到需求，我来协调 GMV 周报数据的提取和报告生成",
+    replies: [
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "本周（04/07 - 04/12）GMV 汇总：¥4,872 万，环比上周 +6.3%，同比去年 +21.7%。" },
+          { text: "品类拆分：食品饮料 ¥1,843 万（37.8%）、3C数码 ¥1,265 万（26.0%）、服饰 ¥892 万（18.3%）。", tags: ["ads_gmv_weekly", "dws_order_category", "dim_product_category"] },
+          { text: "客单价 ¥186.5，环比 +2.1%；订单量 26.1 万单，环比 +4.1%。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        lines: [
+          { text: "异常发现：周三 GMV 骤降 15%，关联到 CDN 故障导致下单页加载超时。" },
+          { text: "周报 PDF 已生成，含 GMV 趋势图、品类占比饼图、TOP10 爆款商品排行。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "周报自动化任务已创建，每周日 20:00 自动生成并推送至管理层邮箱。" },
+        ],
+      },
+    ],
+  },
+  t11: {
+    title: "元数据血缘扫描",
+    userMsg: "帮我扫描数仓的元数据血缘关系",
+    thinkingText: "收到需求，我来协调元数据血缘扫描和治理任务",
+    replies: [
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "全量血缘扫描启动：覆盖 Hive 347 张表、Spark SQL 作业 128 个、调度任务 89 个。" },
+          { text: "表级血缘图谱已生成：平均链路深度 4.2 层，最长链路 ODS→DWD→DWS→ADS→BI 共 7 层。", tags: ["hive_metastore", "spark_sql_lineage", "workflow_dag"] },
+          { text: "发现 23 张孤儿表（无上下游引用），建议归档清理释放 1.2TB 存储。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "字段级血缘已追踪：核心指标 GMV 的计算路径涉及 5 张源表、12 次 JOIN、3 次聚合。" },
+          { text: "口径一致性检查：发现 2 处 GMV 定义冲突（是否含退款），已标记待治理。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        lines: [
+          { text: "血缘图谱已同步至数据目录平台，支持影响分析和变更评估。" },
+          { text: "增量血缘捕获已开启，后续 SQL 变更将自动更新血缘关系。" },
+        ],
+      },
+    ],
+  },
+  t12: {
+    title: "运营周报看板搭建",
+    userMsg: "帮我搭建运营数据的周报看板",
+    thinkingText: "收到需求，我来协调运营周报看板的设计和搭建",
+    replies: [
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "看板框架设计完成：顶部 KPI 卡片 → 趋势折线图 → 分维度明细表 → 异常预警区。" },
+          { text: "核心指标已配置：DAU、GMV、新增用户、留存率、客单价、转化率共 8 个 KPI 卡片。", tags: ["ads_daily_kpi", "ads_weekly_summary", "dim_date"] },
+          { text: "看板数据源已绑定 ADS 层汇总表，刷新频率设为每日 08:00 自动更新。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        lines: [
+          { text: "交互功能：支持时间范围筛选、渠道/地区下钻、指标同环比切换。" },
+          { text: "移动端适配完成，支持飞书/企微内嵌查看。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        lines: [
+          { text: "权限配置：运营组全员可查看，数据导出权限仅限运营负责人。" },
+          { text: "看板链接已生成，已推送至运营协作群。" },
+        ],
+      },
+    ],
+  },
+  t13: {
+    title: "活动效果归因分析",
+    userMsg: "帮我分析最近一次营销活动的效果归因",
+    thinkingText: "收到需求，我来拆解营销活动效果归因分析任务",
+    replies: [
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        lines: [
+          { text: "定位活动数据：「春季焕新季」活动，周期 04/01 - 04/10，投放渠道覆盖 5 个平台。" },
+          { text: "活动期间 GMV ¥8,240 万，较活动前均值提升 38.5%，新增用户 4.2 万。", tags: ["fact_campaign_order", "dim_campaign", "fact_channel_attribution"] },
+          { text: "多触点归因（Shapley 模型）：信息流广告贡献 35%、Push 推送 22%、开屏广告 18%、短信 15%、自然流量 10%。" },
+        ],
+      },
+      {
+        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        lines: [
+          { text: "ROI 分析：整体 ROI 3.2x，其中信息流广告 ROI 最高 4.5x，短信渠道 ROI 仅 1.8x 建议优化。" },
+          { text: "用户分群效果：老用户召回 GMV 占比 42%，说明活动对沉睡用户激活效果显著。" },
+          { text: "归因报告已导出，包含渠道对比雷达图和 ROI 瀑布图。" },
+        ],
+      },
+    ],
+  },
+};
+
 export default function Home() {
   const [targetView, setTargetView] = useState("dataclaw");
   const [viewState, setViewState] = useState<"dataclaw" | "shrinking" | "studio">("dataclaw");
@@ -111,6 +467,14 @@ export default function Home() {
   const [showClawManager, setShowClawManager] = useState(false);
   // 对话流分步揭示：0=用户气泡, 1=思考摘要, 2=Plan卡片
   const [revealStep, setRevealStep] = useState(0);
+  // 左侧任务列表当前选中
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  // 即时模式（侧边栏点击进入，不逐字吐出）
+  const [isInstantMode, setIsInstantMode] = useState(false);
+  // 自定义专家回复数据
+  const [taskReplies, setTaskReplies] = useState<ExpertReplyDataType[] | undefined>(undefined);
+  // 自定义思考摘要文案
+  const [taskThinkingText, setTaskThinkingText] = useState<string | undefined>(undefined);
   // 卡片参数配置
   const [fanConfig, setFanConfig] = useState<FanCardsConfig>(DEFAULT_FAN_CONFIG);
   const [chatInputConfig, setChatInputConfig] = useState<Record<string, number>>(CHAT_INPUT_MOTION.defaultConfig);
@@ -123,7 +487,18 @@ export default function Home() {
   const [motionTarget, setMotionTarget] = useState<string | null>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const dataClawRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
+
+  // 对话内容更新时自动滚到底部
+  useEffect(() => {
+    if (chatPhase === "conversation" && scrollRef.current) {
+      const timer = setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [chatPhase, revealStep]);
 
   const handleSkillClick = useCallback((label: string, agent?: { name: string; title: string; avatar: string; summonText?: string }) => {
     setActiveSkills([{ id: label, label, icon: SKILL_ICON_MAP[label] }]);
@@ -169,6 +544,12 @@ export default function Home() {
     setConversationTitle(`华东区过去 7 天的用户活跃度趋势`);
     // 清掉 skills 和 summonedAgent 相关的输入框状态
     setActiveSkills([]);
+    // 输入框发送走流式模式
+    setIsInstantMode(false);
+    setTaskReplies(undefined);
+    setTaskThinkingText(undefined);
+    setActiveTaskId(null);
+    setRevealStep(0);
   }, [summonedAgent]);
 
   // ── Motion 选择模式 handlers ──────────────────────────────────
@@ -204,6 +585,37 @@ export default function Home() {
     setRevealStep(0);
     setSummonedAgent(null);
     setActiveSkills([]);
+    setActiveTaskId(null);
+    setIsInstantMode(false);
+    setTaskReplies(undefined);
+    setTaskThinkingText(undefined);
+  }, []);
+
+  const handleTaskClick = useCallback((task: { id: string; title: string }) => {
+    const conv = TASK_CONVERSATIONS[task.id];
+    setActiveTaskId(task.id);
+    setShowSkillPlaza(false);
+    setShowClawManager(false);
+    setIsInstantMode(true);
+    setUserMessage(conv?.userMsg ?? task.title);
+    setSummonedAgent({
+      name: "Rigel",
+      title: "数据运维专家",
+      avatar: "/agents/1a.png",
+    });
+    setChatPhase("conversation");
+    setConversationTitle(conv?.title ?? task.title);
+    setActiveSkills([]);
+    // 即时模式：直接全部展示
+    setRevealStep(2);
+    setTaskReplies(conv?.replies);
+    setTaskThinkingText(conv?.thinkingText);
+    // 即时模式：自动打开产物面板
+    setArtifactsPanelOpen(true);
+    // 滚动到顶部
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ top: 0 });
+    });
   }, []);
 
   const handleMenuClick = useCallback((id: string) => {
@@ -253,19 +665,41 @@ export default function Home() {
       <PrimaryNav />
 
       {/* ── 二级导航面板 ── */}
-      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} />}
+      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} onTaskClick={handleTaskClick} activeTaskId={activeTaskId} />}
 
       {/* ── 右侧内容区 ── */}
+      <AnimatePresence mode="wait">
       {showSkillPlaza ? (
-        <div style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}>
+        <motion.div
+          key="skill-plaza"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22, ease: EASE }}
+          style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
+        >
           <SkillPlaza onBack={() => setShowSkillPlaza(false)} />
-        </div>
+        </motion.div>
       ) : showClawManager ? (
-        <div style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}>
+        <motion.div
+          key="claw-manager"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22, ease: EASE }}
+          style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
+        >
           <ClawManager />
-        </div>
+        </motion.div>
       ) : (
-      <div style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden", position: "relative" }}>
+      <motion.div
+        key="dataclaw-main"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18, ease: EASE }}
+        style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden", position: "relative" }}
+      >
         {/* Studio 背景层：先露出主画布，不提前露出气泡 */}
         <motion.div
           initial={false}
@@ -386,7 +820,7 @@ export default function Home() {
           </motion.div>
         )}
         {/* ── 中间内容区（可滚动） ── */}
-        <div style={{
+        <div ref={scrollRef} style={{
           flex: 1,
           minHeight: 0,
           overflowY: "auto",
@@ -395,7 +829,7 @@ export default function Home() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: chatPhase === "welcome" ? "center" : "flex-start",
-          scrollbarWidth: "none",
+          scrollbarWidth: "thin",
           transition: "justify-content 0.3s",
           position: "relative",
           backgroundColor: C.rightBg,
@@ -434,7 +868,7 @@ export default function Home() {
             width: "100%",
             maxWidth: 880,
             boxSizing: "border-box",
-            padding: chatPhase === "welcome" ? "0 24px 24px" : "24px 24px 120px",
+            padding: chatPhase === "welcome" ? "0 24px 24px" : "24px 24px 160px",
           }}>
             <AnimatePresence mode="wait">
               {chatPhase === "welcome" ? (
@@ -502,52 +936,52 @@ export default function Home() {
               ) : (
                 <motion.div
                   key="conversation"
-                  initial={{ opacity: 0 }}
+                  initial={isInstantMode ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, ease: EASE }}
+                  transition={{ duration: isInstantMode ? 0 : 0.3, ease: EASE }}
                   style={{ display: "flex", flexDirection: "column", gap: 24 }}
                 >
-                  {/* Step 0: 用户气泡 — 立即出现 */}
+                  {/* Step 0: 用户气泡 */}
                   <motion.div
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: EASE }}
-                    onAnimationComplete={() => setRevealStep((s) => Math.max(s, 1))}
+                    transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE }}
+                    onAnimationComplete={() => { if (!isInstantMode) setRevealStep((s) => Math.max(s, 1)); }}
                   >
                     <UserMessageBubble content={userMessage} />
                   </motion.div>
 
-                  {/* Step 1: 思考摘要 — 等用户气泡完成后出现 */}
+                  {/* Step 1: 思考摘要 */}
                   {revealStep >= 1 && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, ease: EASE, delay: 0.3 }}
-                      onAnimationComplete={() => setRevealStep((s) => Math.max(s, 2))}
+                      transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.3 }}
+                      onAnimationComplete={() => { if (!isInstantMode) setRevealStep((s) => Math.max(s, 2)); }}
                     >
-                      <ThinkingSummary />
+                      <ThinkingSummary text={taskThinkingText} />
                     </motion.div>
                   )}
 
-                  {/* Step 2: Agent 执行计划 — 等思考摘要完成后出现 */}
+                  {/* Step 2: Agent 执行计划 */}
                   {revealStep >= 2 && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, ease: EASE, delay: 0.15 }}
+                      transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.15 }}
                     >
                       <Plan />
                     </motion.div>
                   )}
 
-                  {/* Step 3: 专家回复 — 等 Plan 出现后显示 */}
+                  {/* Step 3: 专家回复 */}
                   {revealStep >= 2 && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, ease: EASE, delay: 0.8 }}
+                      transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.8 }}
                     >
-                      <ExpertReplies />
+                      <ExpertReplies instant={isInstantMode} replies={taskReplies} onComplete={() => setArtifactsPanelOpen(true)} />
                     </motion.div>
                   )}
                 </motion.div>
@@ -560,14 +994,31 @@ export default function Home() {
         {/* ── 置底输入框：固定距底部 32px，高度向上伸缩，不影响上方卡片布局 ── */}
         <div style={{
           position: "absolute",
-          left: 20,
-          right: 20,
-          bottom: 32,
+          left: 0,
+          right: 0,
+          bottom: 0,
           display: "flex",
-          justifyContent: "center",
+          flexDirection: "column",
+          alignItems: "center",
           pointerEvents: "none",
           zIndex: 3,
         }}>
+          {/* 渐变遮罩：防止滚动内容从输入框下方漏出 */}
+          <div style={{
+            width: "100%",
+            height: 80,
+            background: `linear-gradient(to bottom, transparent, ${C.rightBg} 70%)`,
+            pointerEvents: "none",
+            flexShrink: 0,
+          }} />
+          <div style={{
+            width: "100%",
+            background: C.rightBg,
+            padding: "0 20px 32px",
+            display: "flex",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}>
           <div style={{ width: "100%", maxWidth: 880, position: "relative", pointerEvents: "auto" }}>
             {/* ── Agent 召唤引导：头像从输入框后面伸出（仅 welcome 阶段） ── */}
             <AnimatePresence>
@@ -720,6 +1171,7 @@ export default function Home() {
               </MotionTargetOverlay>
             </div>
           </div>
+          </div>
         </div>
 
         {/* 帘幕遮罩：覆盖整个 DataClaw 面板，与背景同色从不透明→透明，
@@ -749,8 +1201,9 @@ export default function Home() {
 
         </motion.div>
         )}
-      </div>
+      </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Motion 选择模式按钮 - 仅 welcome 阶段显示 */}
       {chatPhase === "welcome" && (
