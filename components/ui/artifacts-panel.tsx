@@ -76,12 +76,13 @@ interface ArtifactsPanelProps {
 // ── Component ────────────────────────────────────────────────────
 export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
   const [selectedArtifact, setSelectedArtifact] = React.useState<Artifact | null>(null);
-  const [activeTab, setActiveTab] = React.useState<"artifacts" | "overview" | "logs">("overview");
+  const [activeTab, setActiveTab] = React.useState<"artifacts" | "overview" | "logs">("artifacts");
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
+          data-role="artifacts-panel"
           initial={{ width: 0, opacity: 0 }}
           animate={{ width: PANEL_WIDTH, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
@@ -94,6 +95,7 @@ export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
             borderLeft: `1px solid ${BORDER_PANEL}`,
             fontFamily: FONT,
             display: "flex",
+            maxWidth: "50vw",
             flexDirection: "column",
             position: "relative",
           }}

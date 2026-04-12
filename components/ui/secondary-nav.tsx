@@ -53,7 +53,7 @@ function ToolbarButton({ onClick, title, children }: {
 }
 
 // ── Nav menu item ──────────────────────────────────────────────
-function NavMenuItem({ icon, label, onClick }: { icon: string; label: string; onClick?: () => void }) {
+function NavMenuItem({ icon, label, active, onClick }: { icon: string; label: string; active?: boolean; onClick?: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -67,14 +67,14 @@ function NavMenuItem({ icon, label, onClick }: { icon: string; label: string; on
         padding: "0 12px",
         borderRadius: 20,
         cursor: "pointer",
-        backgroundColor: hovered ? C.hoverBg : "transparent",
+        backgroundColor: active ? "#E1E5ED" : hovered ? C.hoverBg : "transparent",
         transition: "background 100ms",
         gap: 12,
       }}
     >
       <img src={icon} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
       <span style={{
-        fontFamily: FONT, fontSize: 14, fontWeight: 400,
+        fontFamily: FONT, fontSize: 14, fontWeight: active ? 600 : 400,
         lineHeight: "22px", color: C.textPrimary,
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
       }}>
@@ -290,9 +290,10 @@ interface SecondaryNavProps {
   onClawManager?: () => void;
   onTaskClick?: (task: { id: string; title: string }) => void;
   activeTaskId?: string | null;
+  activeMenu?: "skill-plaza" | "claw-manager" | null;
 }
 
-export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId }: SecondaryNavProps) {
+export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu }: SecondaryNavProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   const contentFade: React.CSSProperties = {
@@ -304,6 +305,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
 
   return (
     <motion.div
+      data-role="secondary-nav"
       initial={false}
       animate={{ width: navWidthPx, minWidth: navWidthPx, maxWidth: navWidthPx, flexBasis: navWidthPx }}
       transition={{ duration: COLLAPSE_DURATION, ease: COLLAPSE_EASE }}
@@ -427,8 +429,8 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           flexDirection: "column",
           gap: 2,
         }}>
-          <NavMenuItem icon="/icons/nav/5.svg" label="技能广场" onClick={onSkillPlaza} />
-          <NavMenuItem icon="/icons/nav/6.svg" label="Claw管理" onClick={onClawManager} />
+          <NavMenuItem icon="/icons/nav/5.svg" label="技能广场" active={activeMenu === "skill-plaza"} onClick={onSkillPlaza} />
+          <NavMenuItem icon="/icons/nav/6.svg" label="Claw管理" active={activeMenu === "claw-manager"} onClick={onClawManager} />
         </div>
 
         {/* 下区：团队 & 专家列表（可折叠） */}

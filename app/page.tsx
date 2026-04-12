@@ -490,14 +490,44 @@ export default function Home() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
 
-  // 对话内容更新时自动滚到底部
+  // 对话内容更新时自动滚到底部（含流式打字）
   useEffect(() => {
-    if (chatPhase === "conversation" && scrollRef.current) {
-      const timer = setTimeout(() => {
-        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-      }, 100);
-      return () => clearTimeout(timer);
-    }
+    if (chatPhase !== "conversation" || !scrollRef.current) return;
+
+    const el = scrollRef.current;
+    let rafId: number | null = null;
+    let userScrolledUp = false;
+
+    const scrollToBottom = () => {
+      if (userScrolledUp) return;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+        rafId = null;
+      });
+    };
+
+    // 检测用户是否手动向上滚动（距底部超过 150px 则暂停自动滚动）
+    const handleScroll = () => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      userScrolledUp = distFromBottom > 150;
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+
+    // 监听 DOM 内容变化（流式文字追加）
+    const observer = new MutationObserver(() => {
+      scrollToBottom();
+    });
+    observer.observe(el, { childList: true, subtree: true, characterData: true });
+
+    // 初始滚动
+    scrollToBottom();
+
+    return () => {
+      observer.disconnect();
+      el.removeEventListener("scroll", handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [chatPhase, revealStep]);
 
   const handleSkillClick = useCallback((label: string, agent?: { name: string; title: string; avatar: string; summonText?: string }) => {
@@ -665,7 +695,7 @@ export default function Home() {
       <PrimaryNav />
 
       {/* ── 二级导航面板 ── */}
-      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} onTaskClick={handleTaskClick} activeTaskId={activeTaskId} />}
+      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} onTaskClick={handleTaskClick} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} />}
 
       {/* ── 右侧内容区 ── */}
       <AnimatePresence mode="wait">
@@ -863,10 +893,10 @@ export default function Home() {
               />
             )}
           </AnimatePresence>
-          {/* 内容宽度容器 880px */}
+          {/* 内容宽度容器 */}
           <div style={{
             width: "100%",
-            maxWidth: 880,
+            maxWidth: "min(880px, 100%)",
             boxSizing: "border-box",
             padding: chatPhase === "welcome" ? "0 24px 24px" : "24px 24px 160px",
           }}>
@@ -1003,14 +1033,6 @@ export default function Home() {
           pointerEvents: "none",
           zIndex: 3,
         }}>
-          {/* 渐变遮罩：防止滚动内容从输入框下方漏出 */}
-          <div style={{
-            width: "100%",
-            height: 80,
-            background: `linear-gradient(to bottom, transparent, ${C.rightBg} 70%)`,
-            pointerEvents: "none",
-            flexShrink: 0,
-          }} />
           <div style={{
             width: "100%",
             background: C.rightBg,
@@ -1019,7 +1041,7 @@ export default function Home() {
             justifyContent: "center",
             pointerEvents: "none",
           }}>
-          <div style={{ width: "100%", maxWidth: 880, position: "relative", pointerEvents: "auto" }}>
+          <div style={{ width: "100%", maxWidth: "min(880px, 100%)", position: "relative", pointerEvents: "auto" }}>
             {/* ── Agent 召唤引导：头像从输入框后面伸出（仅 welcome 阶段） ── */}
             <AnimatePresence>
               {chatPhase === "welcome" && summonedAgent && (

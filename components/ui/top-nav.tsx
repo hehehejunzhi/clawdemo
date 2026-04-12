@@ -208,7 +208,7 @@ export default function TopNav({ activeId, onMenuClick }: TopNavProps) {
         flexShrink: 0,
       }}>
         {/* 文字链接 */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 24px" }}>
+        <div data-role="topnav-links" style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 24px" }}>
           <NavLink label="集团账号" />
           <NavLink label="备案" />
           <NavLink label="工具" />

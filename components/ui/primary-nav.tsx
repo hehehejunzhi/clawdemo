@@ -74,7 +74,7 @@ function MenuItem({ icon, label, active }: {
 // ── Main component ─────────────────────────────────────────────
 export default function PrimaryNav() {
   return (
-    <div style={{
+    <div data-role="primary-nav" style={{
       width: 200,
       minWidth: 200,
       height: "100%",

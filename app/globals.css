@@ -181,3 +181,46 @@
     @apply font-sans;
   }
 }
+
+/* ── 自适应响应式 ───────────────────────────────── */
+/* 隐藏 PrimaryNav（≤1200px） */
+@media (max-width: 1200px) {
+  [data-role="primary-nav"] {
+    display: none !important;
+  }
+}
+
+/* 窄屏时 SecondaryNav 收窄 */
+@media (max-width: 1000px) {
+  [data-role="secondary-nav"] {
+    max-width: 200px !important;
+    min-width: 200px !important;
+    width: 200px !important;
+  }
+}
+
+/* 更窄时隐藏 SecondaryNav */
+@media (max-width: 860px) {
+  [data-role="secondary-nav"] {
+    display: none !important;
+  }
+}
+
+/* 产物面板自适应 */
+@media (max-width: 1400px) {
+  [data-role="artifacts-panel"] {
+    max-width: 480px !important;
+  }
+}
+@media (max-width: 1100px) {
+  [data-role="artifacts-panel"] {
+    max-width: 380px !important;
+  }
+}
+
+/* 顶部导航右侧工具栏在窄屏时隐藏文字链接 */
+@media (max-width: 1100px) {
+  [data-role="topnav-links"] {
+    display: none !important;
+  }
+}

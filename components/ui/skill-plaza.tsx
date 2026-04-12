@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+const EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
 const C = {
   bg: "#F9FAFC",
@@ -330,25 +332,44 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
           {/* 技能卡片 */}
           <div style={{
             flex: 1, overflowY: "auto", padding: "12px 24px 24px",
-            display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start",
-            scrollbarWidth: "none",
+            scrollbarWidth: "none", position: "relative",
           }}>
-            {activeTab === "preset" ? (
-              skills.map((s) => (
-                <SkillCard
-                  key={`${activeCat}-${s.title}`}
-                  icon={s.icon} iconBg={s.iconBg}
-                  title={s.title} desc={s.desc}
-                  defaultTag={s.defaultTag}
-                  on={isOn(`${activeCat}-${s.title}`)}
-                  onToggle={() => toggle(`${activeCat}-${s.title}`)}
-                />
-              ))
-            ) : (
-              HUB_SKILLS.map((s) => (
-                <HubCard key={s.title} icon={s.icon} iconBg={s.iconBg} title={s.title} desc={s.desc} />
-              ))
-            )}
+            <AnimatePresence mode="wait">
+              {activeTab === "preset" ? (
+                <motion.div
+                  key={`preset-${activeCat}`}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2, ease: EASE }}
+                  style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}
+                >
+                  {skills.map((s) => (
+                    <SkillCard
+                      key={`${activeCat}-${s.title}`}
+                      icon={s.icon} iconBg={s.iconBg}
+                      title={s.title} desc={s.desc}
+                      defaultTag={s.defaultTag}
+                      on={isOn(`${activeCat}-${s.title}`)}
+                      onToggle={() => toggle(`${activeCat}-${s.title}`)}
+                    />
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="hub"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2, ease: EASE }}
+                  style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}
+                >
+                  {HUB_SKILLS.map((s) => (
+                    <HubCard key={s.title} icon={s.icon} iconBg={s.iconBg} title={s.title} desc={s.desc} />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
