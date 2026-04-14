@@ -20,6 +20,7 @@ const C = {
 interface CreateTeamDialogProps {
   open: boolean;
   onClose: () => void;
+  onCreate?: (name: string, desc: string) => void;
 }
 
 // ── Checkbox item ─────────────────────────────────────────────
@@ -68,43 +69,11 @@ function CheckItem({ label, abbr, abbrBg, checked, onChange }: {
   );
 }
 
-// ── Radio card ────────────────────────────────────────────────
-function RadioCard({ label, desc, active, onClick }: {
-  label: string; desc: string; active: boolean; onClick: () => void;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        flex: 1, padding: "12px 14px", borderRadius: 8,
-        border: `1.5px solid ${active ? C.borderActive : C.border}`,
-        background: active ? "rgba(126,158,255,0.04)" : C.bgCard,
-        cursor: "pointer", transition: "all 100ms",
-        display: "flex", alignItems: "flex-start", gap: 8,
-      }}
-    >
-      <div style={{
-        width: 16, height: 16, borderRadius: 8, marginTop: 2,
-        border: `2px solid ${active ? "#1664FF" : "#D6DBE3"}`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        {active && <div style={{ width: 8, height: 8, borderRadius: 4, background: "#1664FF" }} />}
-      </div>
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 500, color: C.textPrimary }}>{label}</div>
-        <div style={{ fontSize: 12, color: C.textTertiary, marginTop: 2 }}>{desc}</div>
-      </div>
-    </div>
-  );
-}
-
 // ── Main dialog ───────────────────────────────────────────────
-export default function CreateTeamDialog({ open, onClose }: CreateTeamDialogProps) {
+export default function CreateTeamDialog({ open, onClose, onCreate }: CreateTeamDialogProps) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [members, setMembers] = useState<Set<string>>(new Set());
-  const [mode, setMode] = useState("free");
 
   const toggleMember = useCallback((id: string) => {
     setMembers((prev) => {
@@ -153,7 +122,7 @@ export default function CreateTeamDialog({ open, onClose }: CreateTeamDialogProp
           >
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 24px 16px", flexShrink: 0 }}>
-              <span style={{ fontSize: 20, fontWeight: 600, color: C.textPrimary }}>创建 ClawTeam</span>
+              <span style={{ fontSize: 20, fontWeight: 600, color: C.textPrimary }}>创建团队</span>
               <div onClick={onClose} style={{ width: 32, height: 32, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M12 4L4 12M4 4L12 12" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" />
@@ -223,16 +192,6 @@ export default function CreateTeamDialog({ open, onClose }: CreateTeamDialogProp
                   </div>
                 </div>
               </div>
-
-              {/* 协作模式 */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>协作模式</span>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <RadioCard label="自由讨论" desc="所有Claw自由发言讨论" active={mode === "free"} onClick={() => setMode("free")} />
-                  <RadioCard label="调度编排" desc="由调度Claw统一协调分工" active={mode === "dispatch"} onClick={() => setMode("dispatch")} />
-                  <RadioCard label="轮询模式" desc="Claw按顺序依次响应" active={mode === "round"} onClick={() => setMode("round")} />
-                </div>
-              </div>
             </div>
 
             {/* Footer */}
@@ -243,7 +202,12 @@ export default function CreateTeamDialog({ open, onClose }: CreateTeamDialogProp
                 fontFamily: FONT, fontSize: 14, fontWeight: 500,
                 color: C.textPrimary, cursor: "pointer", outline: "none",
               }}>取消</button>
-              <button disabled={!isValid} style={{
+              <button disabled={!isValid} onClick={() => {
+                if (isValid && onCreate) {
+                  onCreate(name.trim(), desc.trim() || "自定义协作团队");
+                  setName(""); setDesc(""); setMembers(new Set());
+                }
+              }} style={{
                 height: 40, padding: "0 24px", borderRadius: 100,
                 border: "none",
                 background: isValid ? "#000000" : "rgba(0,0,0,0.2)",
@@ -251,7 +215,7 @@ export default function CreateTeamDialog({ open, onClose }: CreateTeamDialogProp
                 color: "#FFFFFF",
                 cursor: isValid ? "pointer" : "not-allowed",
                 outline: "none", transition: "background 150ms",
-              }}>创建群聊</button>
+              }}>创建团队</button>
             </div>
           </motion.div>
         </motion.div>

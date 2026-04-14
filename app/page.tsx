@@ -719,7 +719,7 @@ export default function Home() {
           transition={{ duration: 0.22, ease: EASE }}
           style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
         >
-          <ClawManager />
+          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} />
         </motion.div>
       ) : (
       <motion.div
