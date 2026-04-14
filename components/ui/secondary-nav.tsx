@@ -430,7 +430,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           gap: 2,
         }}>
           <NavMenuItem icon="/icons/nav/5.svg" label="技能广场" active={activeMenu === "skill-plaza"} onClick={onSkillPlaza} />
-          <NavMenuItem icon="/icons/nav/6.svg" label="Claw管理" active={activeMenu === "claw-manager"} onClick={onClawManager} />
+          <NavMenuItem icon="/icons/nav/6.svg" label="Claw广场" active={activeMenu === "claw-manager"} onClick={onClawManager} />
         </div>
 
         {/* 下区：团队 & 专家列表（可折叠） */}

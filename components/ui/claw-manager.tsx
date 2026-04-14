@@ -117,7 +117,7 @@ function AvatarCircle({ src, letter, bg, size = 48, status }: { src?: string; le
         {src ? <img src={src} alt="" style={{ width: size + 3, height: size + 3, objectFit: "cover" }} />
           : <span style={{ fontSize: size * 0.5, fontWeight: 500, color: "#FFF" }}>{letter}</span>}
       </div>
-      {status === "online" && <StatusDot />}
+      {status === "online" && null}
     </div>
   );
 }
@@ -141,7 +141,7 @@ function GridAvatar({ status }: { status?: "online" | "offline" }) {
           <img src="/icons/claw-mgr/3.svg" alt="" style={{ position: "absolute", left: 0, top: 0 }} />
         </div>
       </div>
-      {status === "online" && <StatusDot />}
+      {status === "online" && null}
     </div>
   );
 }
@@ -188,7 +188,7 @@ export default function ClawManager() {
         height: 50, flexShrink: 0, display: "flex", alignItems: "center",
         padding: "0 24px", borderBottom: `1px solid ${C.border}`, background: C.bg,
       }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>Claw 管理</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>Claw广场</span>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", scrollbarWidth: "none" }}>
@@ -227,7 +227,7 @@ export default function ClawManager() {
         <SectionTitle title="数字分身" desc="定制你的专属AI分身，沉淀个人知识" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap", alignItems: "stretch" }}>
           <Card
-            avatar={<AvatarCircle letter="运" bg="#E59858" status="online" />}
+            avatar={<AvatarCircle letter="运" bg="#E59858" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>运营助手</span>}
             desc="个人定制的运营分析助手，沉淀了日常运营经验"
           />
