@@ -18,6 +18,7 @@ interface ChatTitlebarProps {
   showNewChat?: boolean;
   onNewChat?: () => void;
   onArtifacts?: () => void;
+  hideTeamBadge?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────
@@ -26,6 +27,7 @@ export default function ChatTitlebar({
   showNewChat = true,
   onNewChat,
   onArtifacts,
+  hideTeamBadge = false,
 }: ChatTitlebarProps) {
   return (
     <div
@@ -70,6 +72,7 @@ export default function ChatTitlebar({
         </p>
 
         {/* 专家团 badge */}
+        {!hideTeamBadge && (
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -97,6 +100,7 @@ export default function ChatTitlebar({
             专家团
           </span>
         </div>
+        )}
       </div>
 
       {/* ── Right: 产物 ── */}

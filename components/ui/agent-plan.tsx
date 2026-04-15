@@ -52,51 +52,35 @@ interface Task {
 const initialTasks: Task[] = [
   {
     id: "1",
-    title: "@数据分析专家 对数据访问权限做前置合规审查",
-    description: "检查华东区用户行为数据的访问权限与合规性",
+    title: "@大数据运维专家 加载 EMR 技能，通过 DescribeSparkQueries 接口检索所有慢 SQL",
+    description: "连接广州地域集群 emr-ccrnhw11，检索慢 SQL 列表",
     status: "completed",
     dependencies: [],
     subtasks: [],
   },
   {
     id: "2",
-    title: "@数据开发专家 确认数据源 dw_user_behavior 华东区分区完整性",
-    description: "验证数据源华东区分区近 7 天数据完整性",
-    status: "completed",
-    dependencies: [],
+    title: "@大数据开发专家 对检索到的慢 SQL 进行深度调优分析，生成优化方案",
+    description: "分析 Top 慢 SQL 的执行计划，定位性能瓶颈",
+    status: "in-progress",
+    elapsedLabel: "",
+    dependencies: ["1"],
     subtasks: [],
   },
   {
     id: "3",
-    title: "@数据分析专家 调用\"指标 SQL Copilot\"生成聚合 SQL → 提交 Spark 计算",
-    description: "生成 DAU/WAU 聚合 SQL 并提交 Spark 集群执行",
-    status: "completed",
-    dependencies: ["1", "2"],
+    title: "@大数据开发专家 执行优化方案，通过 RunJobFlow 提交到集群验证",
+    description: "将优化后的 SQL 提交到集群执行并验证性能提升",
+    status: "pending",
+    dependencies: ["2"],
     subtasks: [],
   },
   {
     id: "4",
-    title: "@数据运维专家 监测 Spark 任务资源，必要时弹性扩容",
-    description: "监控 Spark 任务执行资源使用情况，按需扩容",
-    status: "completed",
-    dependencies: ["3"],
-    subtasks: [],
-  },
-  {
-    id: "5",
-    title: "@数据分析专家 调用\"BI 图表生成\"输出 DAU/WAU 趋势图 + 中文业务结论",
-    description: "生成可视化趋势图和业务分析结论",
-    status: "in-progress",
-    elapsedLabel: "",
-    dependencies: ["3", "4"],
-    subtasks: [],
-  },
-  {
-    id: "6",
-    title: "@数据开发专家 产出物归档，SQL 模板沉淀到知识库",
-    description: "将产出的 SQL 模板和分析报告归档沉淀",
+    title: "@大数据分析专家 获取执行结果，生成性能对比可视化报告",
+    description: "对比优化前后的执行时间，输出可视化报告",
     status: "pending",
-    dependencies: ["5"],
+    dependencies: ["3"],
     subtasks: [],
   },
 ];
@@ -280,7 +264,7 @@ export default function Plan() {
               fontSize: 14, fontWeight: 600, lineHeight: "22px", color: T.primary,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
-              任务拆解中...
+              任务执行中...
             </span>
           </div>
 

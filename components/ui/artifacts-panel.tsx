@@ -56,25 +56,47 @@ interface Artifact {
   description: string;
 }
 
-const MOCK_ARTIFACTS: Artifact[] = [
-  { id: "1", title: "2025年6至7月各地区的复购率设计方案.html", description: "数据读取脚本 · 从源表读取原始数据" },
-  { id: "2", title: "clean_null_value.sql", description: "数据清洗脚本 · 空值过滤与格式标准化" },
-  { id: "3", title: "read_source_data.sql", description: "数据读取脚本 · 从源表读取原始数据" },
-  { id: "4", title: "clean_null_value.md", description: "数据清洗脚本 · 空值过滤与格式标准化" },
-  { id: "5", title: "read_source_data.md", description: "数据读取脚本 · 从源表读取原始数据" },
-  { id: "6", title: "clean_null_value.sql", description: "数据清洗脚本 · 空值过滤与格式标准化" },
-  { id: "7", title: "read_source_data.notebook", description: "数据读取脚本 · 从源表读取原始数据" },
-  { id: "8", title: "clean_null_value.notebook", description: "数据清洗脚本 · 空值过滤与格式标准化" },
+interface ArtifactGroup {
+  expert: string;
+  icon: string;
+  items: Artifact[];
+}
+
+const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
+  {
+    expert: "数据运维专家过程制品",
+    icon: "/icons/expert/25.svg",
+    items: [
+      { id: "1", title: "2025年6至7月各地区的复购率设计方案.html", description: "数据读取脚本 · 从源表读取原始数据" },
+      { id: "2", title: "clean_null_value.sql", description: "数据清洗脚本 · 空值过滤与格式标准化" },
+      { id: "3", title: "read_source_data.sql", description: "数据读取脚本 · 从源表读取原始数据" },
+      { id: "4", title: "clean_null_value.md", description: "数据清洗脚本 · 空值过滤与格式标准化" },
+    ],
+  },
+  {
+    expert: "数据开发专家过程制品",
+    icon: "/icons/expert/17.svg",
+    items: [
+      { id: "5", title: "read_source_data.md", description: "数据读取脚本 · 从源表读取原始数据" },
+      { id: "6", title: "clean_null_value.sql", description: "数据清洗脚本 · 空值过滤与格式标准化" },
+      { id: "7", title: "read_source_data.notebook", description: "数据读取脚本 · 从源表读取原始数据" },
+      { id: "8", title: "clean_null_value.notebook", description: "数据清洗脚本 · 空值过滤与格式标准化" },
+    ],
+  },
 ];
+
+const MOCK_ALL_ARTIFACTS: Artifact[] = MOCK_ARTIFACT_GROUPS.flatMap((g) => g.items);
 
 // ── Types ────────────────────────────────────────────────────────
 interface ArtifactsPanelProps {
   open: boolean;
   onClose: () => void;
+  phase?: number;
+  singleExpert?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────
-export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
+export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert = false }: ArtifactsPanelProps) {
   const [selectedArtifact, setSelectedArtifact] = React.useState<Artifact | null>(null);
   const [activeTab, setActiveTab] = React.useState<"artifacts" | "overview" | "logs">("artifacts");
 
@@ -172,8 +194,27 @@ export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
           >
             {activeTab === "artifacts" && (
               <>
-                {MOCK_ARTIFACTS.map((a) => (
-                  <ArtifactItem key={a.id} artifact={a} onClick={() => setSelectedArtifact(a)} />
+                {MOCK_ARTIFACT_GROUPS.map((group) => (
+                  <React.Fragment key={group.expert}>
+                    {/* Group header — hidden in single expert mode */}
+                    {!singleExpert && (
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "8px 0 4px",
+                    }}>
+                      <img src={group.icon} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
+                      <span style={{
+                        fontSize: 13, fontWeight: 500, lineHeight: "20px",
+                        color: TEXT_TERTIARY,
+                      }}>
+                        {group.expert}
+                      </span>
+                    </div>
+                    )}
+                    {group.items.map((a) => (
+                      <ArtifactItem key={a.id} artifact={a} onClick={() => setSelectedArtifact(a)} />
+                    ))}
+                  </React.Fragment>
                 ))}
               </>
             )}
@@ -185,7 +226,7 @@ export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
                   <div style={{ display: "flex" }}>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>执行 Claw</span>
-                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>大数据团队 (3人)</span>
+                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>{singleExpert ? "数据运维专家 (1人)" : "大数据团队 (3人)"}</span>
                     </div>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>状态</span>
@@ -230,43 +271,93 @@ export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
                     <DagNode label="接收用户需求" status="done" />
                     <DagArrow />
 
-                    {/* 任务解析与调度 */}
-                    <DagNode label="任务解析与调度" status="done" />
-                    <DagArrowFan />
+                    {singleExpert ? (
+                      <>
+                        {/* 单专家模式：只有一个专家卡片，居中显示 */}
+                        <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+                          <div style={{ width: "60%" }}>
+                            <ExpertCard
+                              name="数据运维专家"
+                              tasks={[
+                                { label: "资源监控", icon: "/icons/dag/9.svg", status: phase >= 1 ? "done" : "pending" },
+                                { label: "自动扩缩容", icon: "/icons/dag/10.svg", status: phase >= 2 ? "done" : "active" },
+                                { label: "故障预警", icon: "/icons/dag/11.svg", status: phase >= 2 ? "active" : "pending" },
+                              ]}
+                              artifacts={phase >= 1 ? [
+                                { label: "Spark查询报告.md", id: "r1" },
+                                { label: "emr_query_stats.sql", id: "r2" },
+                                { label: "dau_wau_east_7d.sql", id: "r3" },
+                                { label: "query_trend_chart.png", id: "r4" },
+                              ] : undefined}
+                              onArtifactClick={(id) => {
+                                const a = MOCK_ALL_ARTIFACTS.find((x) => x.id === id) ?? { id, title: "Spark查询报告.md", description: "业务结论报告 · Markdown 可下载" };
+                                setSelectedArtifact(a);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <DagArrow />
+                      </>
+                    ) : (
+                      <>
+                        {/* 多专家模式：任务解析与调度 → 三个专家卡片 → 结果融合 */}
+                        <DagNode label="任务解析与调度" status="done" />
+                        <DagArrowFan />
 
-                    {/* 三个专家卡片 */}
-                    <div style={{ display: "flex", gap: 16, width: "100%" }}>
-                      <ExpertCard
-                        name="数据分析专家"
-                        tasks={[
-                          { label: "权限验证", icon: "/icons/dag/6.svg", status: "done" },
-                          { label: "SQL 生成", icon: "/icons/dag/7.svg", status: "active" },
-                          { label: "数据探索", icon: "/icons/dag/8.svg", status: "pending" },
-                        ]}
-                      />
-                      <ExpertCard
-                        name="数据开发专家"
-                        tasks={[
-                          { label: "HDFS 完整性检查", icon: "/icons/dag/12.svg", status: "done" },
-                          { label: "血缘追踪", icon: "/icons/dag/13.svg", status: "pending" },
-                          { label: "质量检查", icon: "/icons/dag/14.svg", status: "pending" },
-                        ]}
-                      />
-                      <ExpertCard
-                        name="数据运维专家"
-                        tasks={[
-                          { label: "资源监控", icon: "/icons/dag/9.svg", status: "pending" },
-                          { label: "自动扩缩容", icon: "/icons/dag/10.svg", status: "pending" },
-                          { label: "故障预警", icon: "/icons/dag/11.svg", status: "pending" },
-                        ]}
-                      />
-                    </div>
+                        <div style={{ display: "flex", gap: 16, width: "100%" }}>
+                          <ExpertCard
+                            name="数据分析专家"
+                            tasks={[
+                              { label: "权限验证", icon: "/icons/dag/6.svg", status: "done" },
+                              { label: "SQL 生成", icon: "/icons/dag/7.svg", status: phase >= 1 ? "done" : "active" },
+                              { label: "数据探索", icon: "/icons/dag/8.svg", status: phase >= 1 ? "done" : "pending" },
+                            ]}
+                            artifacts={phase >= 1 ? [
+                              { label: "Spark查询报告.md", id: "r1" },
+                              { label: "emr_query_stats.sql", id: "r2" },
+                              { label: "dau_wau_east_7d.sql", id: "r3" },
+                              { label: "query_trend_chart.png", id: "r4" },
+                            ] : undefined}
+                            onArtifactClick={(id) => {
+                              const a = MOCK_ALL_ARTIFACTS.find((x) => x.id === id) ?? { id, title: "Spark查询报告.md", description: "业务结论报告 · Markdown 可下载" };
+                              setSelectedArtifact(a);
+                            }}
+                          />
+                          <ExpertCard
+                            name="数据开发专家"
+                            tasks={[
+                              { label: "HDFS 完整性检查", icon: "/icons/dag/12.svg", status: phase >= 1 ? "done" : "done" },
+                              { label: "血缘追踪", icon: "/icons/dag/13.svg", status: phase >= 2 ? "done" : phase >= 1 ? "active" : "pending" },
+                              { label: "质量检查", icon: "/icons/dag/14.svg", status: phase >= 2 ? "done" : "pending" },
+                            ]}
+                            artifacts={phase >= 2 ? [
+                              { label: "慢SQL #1 调优分析.md", id: "r5" },
+                              { label: "optimized_query.sql", id: "r6" },
+                              { label: "execution_plan.png", id: "r7" },
+                              { label: "performance_diff.md", id: "r8" },
+                            ] : undefined}
+                            onArtifactClick={(id) => {
+                              const a = MOCK_ALL_ARTIFACTS.find((x) => x.id === id) ?? { id, title: "慢SQL #1 调优.md", description: "深度调优分析报告" };
+                              setSelectedArtifact(a);
+                            }}
+                          />
+                          <ExpertCard
+                            name="数据运维专家"
+                            tasks={[
+                              { label: "资源监控", icon: "/icons/dag/9.svg", status: phase >= 1 ? "done" : "pending" },
+                              { label: "自动扩缩容", icon: "/icons/dag/10.svg", status: phase >= 2 ? "done" : "pending" },
+                              { label: "故障预警", icon: "/icons/dag/11.svg", status: phase >= 2 ? "active" : "pending" },
+                            ]}
+                          />
+                        </div>
 
-                    <DagArrowMerge />
+                        <DagArrowMerge />
 
-                    {/* 结果融合 */}
-                    <DagNode label="结果融合" status="pending" />
-                    <DagArrow />
+                        {/* 结果融合 */}
+                        <DagNode label="结果融合" status={phase >= 2 ? "active" : "pending"} />
+                        <DagArrow />
+                      </>
+                    )}
 
                     {/* 报告生成 */}
                     <DagNode label="报告生成" status="pending" />
@@ -327,7 +418,7 @@ export default function ArtifactsPanel({ open, onClose }: ArtifactsPanelProps) {
             {selectedArtifact && (
               <ArtifactDetailDrawer
                 artifact={selectedArtifact}
-                allArtifacts={MOCK_ARTIFACTS}
+                allArtifacts={MOCK_ALL_ARTIFACTS}
                 onBack={() => setSelectedArtifact(null)}
                 onSelectArtifact={(a) => setSelectedArtifact(a)}
               />
@@ -605,13 +696,49 @@ function DagArrowMerge() {
   );
 }
 
+// ── Artifact text link (hover → blue) ───────────────────────────
+function ArtifactTextLink({ label, onClick }: { label: string; onClick?: () => void }) {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <span
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        fontSize: 12,
+        fontWeight: 400,
+        lineHeight: "20px",
+        color: hovered ? "#1664FF" : "rgba(0,0,0,0.5)",
+        cursor: "pointer",
+        transition: "color 0.15s",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        textDecoration: hovered ? "underline" : "none",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
 interface ExpertTask {
   label: string;
   icon: string;
   status: "done" | "active" | "pending";
 }
 
-function ExpertCard({ name, tasks }: { name: string; tasks: ExpertTask[] }) {
+interface ExpertArtifactLink {
+  label: string;
+  id: string;
+}
+
+function ExpertCard({ name, tasks, artifacts, onArtifactClick }: {
+  name: string;
+  tasks: ExpertTask[];
+  artifacts?: ExpertArtifactLink[];
+  onArtifactClick?: (id: string) => void;
+}) {
   return (
     <div style={{
       flex: 1,
@@ -648,6 +775,17 @@ function ExpertCard({ name, tasks }: { name: string; tasks: ExpertTask[] }) {
           </div>
         ))}
       </div>
+      {/* Artifact text links */}
+      {artifacts && artifacts.length > 0 && (
+        <>
+          <div style={{ margin: "0 12px", height: 1, background: "#E6E9EF" }} />
+          <div style={{ padding: "8px 12px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
+            {artifacts.map((a) => (
+              <ArtifactTextLink key={a.id} label={a.label} onClick={() => onArtifactClick?.(a.id)} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

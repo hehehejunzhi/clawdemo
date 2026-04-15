@@ -96,35 +96,120 @@ interface TaskConversation {
   userMsg: string;
   thinkingText: string;
   replies: ExpertReplyDataType[];
+  /** 单专家模式：不显示调度Claw、Plan、任务已分派 */
+  singleExpert?: boolean;
 }
 
 const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
   t1: {
     title: "慢SQL查询与调优",
-    userMsg: "帮我搭建订单数据从业务库到数仓的 ETL 同步流程",
-    thinkingText: "收到需求，我来作为调度者拆解 ETL 同步任务并分派给团队成员",
+    userMsg: "查看广州地域集群emr-ccrnhw11的所有慢SQL，给出优化建议并执行，最后给我一份报告",
+    thinkingText: "收到慢 SQL 检索与调优任务，我来作为调度者拆解任务并分派给团队成员",
     replies: [
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
         lines: [
-          { text: "已连接业务库 MySQL 实例，扫描到 orders 表共 2,847 万条记录。" },
-          { text: "创建 Sqoop 导入任务，增量同步策略为 modified_time > last_sync_time。", tags: ["orders", "order_items", "order_payments"] },
-          { text: "ODS 层落地表 ods_orders_di 已创建，分区键为 ds（按天），存储格式 ORC + Snappy 压缩。" },
-        ],
-      },
-      {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
-        lines: [
-          { text: "数据质量规则已配置：主键唯一性检查、金额字段非负校验、时间戳连续性检测。" },
-          { text: "T+1 数据新鲜度 SLA 设置为每日 06:00 前完成同步。" },
+          {
+            text: "我需要通过 DescribeSparkQueries 接口获取广州地域集群 emr-ccrnhw11 的慢 SQL。让我先验证鉴权，然后查询。",
+            toolCalls: [{ title: "验证 tccli 鉴权是否有效", command: "tccli configure list", result: "secretId: AKIDz8k***\nsecretKey: Gu5t***\nregion: ap-guangzhou\noutput: json" }],
+          },
+          {
+            text: "鉴权正常。现在查询 DescribeSparkQueries 接口文档，确认参数：",
+            toolCalls: [
+              { title: "查看 DescribeSparkQueries 接口文档", command: "SHOW TABLES IN dwd_trade;", result: "seller_monthly_wide order_detail_di refund_detail_di 3 rows selected" },
+              { title: "查看 SparkQuery 数据结构了解返回字段" },
+            ],
+          },
+          {
+            text: "好的，接口参数很清楚。时间限制是 EndTime - StartTime ≤ 1 天。让我先查最近一天的所有 Spark 查询，按完成状态获取：",
+            tags: ["TaskDecompose(slow_sql_analysis)", "ClusterValidate(emr-ccrnhw11)", "TodoWrite(4_phases)"],
+            toolCalls: [{ title: "查询广州集群 emr-ccrnhw11 最近一天的所有 Spark 查询", command: "tccli emr DescribeSparkQueries \\\n  --InstanceId emr-ccrnhw11 \\\n  --StartTime 2026-04-14T00:00:00Z \\\n  --EndTime 2026-04-15T00:00:00Z \\\n  --PageSize 20", result: "Total: 11\nQueryList: [{...}, ...] 11 rows selected" }],
+          },
+          {
+            text: "查到了 11 条 Spark 查询记录。不过输出被截断了，让我把完整数据导出来处理",
+            toolCalls: [
+              { title: "导出并按耗时降序排列所有 Spark 查询，展示慢 SQL 概况", command: "cat /tmp/spark_queries.json | jq \\\n  'sort_by(-.Duration) | .[] |\n  {Id, Statement: .Statement[:60], Duration, ScanRows}'", result: "#1  56.5s  品牌年度销售汇总  29.5亿行\n#2  14.5s  品牌年度-CTE优化  29.5亿行\n#3  12.8s  全表 count        29.5亿行\n...共 11 条" },
+              { title: "输出所有查询的完整 SQL 用于详细分析", command: "for id in $(seq 1 11); do\n  echo \"=== Query #$id ===\"\n  jq -r \".[$id-1].Statement\" /tmp/spark_queries.json\n  echo\ndone", result: "=== Query #1 ===\nINSERT OVERWRITE TABLE dwd_trade.seller_monthly_wide\nPARTITION (dt = '2026-03')\nSELECT s.seller_id, ...\n\n=== Query #2 ===\nWITH filtered AS (\n  SELECT * FROM store_sales WHERE ...\n)\n..." },
+            ],
+          },
         ],
       },
       {
         icon: "/icons/expert/25.svg", name: "数据运维专家",
+        delay: 6000,
         lines: [
-          { text: "已注册调度工作流，Cron 表达式 0 2 * * *，每日凌晨 2 点触发。" },
-          { text: "失败告警已绑定飞书群，重试策略为指数退避，最多 3 次。" },
-          { text: "资源预估：单次同步约消耗 4 CU·小时，已预留弹性资源池。" },
+          { text: "数据齐全了，让我生成一个清晰的报告。" },
+          { text: "以下是广州地域集群 emr-ccrnhw11 最近 24 小时的全部 Spark 查询记录（共 11 条，按耗时从高到低排列）：", boldText: "Spark 查询一览（按耗时降序）" },
+          {
+            text: "",
+            table: {
+              headers: ["序号", "查询标题", "耗时(秒)", "扫描量", "状态"],
+              rows: [
+                ["#1", "品牌年度销售汇总-隐式三表 JOIN", "56.5", "store_sales 29.5亿行", "已完成"],
+                ["#2", "品牌年度销售汇总-CTE优化版", "14.5", "store_sales 29.5亿行", "已完成"],
+                ["#3", "全表 count（store_sales）", "12.8", "29.5亿行 113.6GB", "已完成"],
+                ["#4", "门店日均客流统计", "8.3", "store_sales 12亿行", "已完成"],
+                ["#5", "折扣金额统计-含相关子查询", "11.2", "store_sales 8.7亿行", "已完成"],
+                ["#6", "折扣金额统计-CTE优化版", "6.9", "store_sales 8.7亿行", "已完成"],
+              ],
+            },
+          },
+        ],
+      },
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        delay: 10000,
+        lines: [
+          { text: "", boldText: "Top 3 慢 SQL 详情" },
+          {
+            text: "",
+            numberedHeading: { num: 1, text: "慢 SQL #1：56.5秒（最慢）" },
+            sqlBlock: {
+              title: "品牌年度销售汇总-隐式三表 JOIN",
+              code: "INSERT OVERWRITE TABLE dwd_trade.seller_monthly_wide PARTITION (dt = '2026-03') SELECT\n    s.seller_id,",
+            },
+          },
+          { text: "同查询的优化版（#2）只用 14.5 秒，提升了 74%。优化手段：CTE 预过滤 + 隐式 JOIN → 显式 INNER JOIN。" },
+          {
+            text: "",
+            numberedHeading: { num: 2, text: "慢 SQL #3：12.8秒" },
+            sqlBlock: {
+              title: "全表 count —— store_sales表（29.5亿行，113.6GB）",
+              code: "INSERT OVERWRITE TABLE dwd_trade.seller_monthly_wide PARTITION (dt = '2026-03') SELECT\n    s.seller_id,",
+            },
+          },
+          { text: "同查询的优化版（#2）只用 14.5 秒，提升了 74%。优化手段：CTE 预过滤 + 隐式 JOIN → 显式 INNER JOIN。" },
+          {
+            text: "",
+            numberedHeading: { num: 3, text: "慢 SQL #5：11.2秒" },
+            sqlBlock: {
+              title: "折扣金额统计 —— 含相关子查询",
+              code: "INSERT OVERWRITE TABLE dwd_trade.seller_monthly_wide PARTITION (dt = '2026-03') SELECT\n    s.seller_id,",
+            },
+          },
+          { text: "同查询的优化版（#6）只用 6.9 秒，提升了 38%。优化手段：CTE 消除重复扫描 + 显式 JOIN。" },
+          {
+            text: "",
+            artifacts: {
+              count: 12,
+              items: [
+                { title: "Spark查询报告.md", description: "业务结论报告 · Markdown 可下载", iconType: "md" },
+                { title: "dau_wau_east_7d.sql", description: "数据读取脚本 · 从源表读取原始数据", iconType: "sql" },
+                { title: "dau_wau_trend_chart.png", description: "DAU/WAU 趋势图", iconType: "png" },
+                { title: "slow_sql_optimization.sql", description: "慢 SQL 优化方案 · CTE + JOIN 重写", iconType: "sql" },
+                { title: "emr_cluster_report.md", description: "集群性能对比报告 · 优化前后", iconType: "md" },
+                { title: "query_execution_plan.png", description: "执行计划可视化 · Spark DAG", iconType: "png" },
+              ],
+            },
+          },
+          {
+            text: "",
+            confirmCard: {
+              title: "请确认数据源",
+              description: "我可以帮您针对慢 SQL #1 进行深度诊断，并直接向集群提交优化后的版本。请确认执行，或在下方输入您想要优化的SQL。",
+              buttonText: "确认执行",
+            },
+          },
         ],
       },
     ],
@@ -263,10 +348,11 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
   t7: {
     title: "数仓分层模型搭建",
     userMsg: "帮我搭建数仓的分层模型体系",
-    thinkingText: "收到需求，我来规划数仓分层架构并分派搭建任务",
+    thinkingText: "",
+    singleExpert: true,
     replies: [
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
         lines: [
           { text: "数仓分层方案已设计：ODS（原始层）→ DWD（明细层）→ DWS（汇总层）→ ADS（应用层）。" },
           { text: "ODS 层：12 张业务源表镜像，保留原始字段，增加 ds 分区和 etl_time 审计字段。", tags: ["ODS", "DWD", "DWS", "ADS"] },
@@ -275,15 +361,11 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        delay: 3000,
         lines: [
           { text: "ADS 层指标体系已梳理：覆盖 DAU、GMV、客单价、留存率等 28 个核心指标。" },
           { text: "维度表设计完成：dim_user、dim_product、dim_channel、dim_area 共 6 张维度表。" },
-        ],
-      },
-      {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
-        lines: [
           { text: "存储规划：ODS 保留 90 天，DWD 保留 365 天，DWS 永久保留，冷热分层存储已配置。" },
           { text: "建表 DDL 已生成并提交至 Git 仓库，Code Review 流程已触发。" },
         ],
@@ -293,17 +375,19 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
   t8: {
     title: "ODS 层数据接入验证",
     userMsg: "帮我验证 ODS 层数据接入的完整性和准确性",
-    thinkingText: "收到需求，我来协调对 ODS 层数据进行全面验证",
+    thinkingText: "",
+    singleExpert: true,
     replies: [
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
         lines: [
           { text: "ODS 层 12 张表逐一对账：源端总行数 vs ODS 行数，误差率均 < 0.01%。" },
           { text: "字段级校验：抽样 10 万条做字段值 MD5 对比，一致率 100%。", tags: ["ods_orders", "ods_users", "ods_payments", "ods_products"] },
         ],
       },
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        delay: 2500,
         lines: [
           { text: "增量同步验证：模拟业务写入 1000 条测试数据，T+1 后全部正确落入 ODS 对应分区。" },
           { text: "异常场景测试：源端删除/更新操作，ODS 层 CDC 捕获并正确标记 op_type 字段。" },
@@ -446,6 +530,60 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
   },
 };
 
+// ── 确认执行后的二阶段对话内容 ────────────────────────────────
+const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
+  {
+    icon: "/icons/expert/17.svg", name: "数据开发专家",
+    delay: 800,
+    lines: [
+      {
+        text: "好的，你选了 #1 — 最慢的那条 56.5 秒的 SQL。让我对它做深入调优分析。",
+        toolCalls: [{ title: "提取慢 SQL #1 的完整信息用于调优分析", command: "jq '.[0]' /tmp/spark_queries.json", result: "{\n  \"Id\": \"sq-001\",\n  \"Duration\": 56.5,\n  \"Statement\": \"INSERT OVERWRITE TABLE dwd_trade...\",\n  \"ScanRows\": 2950000000\n}" }],
+      },
+      {
+        text: "好的，数据齐了。现在让我生成一份完整的调优分析报告：",
+        toolCalls: [{ title: "查看 DescribeSparkQueries 接口文档" }],
+      },
+      { text: "", divider: true },
+    ],
+  },
+  {
+    icon: "/icons/expert/17.svg", name: "数据开发专家",
+    delay: 4000,
+    lines: [
+      { text: "展示慢 SQL #1 的深度调优分析报告，以下是报告核心结论：" },
+      { text: "以下是报告核心结论" },
+      { text: "", boldText: "这条 56.5 秒的慢 SQL 最大的问题是隐式 JOIN + 缺少预过滤，导致 store_sales 的 4.77 亿行被全量扫描后才做 JOIN 过滤。" },
+      { text: "已经有实测数据证明 方案 1（CTE + 显式 JOIN）可以从 56.5s 降到 14.5s（↓74%）。如果还想继续压缩，可以试：" },
+      { text: "", numberedHeading: { num: 1, text: "方案 2：加 /*+ BROADCAST(dt), BROADCAST(fi) */ Hint，强制小表广播，预计 8~10s" } },
+      {
+        text: "",
+        numberedHeading: { num: 2, text: "方案 3：加上 ss_sold_date_sk 范围预过滤做分区裁剪，预计 5~7s" },
+      },
+      { text: " date_dim 和 item 的过滤条件未提前执行，导致 store_sales 大量扫描后才做 JOIN 过滤。" },
+      {
+        text: "",
+        artifacts: {
+          count: 3,
+          items: [
+            { title: "慢SQL #1 深度调优分析.md", description: "业务结论报告 · Markdown 可下载", iconType: "md" as const },
+            { title: "dau_wau_east_7d.sql", description: "数据读取脚本 · 从源表读取原始数据", iconType: "sql" as const },
+            { title: "dau_wau_trend_chart.png", description: "DAU/WAU 趋势图", iconType: "png" as const },
+          ],
+        },
+      },
+      {
+        text: "",
+        confirmCard: {
+          title: "请确认优化方案",
+          description: "要不要我直接把方案 2 的 SQL 提交到集群跑一下验证？",
+          buttonText: "选择方案2",
+        },
+      },
+    ],
+  },
+];
+
 export default function Home() {
   const [targetView, setTargetView] = useState("dataclaw");
   const [viewState, setViewState] = useState<"dataclaw" | "shrinking" | "studio">("dataclaw");
@@ -476,6 +614,10 @@ export default function Home() {
   const [taskReplies, setTaskReplies] = useState<ExpertReplyDataType[] | undefined>(undefined);
   // 自定义思考摘要文案
   const [taskThinkingText, setTaskThinkingText] = useState<string | undefined>(undefined);
+  // 确认后的二阶段对话
+  const [confirmPhase, setConfirmPhase] = useState(false);
+  const [phase2Replies, setPhase2Replies] = useState<ExpertReplyDataType[] | undefined>(undefined);
+  const [isSingleExpert, setIsSingleExpert] = useState(false);
   // 卡片参数配置
   const [fanConfig, setFanConfig] = useState<FanCardsConfig>(DEFAULT_FAN_CONFIG);
   const [chatInputConfig, setChatInputConfig] = useState<Record<string, number>>(CHAT_INPUT_MOTION.defaultConfig);
@@ -694,7 +836,15 @@ export default function Home() {
     setIsInstantMode(false);
     setTaskReplies(undefined);
     setTaskThinkingText(undefined);
+    setIsSingleExpert(false);
+    setConfirmPhase(false);
+    setPhase2Replies(undefined);
     chatInputRef.current?.resetAgent();
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    setConfirmPhase(true);
+    setPhase2Replies(CONFIRM_PHASE2_REPLIES);
   }, []);
 
   const handleTaskClick = useCallback((task: { id: string; title: string }) => {
@@ -716,6 +866,9 @@ export default function Home() {
     setRevealStep(2);
     setTaskReplies(conv?.replies);
     setTaskThinkingText(conv?.thinkingText);
+    setIsSingleExpert(conv?.singleExpert ?? false);
+    setConfirmPhase(false);
+    setPhase2Replies(undefined);
     // 即时模式：自动打开产物面板
     setArtifactsPanelOpen(true);
     // 滚动到顶部
@@ -921,6 +1074,7 @@ export default function Home() {
                 showNewChat={isSecondaryCollapsed}
                 onNewChat={handleNewChat}
                 onArtifacts={() => setArtifactsPanelOpen(v => !v)}
+                hideTeamBadge={isSingleExpert}
               />
             </div>
           </motion.div>
@@ -1057,8 +1211,8 @@ export default function Home() {
                     <UserMessageBubble content={userMessage} />
                   </motion.div>
 
-                  {/* Step 1: 思考摘要 */}
-                  {revealStep >= 1 && (
+                  {/* Step 1: 思考摘要 (单专家模式跳过) */}
+                  {revealStep >= 1 && !isSingleExpert && (
                     <motion.div
                       initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -1068,9 +1222,18 @@ export default function Home() {
                       <ThinkingSummary text={taskThinkingText} />
                     </motion.div>
                   )}
+                  {/* 单专家模式：step1 直接跳到 step2 */}
+                  {revealStep >= 1 && isSingleExpert && !isInstantMode && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0 }}
+                      transition={{ duration: 0.1 }}
+                      onAnimationComplete={() => setRevealStep((s) => Math.max(s, 2))}
+                    />
+                  )}
 
-                  {/* Step 2: Agent 执行计划 */}
-                  {revealStep >= 2 && (
+                  {/* Step 2: Agent 执行计划 (单专家模式跳过) */}
+                  {revealStep >= 2 && !isSingleExpert && (
                     <motion.div
                       initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -1087,8 +1250,28 @@ export default function Home() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.8 }}
                     >
-                      <ExpertReplies instant={isInstantMode} replies={taskReplies} onComplete={() => setArtifactsPanelOpen(true)} />
+                      <ExpertReplies instant={isInstantMode} replies={taskReplies} onComplete={() => setArtifactsPanelOpen(true)} onArtifactClick={() => setArtifactsPanelOpen(true)} onConfirm={handleConfirm} hideDispatch={isSingleExpert} />
                     </motion.div>
+                  )}
+
+                  {/* Phase 2: 确认后的继续对话 */}
+                  {confirmPhase && phase2Replies && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, ease: EASE }}
+                      >
+                        <UserMessageBubble content="针对慢 SQL #1 进行深度诊断，并直接向集群提交优化" />
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, ease: EASE, delay: 0.3 }}
+                      >
+                        <ExpertReplies replies={phase2Replies} onArtifactClick={() => setArtifactsPanelOpen(true)} hideDispatch />
+                      </motion.div>
+                    </>
                   )}
                 </motion.div>
               )}
@@ -1296,6 +1479,8 @@ export default function Home() {
           <ArtifactsPanel
             open={artifactsPanelOpen}
             onClose={() => setArtifactsPanelOpen(false)}
+            phase={confirmPhase ? 2 : 1}
+            singleExpert={isSingleExpert}
           />
         )}
 
