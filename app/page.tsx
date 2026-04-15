@@ -33,6 +33,7 @@ type ChatPhase = "welcome" | "conversation";
 // ── 当前召唤的 Agent 信息 ────────────────────────────────────────
 interface SummonedAgent {
   name: string;
+  nameColor?: string;
   title: string;
   avatar: string;
   summonText?: string;
@@ -559,6 +560,75 @@ export default function Home() {
     setActiveSkills([]);
   }, []);
 
+  // ── 从输入框 Agent 下拉菜单选择专家/团队 ─────────────────────
+  const AGENT_MAP: Record<string, { name: string; nameColor: string; title: string; avatar: string; summonText: string }> = {
+    "ops-expert": { name: "Orion", nameColor: "#CC6B3A", title: "数据运维专家", avatar: "/agents/3a.png", summonText: "告诉我你想梳理哪条数据链路？" },
+    "analysis-expert": { name: "Vega", nameColor: "#00BBA2", title: "数据分析专家", avatar: "/agents/2a.png", summonText: "告诉我你想分析什么数据？" },
+    "dev-expert": { name: "Rigel", nameColor: "#2873FF", title: "数据开发专家", avatar: "/agents/1a.png", summonText: "今天想开发什么数仓？" },
+  };
+
+  const handleSelectAgent = useCallback((agentId: string) => {
+    const agentInfo = AGENT_MAP[agentId];
+    if (agentInfo) {
+      // 单个专家：召唤并显示引导
+      setSummonedAgent({
+        name: agentInfo.name,
+        title: agentInfo.title,
+        avatar: agentInfo.avatar,
+        summonText: agentInfo.summonText,
+        nameColor: agentInfo.nameColor,
+      });
+      setActiveSkills([]);
+      requestAnimationFrame(() => chatInputRef.current?.focus());
+    } else {
+      // 团队：清除召唤状态
+      setSummonedAgent(null);
+      setActiveSkills([]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── 单专家回复数据：仅该专家一人回复 ──────────────────────────
+  const SINGLE_EXPERT_REPLIES: Record<string, ExpertReplyDataType[]> = {
+    "数据运维专家": [
+      {
+        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        delay: 1200,
+        lines: [
+          { text: "正在检查华东区数据链路状态，扫描 ODS → DWD → DWS → ADS 全链路节点。" },
+          { text: "数据链路拓扑分析完成：共 23 个节点，关键路径涉及 4 层流转。", tags: ["ods_sync", "dwd_clean", "dws_aggregate", "ads_report"] },
+          { text: "发现 DWD 层 dwd_order_detail 任务延迟 12 分钟，原因为上游 ODS 分区到达时间偏移。" },
+          { text: "已自动触发补偿调度，预计 8 分钟内恢复正常数据时效。" },
+          { text: "全链路监控看板已更新，异常告警已推送至运维群。", tags: ["monitor_dashboard", "alert_feishu"] },
+        ],
+      },
+    ],
+    "数据分析专家": [
+      {
+        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        delay: 1200,
+        lines: [
+          { text: "正在拉取华东区过去 7 天用户活跃数据，数据源为 dws_user_active_di。" },
+          { text: "DAU 均值 124.5 万，WAU 382.7 万，DAU/WAU 比值 32.6%。", tags: ["dws_user_active_di", "ads_dau_wau_east_7d"] },
+          { text: "趋势分析：DAU 较上周同期 +3.2%，移动端增长 5.1%，PC 端下降 1.8%。" },
+          { text: "已生成 DAU/WAU 趋势折线图和业务结论报告，可在产物面板查看。" },
+        ],
+      },
+    ],
+    "数据开发专家": [
+      {
+        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        delay: 1200,
+        lines: [
+          { text: "正在分析数仓分层模型需求，梳理业务数据源和目标架构。" },
+          { text: "ODS 层设计完成：12 张业务源表镜像，增加 ds 分区和 etl_time 审计字段。", tags: ["ODS", "DWD", "DWS", "ADS"] },
+          { text: "DWD 层统一编码规范、时区转换、空值填充，输出 8 张主题明细宽表。" },
+          { text: "建表 DDL 已生成并提交至 Git 仓库，Code Review 流程已触发。" },
+        ],
+      },
+    ],
+  };
+
   const handleSendMessage = useCallback(({ message }: { message: string; files: unknown[] }) => {
     if (!message.trim()) return;
     setUserMessage(message.trim());
@@ -566,20 +636,25 @@ export default function Home() {
     if (!summonedAgent) {
       setSummonedAgent({
         name: "Rigel",
-        title: "数据运维专家",
+        title: "数据开发专家",
         avatar: "/agents/1a.png",
       });
     }
     setChatPhase("conversation");
     setConversationTitle(`华东区过去 7 天的用户活跃度趋势`);
-    // 清掉 skills 和 summonedAgent 相关的输入框状态
+
+    // 判断是否单个专家模式
+    const agentTitle = summonedAgent?.title;
+    const singleReplies = agentTitle ? SINGLE_EXPERT_REPLIES[agentTitle] : undefined;
+
     setActiveSkills([]);
     // 输入框发送走流式模式
     setIsInstantMode(false);
-    setTaskReplies(undefined);
-    setTaskThinkingText(undefined);
+    setTaskReplies(singleReplies);
+    setTaskThinkingText(singleReplies ? undefined : undefined);
     setActiveTaskId(null);
     setRevealStep(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summonedAgent]);
 
   // ── Motion 选择模式 handlers ──────────────────────────────────
@@ -619,6 +694,7 @@ export default function Home() {
     setIsInstantMode(false);
     setTaskReplies(undefined);
     setTaskThinkingText(undefined);
+    chatInputRef.current?.resetAgent();
   }, []);
 
   const handleTaskClick = useCallback((task: { id: string; title: string }) => {
@@ -1101,7 +1177,7 @@ export default function Home() {
                       fontSize: 28,
                       fontWeight: 500,
                       lineHeight: "32px",
-                      color: "#2873FF",
+                      color: summonedAgent.nameColor ?? "#2873FF",
                       whiteSpace: "nowrap",
                     }}>
                       {summonedAgent.name}
@@ -1189,6 +1265,8 @@ export default function Home() {
                   previewState={motionMode === "editing" && motionTarget === "chat-input" ? chatInputPreviewState : undefined}
                   onCreateExpert={() => setCreateExpertOpen(true)}
                   onCreateTeam={() => setCreateTeamOpen(true)}
+                  onSelectAgent={(agentId) => handleSelectAgent(agentId)}
+                  disableAgentSelector={chatPhase === "conversation"}
                 />
               </MotionTargetOverlay>
             </div>

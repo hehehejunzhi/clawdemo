@@ -194,6 +194,7 @@ const FilePreviewCard = ({
 
 export interface ChatInputHandle {
   focus: () => void;
+  resetAgent: () => void;
 }
 
 export type ChatInputPreviewState = "default" | "active";
@@ -210,6 +211,10 @@ interface ChatInputProps {
   previewState?: ChatInputPreviewState;
   onCreateExpert?: () => void;
   onCreateTeam?: () => void;
+  /** 选择单个专家/团队时的回调 */
+  onSelectAgent?: (agentId: string, agentLabel: string) => void;
+  /** 置灰 Agent 选择器（流式输出/对话阶段） */
+  disableAgentSelector?: boolean;
 }
 
 export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ClaudeChatInput({
@@ -223,6 +228,8 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   previewState,
   onCreateExpert,
   onCreateTeam,
+  onSelectAgent,
+  disableAgentSelector = false,
 }, ref) {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<AttachedFile[]>([]);
@@ -261,6 +268,7 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   // 暴露 focus 方法给父组件
   useImperativeHandle(ref, () => ({
     focus: () => textareaRef.current?.focus(),
+    resetAgent: () => setSelectedAgent("大数据团队"),
   }), []);
 
   // Auto-resize textarea
@@ -588,8 +596,8 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                 <div style={{ position: "relative" }}>
                   <div
                     ref={agentBtnRef}
-                    className="ci-hover"
-                    onClick={(e) => { e.stopPropagation(); setShowAgentMenu((v) => !v); setShowModelMenu(false); setShowAddMenu(false); }}
+                    className={disableAgentSelector ? undefined : "ci-hover"}
+                    onClick={(e) => { if (disableAgentSelector) return; e.stopPropagation(); setShowAgentMenu((v) => !v); setShowModelMenu(false); setShowAddMenu(false); }}
                     style={{
                       display: "flex",
                       gap: 4,
@@ -598,8 +606,10 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                       padding: "0 8px",
                       borderRadius: 20,
                       overflow: "hidden",
-                      cursor: "pointer",
+                      cursor: disableAgentSelector ? "not-allowed" : "pointer",
                       flexShrink: 0,
+                      opacity: disableAgentSelector ? 0.4 : 1,
+                      transition: "opacity 0.15s ease",
                     }}
                   >
                     <div style={{ position: "relative", width: 16, height: 16, flexShrink: 0 }}>
@@ -642,7 +652,7 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                         <div
                           key={item.id}
                           className="ci-menu-item"
-                          onClick={(e) => { e.stopPropagation(); setSelectedAgent(item.label); setShowAgentMenu(false); }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedAgent(item.label); setShowAgentMenu(false); onSelectAgent?.(item.id, item.label); }}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -688,91 +698,7 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                   )}
                 </div>
 
-                {/* 模型按钮 + 菜单 */}
-                <div style={{ position: "relative" }}>
-                  <div
-                    ref={modelBtnRef}
-                    className="ci-hover"
-                    onClick={(e) => { e.stopPropagation(); setShowModelMenu((v) => !v); setShowAgentMenu(false); setShowAddMenu(false); }}
-                    style={{
-                      display: "flex",
-                      gap: 4,
-                      height: 32,
-                      alignItems: "center",
-                      padding: "0 8px",
-                      borderRadius: 20,
-                      cursor: "pointer",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div style={{ position: "relative", width: 16, height: 16, flexShrink: 0 }}>
-                      <img src="/icons/claude-logo.svg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
-                    </div>
-                    <span style={{
-                      fontSize: 14, fontWeight: 500, lineHeight: "22px",
-                      color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap",
-                      fontFamily: SF_FONT,
-                    }}>{selectedModel}</span>
-                    <div style={{ position: "relative", width: 14, height: 14, flexShrink: 0 }}>
-                      <div style={{ position: "absolute", top: "33.69%", right: "21.19%", bottom: "31.61%", left: "21.19%" }}>
-                        <img src="/icons/chevron-down.svg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} />
-                      </div>
-                    </div>
-                  </div>
-                  {showModelMenu && (
-                    <div ref={modelMenuRef} style={popupMenuStyle}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-                        {MODEL_OPTIONS.map((model) => (
-                          <div
-                            key={model}
-                            className="ci-menu-item"
-                            onClick={(e) => { e.stopPropagation(); setSelectedModel(model); setShowModelMenu(false); }}
-                            style={{
-                              ...menuItemStyle,
-                              backgroundColor: selectedModel === model ? "#F2F4F8" : undefined,
-                            }}
-                          >
-                            <div style={{ position: "relative", width: 16, height: 16, flexShrink: 0 }}>
-                              <img src="/icons/claude-logo.svg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
-                            </div>
-                            <span style={{ ...menuItemTextStyle, fontFamily: SF_FONT }}>{model}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
 
-                {/* Skills 按钮: px-8 rounded-20 gap-4 */}
-                <div
-                  className="ci-hover"
-                  onClick={(e) => e.stopPropagation()}
-                  style={{
-                    display: "flex",
-                    gap: 4,
-                    height: "100%",
-                    alignItems: "center",
-                    padding: "0 8px",
-                    borderRadius: 20,
-                    overflow: "hidden",
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  <div style={{ position: "relative", width: 16, height: 16, flexShrink: 0 }}>
-                    <img src="/icons/ai-edit.svg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
-                  </div>
-                  <span style={{
-                    fontSize: 14, fontWeight: 500, lineHeight: "22px",
-                    color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap",
-                    fontFamily: SF_FONT,
-                  }}>Skills</span>
-                  <div style={{ position: "relative", width: 14, height: 14, flexShrink: 0 }}>
-                    <div style={{ position: "absolute", top: "33.69%", right: "21.19%", bottom: "31.61%", left: "21.19%" }}>
-                      <img src="/icons/chevron-down.svg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} />
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
 

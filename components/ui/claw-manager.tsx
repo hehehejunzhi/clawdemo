@@ -266,7 +266,7 @@ function MoreMenu({ onManage, onDelete }: { onManage: () => void; onDelete: () =
             padding: "4px 0", overflow: "hidden",
           }}>
             {[
-              { label: "成员管理", action: onManage },
+              { label: "团队详情", action: onManage },
               { label: "删除团队", action: onDelete },
             ].map((item) => (
               <div
@@ -342,162 +342,171 @@ function RoleSelect({ value, onChange }: { value: string; onChange: (v: "调度�
   );
 }
 
-// ── 成员管理弹窗 ──────────────────────────────────────────────
-function MemberManageModal({ teamName, members, onClose, onSave }: {
-  teamName: string;
-  members: TeamMember[];
-  onClose: () => void;
-  onSave: (members: TeamMember[]) => void;
+// ── 团队详情弹窗（查看+编辑成员） ─────────────────────────────
+function TeamDetailModal({ team, onClose, onSave }: {
+  team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void;
 }) {
-  const [localMembers, setLocalMembers] = useState<TeamMember[]>(() => [...members]);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingMembers, setEditingMembers] = useState(false);
+  const [formName, setFormName] = useState(team.name);
+  const [formDesc, setFormDesc] = useState(team.desc);
+  const [formTags, setFormTags] = useState<string[]>([]);
+  const [localMembers, setLocalMembers] = useState<TeamMember[]>(() => [...team.members]);
   const [showAddPanel, setShowAddPanel] = useState(false);
 
   const existingIds = new Set(localMembers.map((m) => m.id));
   const addableMembers = ALL_AVAILABLE_MEMBERS.filter((m) => !existingIds.has(m.id));
 
-  const updateRole = (id: string, role: "调度者" | "执行者" | "观察者") => {
-    setLocalMembers((prev) => prev.map((m) => m.id === id ? { ...m, role } : m));
+  const saveField = () => { setEditingField(null); };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveField(); }
+    if (e.key === "Escape") { setFormName(team.name); setFormDesc(team.desc); setEditingField(null); }
   };
 
-  const removeMember = (id: string) => {
-    setLocalMembers((prev) => prev.filter((m) => m.id !== id));
+  const handleSaveAll = () => {
+    onSave({ ...team, name: formName || team.name, desc: formDesc || team.desc, members: localMembers });
   };
 
-  const addMember = (m: Omit<TeamMember, "role">) => {
-    setLocalMembers((prev) => [...prev, { ...m, role: "执行者" }]);
-    setShowAddPanel(false);
-  };
+  const editIcon = (field: string) => (
+    <div onClick={() => setEditingField(field)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: 6, marginLeft: 6, transition: "background 100ms", flexShrink: 0 }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M12.9961 12.9277H6.34765V11.7637H12.9961V12.9277ZM8.51367 1.29687C8.88733 0.992206 9.42616 0.992173 9.7998 1.29687L9.87793 1.36621L11.7139 3.20312C12.1117 3.60121 12.1118 4.24653 11.7139 4.64453L4.70605 11.6523C4.56284 11.7955 4.3794 11.8926 4.18066 11.9316L1.92383 12.375C1.21758 12.5135 0.593333 11.8961 0.724608 11.1885L1.14844 8.9082L1.1875 8.75878C1.2378 8.61418 1.32049 8.48224 1.42969 8.37304L8.43555 1.36621L8.51367 1.29687ZM2.2832 9.16503L1.90723 11.1914L3.91308 10.7978L8.91504 5.79492L7.28418 4.1621L2.2832 9.16503ZM8.10742 3.33984L9.73828 4.97167L10.7881 3.92285L9.15625 2.29101L8.10742 3.33984Z" fill="rgba(0,0,0,0.7)" /></svg>
+    </div>
+  );
+
+  const LABEL_W = 91;
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: C.textTertiary, flexShrink: 0, width: LABEL_W };
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "5px 10px", borderRadius: 3, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box" as const };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 9000,
-        background: "rgba(0,0,0,0.35)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 12 }}
-        transition={{ duration: 0.2, ease: EASE }}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 560, maxHeight: "85vh", background: C.bgWhite, borderRadius: 16,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
-          fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden",
-        }}
-      >
-        {/* 头部 */}
-        <div style={{ padding: "24px 24px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 20, fontWeight: 600, color: C.textPrimary }}>成员管理</span>
-          <div onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <motion.div initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
+        transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
+        style={{ width: 640, maxHeight: "85vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* Header */}
+        <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>团队详情</span>
+          <div onClick={onClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg>
+          ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16, scrollbarWidth: "none" }}>
+          {/* 团队名称 */}
+          <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
+            <span style={labelStyle}>团队名称</span>
+            {editingField === "name" ? (
+              <input autoFocus value={formName} onChange={(e) => setFormName(e.target.value)} style={{ ...inputStyle, width: 300 }} onKeyDown={handleKeyDown} onBlur={saveField} />
+            ) : (
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: C.textPrimary }}>{formName}</span>
+                {editIcon("name")}
+              </div>
+            )}
           </div>
-        </div>
-        <div style={{ padding: "8px 24px 16px", fontSize: 13, color: C.textTertiary }}>
-          添加/移除成员 · 查看在线状态 · 分配角色（调度者/执行者/观察者）
-        </div>
 
-        {/* 成员列表 */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 24px", scrollbarWidth: "none", display: "flex", flexDirection: "column", gap: 8 }}>
-          {localMembers.map((m) => (
-            <div key={m.id} style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "12px 16px", borderRadius: 12,
-              background: "#FAFBFC", border: `1px solid ${C.border}`,
-            }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 20, background: m.abbrBg,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#FFF" }}>{m.abbr}</span>
+          {/* 描述 */}
+          <div style={{ display: "flex", alignItems: "flex-start", minHeight: 20 }}>
+            <span style={labelStyle}>描述</span>
+            {editingField === "desc" ? (
+              <textarea autoFocus value={formDesc} onChange={(e) => setFormDesc(e.target.value)} rows={2} style={{ ...inputStyle, resize: "none" }} onKeyDown={handleKeyDown} onBlur={saveField} />
+            ) : (
+              <div style={{ display: "flex", alignItems: "flex-start" }}>
+                <span style={{ fontSize: 12, color: C.textPrimary, lineHeight: "20px" }}>{formDesc || "暂无描述"}</span>
+                {editIcon("desc")}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: C.textPrimary }}>{m.name}</div>
-                <div style={{ fontSize: 12, color: C.textTertiary }}>{m.category}</div>
-              </div>
-              <RoleSelect value={m.role} onChange={(r) => updateRole(m.id, r)} />
-              <span
-                onClick={() => removeMember(m.id)}
-                style={{ fontSize: 13, fontWeight: 500, color: C.error, cursor: "pointer", flexShrink: 0, padding: "2px 4px" }}
-              >移除</span>
-            </div>
-          ))}
+            )}
+          </div>
 
-          {/* 添加成员按钮 */}
-          {!showAddPanel ? (
-            <div
-              onClick={() => setShowAddPanel(true)}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "12px", borderRadius: 12,
-                border: `1px dashed ${C.border}`, cursor: "pointer",
-                fontSize: 14, fontWeight: 400, color: C.textSecondary,
-                transition: "background 100ms",
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-            >+ 添加成员 Claw</div>
-          ) : (
-            <div style={{
-              padding: "12px 16px", borderRadius: 12,
-              border: `1px solid ${C.border}`, background: "#FAFBFC",
-              display: "flex", flexDirection: "column", gap: 6,
-            }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textPrimary, marginBottom: 4 }}>选择要添加的成员</div>
-              {addableMembers.length === 0 ? (
-                <div style={{ fontSize: 13, color: C.textTertiary, padding: "8px 0" }}>暂无可添加的成员</div>
-              ) : addableMembers.map((m) => (
-                <div
-                  key={m.id}
-                  onClick={() => addMember(m)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                    borderRadius: 6, cursor: "pointer", transition: "background 100ms",
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                >
-                  <div style={{
-                    width: 24, height: 24, borderRadius: 4, background: m.abbrBg,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "#FFF" }}>{m.abbr}</span>
+          {/* 标签 */}
+          <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
+            <span style={labelStyle}>标签</span>
+            {editingField === "tags" ? (
+              <input autoFocus value={formTags.join("、")} onChange={(e) => setFormTags(e.target.value.split(/[,，、]/).map((s) => s.trim()).filter(Boolean))}
+                placeholder="用逗号分隔" style={{ ...inputStyle, width: 300 }} onKeyDown={handleKeyDown} onBlur={saveField} />
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {(formTags.length > 0 ? formTags : ["运营", "数据分析", "日报"]).map((t) => (
+                  <span key={t} style={{ fontSize: 12, fontWeight: 500, padding: "2px 9px", borderRadius: 8, background: "#F3F4F6", color: "#030213", lineHeight: "18px" }}>{t}</span>
+                ))}
+                {editIcon("tags")}
+              </div>
+            )}
+          </div>
+
+          {/* 成员 */}
+          <div style={{ display: "flex", alignItems: "flex-start" }}>
+            <span style={{ ...labelStyle, paddingTop: editingMembers ? 7 : 0 }}>{editingMembers ? (<>成员 <span style={{ color: C.error }}>*</span></>) : "成员"}</span>
+            <div style={{ flex: 1, background: "#F7F8FB", borderRadius: 3, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+
+              {editingMembers ? (
+                /* ── 编辑模式：下拉选择 + 添加到团队 + 成员列表可改角色/移出 + 底部取消保存 ── */
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div onClick={() => setShowAddPanel((v) => !v)} style={{ flex: 1, height: 32, padding: "0 12px", borderRadius: 3, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 12, color: "#89898A", display: "flex", alignItems: "center", cursor: "pointer", boxSizing: "border-box" as const }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginRight: 6, flexShrink: 0 }}><path d="M3 5l3 3 3-3" stroke="rgba(0,0,0,0.4)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      选择加入团队成员
+                    </div>
+                    <span style={{ fontSize: 12, color: "#265BED", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>添加到团队</span>
                   </div>
-                  <span style={{ fontSize: 13, color: C.textPrimary }}>{m.name}</span>
-                  <span style={{ fontSize: 12, color: C.textTertiary }}>({m.category})</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* 底部 */}
-        <div style={{
-          padding: "16px 24px", display: "flex", justifyContent: "flex-end", gap: 12,
-          borderTop: `1px solid ${C.border}`, marginTop: 8,
-        }}>
-          <button onClick={onClose} style={{
-            height: 40, padding: "0 24px", borderRadius: 100,
-            border: `1px solid ${C.border}`, background: C.bgWhite,
-            fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary,
-            cursor: "pointer", outline: "none",
-          }}>取消</button>
-          <button onClick={() => onSave(localMembers)} style={{
-            height: 40, padding: "0 24px", borderRadius: 100,
-            border: "none", background: "#000000",
-            fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF",
-            cursor: "pointer", outline: "none",
-          }}>保存</button>
+                  {showAddPanel && (
+                    <div style={{ background: C.bgWhite, borderRadius: 8, border: `1px solid ${C.border}`, padding: "4px 0", maxHeight: 200, overflowY: "auto" }}>
+                      {addableMembers.length === 0 ? (
+                        <div style={{ padding: "8px 12px", fontSize: 12, color: C.textTertiary }}>暂无可添加成员</div>
+                      ) : addableMembers.map((m) => (
+                        <div key={m.id} onClick={() => { setLocalMembers((prev) => [...prev, { ...m, role: "执行者" }]); setShowAddPanel(false); }}
+                          style={{ padding: "6px 12px", cursor: "pointer", fontSize: 14, color: C.textPrimary, fontFamily: FONT, transition: "background 100ms" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                        >{m.name}</div>
+                      ))}
+                    </div>
+                  )}
+
+                  <span style={{ fontSize: 12, color: C.textTertiary }}>已添加成员：</span>
+                  {localMembers.map((m) => (
+                    <div key={m.id} style={{ display: "flex", alignItems: "center", height: 38, padding: "0 16px", borderRadius: 10 }}>
+                      <span style={{ fontSize: 14, color: "#0A0A0A", minWidth: 120 }}>{m.name}</span>
+                      <div style={{ flex: 1 }} />
+                      <RoleSelect value={m.role} onChange={(r) => setLocalMembers((prev) => prev.map((x) => x.id === m.id ? { ...x, role: r } : x))} />
+                      <div style={{ flex: 1 }} />
+                      <span onClick={() => setLocalMembers((prev) => prev.filter((x) => x.id !== m.id))}
+                        style={{ fontSize: 12, color: "#265BED", cursor: "pointer", flexShrink: 0 }}>移出团队</span>
+                    </div>
+                  ))}
+
+                  {/* 编辑模式底部按钮 */}
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 8 }}>
+                    <button onClick={() => { setEditingMembers(false); setLocalMembers([...team.members]); setShowAddPanel(false); }}
+                      style={{ height: 32, padding: "0 16px", borderRadius: 32, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 13, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+                    <button onClick={() => { setEditingMembers(false); setShowAddPanel(false); handleSaveAll(); }}
+                      style={{ height: 32, padding: "0 16px", borderRadius: 32, border: "none", background: C.textPrimary, fontFamily: FONT, fontSize: 13, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>保存</button>
+                  </div>
+                </>
+              ) : (
+                /* ── 查看模式：成员列表只读 + 编辑按钮 ── */
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 12, color: C.textTertiary }}>已添加{localMembers.length}位成员</span>
+                    <span onClick={() => setEditingMembers(true)} style={{ fontSize: 14, fontWeight: 500, color: "#265BED", cursor: "pointer" }}>编辑</span>
+                  </div>
+                  {localMembers.map((m) => (
+                    <div key={m.id} style={{ display: "flex", alignItems: "center", height: 38, padding: "0 16px", borderRadius: 10 }}>
+                      <span style={{ fontSize: 14, color: "#0A0A0A", flex: 1 }}>{m.name}</span>
+                      <span style={{ fontSize: 12, color: "#1A1A1A" }}>{m.role}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -578,6 +587,130 @@ function DeleteConfirmModal({ teamName, onClose, onConfirm }: { teamName: string
   );
 }
 
+// ── 外部 Claw 卡片（按 Figma 设计稿 340×168） ────────────────
+function ExternalClawCard({ avatar, name, desc, connected, buttonLabel, onButtonClick, onDisconnect, onDelete }: {
+  avatar: React.ReactNode;
+  name: string;
+  desc: string;
+  connected: boolean;
+  buttonLabel: string;
+  onButtonClick?: () => void;
+  onDisconnect?: () => void;
+  onDelete?: () => void;
+}) {
+  const [h, setH] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
+      style={{
+        width: 340, height: 168, background: C.bgWhite, borderRadius: 16,
+        border: `1px solid ${C.border}`, padding: 20,
+        display: "flex", flexDirection: "column",
+        cursor: "default", transition: "box-shadow 150ms",
+        boxShadow: h ? C.hoverShadow : "none",
+        overflow: "hidden", position: "relative",
+      }}
+    >
+      {/* Top row: avatar + info */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+        {avatar}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Name row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, height: 24, marginBottom: 4 }}>
+            <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
+            {connected && <ConnectedBadge />}
+            <div style={{ marginLeft: "auto", position: "relative" }} onClick={(e) => e.stopPropagation()}>
+              <div
+                onClick={() => setMenuOpen((v) => !v)}
+                style={{
+                  width: 24, height: 24, borderRadius: 20, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: menuOpen ? C.hoverBg : "transparent", transition: "background 100ms",
+                }}
+                onMouseEnter={(e) => { if (!menuOpen) (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                onMouseLeave={(e) => { if (!menuOpen) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="3" r="1.5" fill="rgba(0,0,0,0.5)" />
+                  <circle cx="8" cy="8" r="1.5" fill="rgba(0,0,0,0.5)" />
+                  <circle cx="8" cy="13" r="1.5" fill="rgba(0,0,0,0.5)" />
+                </svg>
+              </div>
+              {menuOpen && (
+                <>
+                  <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setMenuOpen(false)} />
+                  <div style={{
+                    position: "absolute", top: 28, right: 0, zIndex: 100,
+                    minWidth: 140, background: C.bgWhite, borderRadius: 8,
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)", border: `1px solid ${C.border}`,
+                    padding: "4px 0", overflow: "hidden",
+                  }}>
+                    {connected && onDisconnect && (
+                      <div
+                        onClick={() => { setMenuOpen(false); onDisconnect(); }}
+                        style={{
+                          padding: "8px 16px", cursor: "pointer",
+                          fontFamily: FONT, fontSize: 14, fontWeight: 400,
+                          color: C.textPrimary, transition: "background 100ms",
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                      >取消链接</div>
+                    )}
+                    <div
+                      onClick={() => { setMenuOpen(false); onDelete?.(); }}
+                      style={{
+                        padding: "8px 16px", cursor: "pointer",
+                        fontFamily: FONT, fontSize: 14, fontWeight: 400,
+                        color: C.textPrimary, transition: "background 100ms",
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                    >删除外部 Claw</div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          {/* Description (2 lines) */}
+          <div style={{
+            fontSize: 14, fontWeight: 400, color: C.textPrimary, lineHeight: "20px",
+            height: 48, overflow: "hidden", display: "-webkit-box",
+            WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
+          }}>{desc}</div>
+        </div>
+      </div>
+
+      {/* Button: aligned with text area (offset 60px = 48 avatar + 12 gap) */}
+      <div style={{ marginLeft: 60 }}>
+        <button
+          onClick={onButtonClick}
+          style={{
+            width: 240, height: 40, borderRadius: 100,
+            border: "1px solid #E9EBF0",
+            background: "transparent",
+            fontFamily: FONT, fontSize: 14, fontWeight: 500,
+            color: C.textPrimary,
+            cursor: "pointer", outline: "none",
+            transition: "background 100ms",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = C.hoverBg; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+        >
+          {connected && (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3.55 13.75L4.2 13.63L3.55 13.75ZM2.4 12L1.9 12.45L2.4 12ZM3.28 13.05L2.71 13.39L3.28 13.05ZM4.28 15.06L4.61 15.64L4.28 15.06ZM3.89 15.24L3.89 14.57L3.89 15.24ZM3.62 15.08L4.2 14.75L3.62 15.08ZM7.43 14.44L7.38 15.11L7.43 14.44ZM5.7 14.38L5.58 13.73L5.7 14.38ZM4.43 14.97L4.1 14.39L4.43 14.97ZM5.5 14.43L5.32 13.79L5.5 14.43ZM8 1V1.67C11.68 1.67 14.59 4.43 14.59 7.73H15.25H15.92C15.92 3.6 12.32 0.34 8 0.34V1ZM15.25 7.73H14.59C14.59 11.04 11.68 13.8 8 13.8V14.46V15.13C12.32 15.13 15.92 11.86 15.92 7.73H15.25ZM8 14.46V13.8C7.82 13.8 7.65 13.79 7.48 13.78L7.43 14.44L7.38 15.11C7.58 15.12 7.79 15.13 8 15.13V14.46ZM2.4 12L2.9 11.56C1.97 10.51 1.42 9.18 1.42 7.73H0.75H0.09C0.09 9.53 0.77 11.17 1.9 12.45L2.4 12ZM0.75 7.73H1.42C1.42 4.43 4.32 1.67 8 1.67V1V0.34C3.68 0.34 0.09 3.6 0.09 7.73H0.75ZM5 7.5V8.17H8V7.5V6.84H5V7.5ZM8 7.5V8.17H11V7.5V6.84H8V7.5ZM8 4.5H7.34V7.5H8H8.67V4.5H8ZM8 7.5H7.34V10.5H8H8.67V7.5H8Z" fill="rgba(0,0,0,0.9)"/>
+            </svg>
+          )}
+          {connected ? "对话" : buttonLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── 创建外部 Claw 弹窗 ───────────────────────────────────────
 const PLATFORMS = [
   { id: "lh", label: "Lighthouse", abbr: "LH", bg: "#E59858" },
@@ -625,7 +758,7 @@ function CreateExternalClawDialog({ open, onClose, onCreate }: {
           >
             {/* Header */}
             <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建外部 Claw</span>
+              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>连接外部 Claw</span>
               <div onClick={onClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
@@ -779,6 +912,35 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
 }
 
 // ── 数字分身三点菜单（Figma: 152x82 圆角16） ─────────────────
+function ExpertDetailMenu({ onDetail }: { onDetail: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
+      <div onClick={() => setOpen((v) => !v)}
+        style={{ width: 24, height: 24, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: open ? C.hoverBg : "transparent", transition: "background 100ms" }}
+        onMouseEnter={(e) => { if (!open) (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+        onMouseLeave={(e) => { if (!open) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="3" r="1.5" fill="rgba(0,0,0,0.5)" /><circle cx="8" cy="8" r="1.5" fill="rgba(0,0,0,0.5)" /><circle cx="8" cy="13" r="1.5" fill="rgba(0,0,0,0.5)" />
+        </svg>
+      </div>
+      {open && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setOpen(false)} />
+          <div style={{ position: "absolute", top: 28, right: 0, zIndex: 100, width: 120, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", padding: 8 }}>
+            <div onClick={() => { setOpen(false); onDetail(); }}
+              style={{ padding: "5px 8px", borderRadius: 8, cursor: "pointer", fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, transition: "background 100ms" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+            >查看详情</div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function AvatarMoreMenu({ onDetail, onDelete }: { onDetail: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
   return (
@@ -826,10 +988,14 @@ function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
   const cancel = () => { setForm({ ...data, tags: [...data.tags], skills: data.skills.map((s) => ({ ...s })) }); setEditingField(null); };
 
   const editIcon = (field: string) => (
-    <div onClick={() => setEditingField(field)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", padding: 2, borderRadius: 4, marginLeft: 6, transition: "background 100ms" }}
+    <div onClick={() => setEditingField(field)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: 6, marginLeft: 6, transition: "background 100ms", flexShrink: 0 }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-    ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 1.5l2 2-8 8H2.5v-2l8-8z" stroke="rgba(0,0,0,0.35)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path fillRule="evenodd" clipRule="evenodd" d="M12.9961 12.9277H6.34765V11.7637H12.9961V12.9277ZM8.51367 1.29687C8.88733 0.992206 9.42616 0.992173 9.7998 1.29687L9.87793 1.36621L11.7139 3.20312C12.1117 3.60121 12.1118 4.24653 11.7139 4.64453L4.70605 11.6523C4.56284 11.7955 4.3794 11.8926 4.18066 11.9316L1.92383 12.375C1.21758 12.5135 0.593333 11.8961 0.724608 11.1885L1.14844 8.9082L1.1875 8.75878C1.2378 8.61418 1.32049 8.48224 1.42969 8.37304L8.43555 1.36621L8.51367 1.29687ZM2.2832 9.16503L1.90723 11.1914L3.91308 10.7978L8.91504 5.79492L7.28418 4.1621L2.2832 9.16503ZM8.10742 3.33984L9.73828 4.97167L10.7881 3.92285L9.15625 2.29101L8.10742 3.33984Z" fill="rgba(0,0,0,0.7)" />
+      </svg>
+    </div>
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -865,62 +1031,80 @@ function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 28px", display: "flex", flexDirection: "column", gap: 20, scrollbarWidth: "none" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 28px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
           {/* 名称 */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: 0 }}>
-            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 90 }}>数字分身名称</span>
-            <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 32 }}>
+            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 100 }}>数字分身名称</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
               {editingField === "name" ? (
                 <input autoFocus value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} style={inputStyle}
                   onKeyDown={handleKeyDown} onBlur={save} />
               ) : (
-                <span style={{ fontSize: 14, fontWeight: 500, color: C.textPrimary }}>{data.name}{editIcon("name")}</span>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: C.textPrimary }}>{data.name}</span>
+                  {editIcon("name")}
+                </div>
               )}
             </div>
           </div>
 
           {/* 描述 */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: 0 }}>
-            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 90 }}>描述</span>
-            <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minHeight: 32 }}>
+            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 100, paddingTop: 2 }}>描述</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
               {editingField === "desc" ? (
                 <textarea autoFocus value={form.desc} onChange={(e) => setForm((f) => ({ ...f, desc: e.target.value }))} rows={2}
                   style={{ ...inputStyle, resize: "none" }} onKeyDown={handleKeyDown} onBlur={save} />
               ) : (
-                <span style={{ fontSize: 14, color: C.textPrimary, lineHeight: "22px" }}>{data.desc}{editIcon("desc")}</span>
+                <div style={{ display: "flex", alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 14, color: C.textPrimary, lineHeight: "22px" }}>{data.desc || <span style={{ color: C.textDisabled }}>暂无描述</span>}</span>
+                  {editIcon("desc")}
+                </div>
               )}
             </div>
           </div>
 
           {/* 标签 */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: 0 }}>
-            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 90 }}>标签</span>
-            <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 32 }}>
+            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 100 }}>标签</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
               {editingField === "tags" ? (
                 <input autoFocus value={form.tags.join("、")} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value.split("、").map((s) => s.trim()).filter(Boolean) }))}
                   placeholder="用「、」分隔" style={inputStyle} onKeyDown={handleKeyDown} onBlur={save} />
               ) : (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  {data.tags.map((t) => (<span key={t} style={{ fontSize: 13, padding: "3px 12px", borderRadius: 6, background: "#F2F4F8", color: C.textPrimary, border: `1px solid ${C.border}` }}>{t}</span>))}
+                  {data.tags.length > 0 ? data.tags.map((t) => (
+                    <span key={t} style={{ fontSize: 13, padding: "2px 10px", borderRadius: 6, background: "#F2F4F8", color: C.textPrimary, border: `1px solid ${C.border}`, lineHeight: "20px" }}>{t}</span>
+                  )) : <span style={{ fontSize: 14, color: C.textDisabled }}>暂无标签</span>}
                   {editIcon("tags")}
                 </div>
               )}
             </div>
           </div>
 
-          {/* 已关联技能 */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 0 }}>
-            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 90, paddingTop: 10 }}>已关联技能</span>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* 技能 */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 100, paddingTop: 12 }}>技能</span>
+            <div style={{ flex: 1, minWidth: 0, background: "#F7F8FB", borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* 标题行 */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 13, color: C.textTertiary }}>已配置{data.skills.length}条技能</span>
+                <span onClick={() => { onClose(); onConfigSkill?.(); }}
+                  style={{ fontSize: 14, fontWeight: 500, color: "#1664FF", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                >去配置</span>
+              </div>
+              {/* 技能列表 + Toggle */}
               {data.skills.map((s) => (
-                <div key={s.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderRadius: 8, background: "#FAFBFC", border: `1px solid ${C.border}` }}>
-                  <span style={{ fontSize: 14, color: C.textPrimary }}>{s.name}</span>
-                  <span style={{ fontSize: 13, color: C.brandCyan, fontWeight: 500 }}>已启用</span>
+                <div key={s.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 12, background: C.bgWhite, border: `1px solid ${C.border}` }}>
+                  <span style={{ fontSize: 14, fontWeight: 400, color: C.textPrimary }}>{s.name}</span>
+                  <div style={{ width: 40, height: 22, borderRadius: 11, background: s.enabled ? "#7B9EFF" : "#D6DBE3", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background 200ms" }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 9, background: "#FFFFFF", position: "absolute", top: 2, left: s.enabled ? 20 : 2, boxShadow: "0 1px 3px rgba(0,0,0,0.15)", transition: "left 200ms" }} />
+                  </div>
                 </div>
               ))}
-              <span onClick={() => { onClose(); onConfigSkill?.(); }}
-                style={{ fontSize: 13, color: "#1664FF", cursor: "pointer", fontWeight: 500, marginTop: 2 }}
-              >配置技能</span>
+              {data.skills.length === 0 && (
+                <span style={{ fontSize: 13, color: C.textTertiary }}>暂无已配置技能</span>
+              )}
             </div>
           </div>
         </div>
@@ -1009,6 +1193,11 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
   // Lighthouse 连接状态: "disconnected" | "connecting" | "connected" | "disconnecting"
   const [lh1State, setLh1State] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [lh2State, setLh2State] = useState<"connected" | "disconnecting" | "disconnected">("connected");
+  // 删除外部 Claw 确认弹窗
+  const [deletingClawId, setDeletingClawId] = useState<string | null>(null);
+  const [deletingClawName, setDeletingClawName] = useState("");
+  // 查看大数据专家详情
+  const [viewingExpert, setViewingExpert] = useState<{ name: string; desc: string; skills: string[] } | null>(null);
 
   return (
     <div style={{
@@ -1052,16 +1241,19 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
             avatar={<AvatarCircle src="/icons/claw-mgr/7.svg" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Rigel·数据开发专家</span>}
             desc="从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持"
+            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Rigel·数据开发专家", desc: "从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持", skills: ["需求转数据模型", "生成调度方案", "自动数仓开发", "检测管道异常", "接入数据源", "优化任务性能"] })} />}
           />
           <Card
             avatar={<AvatarCircle src="/icons/claw-mgr/10.svg" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Vega·数据分析专家</span>}
             desc="从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持"
+            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Vega·数据分析专家", desc: "从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持", skills: ["自然语言取数", "智能趋势分析", "多维数据洞察", "生成数据报告", "异常归因", "指标拆解"] })} />}
           />
           <Card
             avatar={<AvatarCircle src="/icons/claw-mgr/13.svg" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Orion·数据运维专家</span>}
             desc="从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持"
+            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Orion·数据运维专家", desc: "从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持", skills: ["监测数据质量", "智能血缘维护", "自动管理元数据", "识别口径冲突", "安全脱敏", "标签治理"] })} />}
           />
         </div>
 
@@ -1092,69 +1284,55 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         {/* 外部 Claw */}
         <SectionTitle title="外部 Claw" desc="连接外部AI平台的Agent" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 24px", flexWrap: "wrap", alignItems: "stretch" }}>
-          <Card
-            avatar={<AvatarCircle letter="L" bg="#3BAFB9" />}
-            name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Lighthouse</span>}
+          <ExternalClawCard
+            avatar={<AvatarCircle letter="L" bg="#0BD1E2" />}
+            name="Lighthouse"
             desc="腾讯云轻量应用服务器，一键连接云端实例"
-            button={
-              lh1State === "connecting" ? (
-                <DialogBtn label="连接中..." icon={false} />
-              ) : lh1State === "connected" ? (
-                <DialogBtn label="已连接" icon={false} />
-              ) : (
-                <div onClick={() => { setLh1State("connecting"); setTimeout(() => { setLh1State("connected"); showToast("连接成功", "success"); }, 1500); }}>
-                  <DialogBtn label="连接" icon={false} />
-                </div>
-              )
-            }
-            badge={lh1State === "connected" ? <ConnectedBadge /> : undefined}
+            connected={lh1State === "connected"}
+            buttonLabel={lh1State === "connecting" ? "连接中..." : "连接"}
+            onButtonClick={() => {
+              if (lh1State === "disconnected") { setLh1State("connecting"); setTimeout(() => { setLh1State("connected"); showToast("连接成功", "success"); }, 1500); }
+            }}
+            onDisconnect={() => { setLh1State("disconnected"); showToast("已断开连接", "success"); }}
+            onDelete={() => { setDeletingClawId("lh1"); setDeletingClawName("Lighthouse"); }}
           />
-          <Card
-            avatar={<AvatarCircle letter="L" bg="#7B68EE" />}
-            name={<>
-              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Lighthouse</span>
-              {lh2State === "connected" && <ConnectedBadge />}
-            </>}
+          <ExternalClawCard
+            avatar={<AvatarCircle letter="L" bg="#8A77FF" />}
+            name="Lighthouse"
             desc="腾讯云轻量应用服务器，一键连接云端实例"
-            button={
-              lh2State === "disconnecting" ? (
-                <DialogBtn label="断开中..." icon={false} />
-              ) : lh2State === "connected" ? (
-                <div onClick={() => { setLh2State("disconnecting"); setTimeout(() => { setLh2State("disconnected"); showToast("已断开连接", "success"); }, 1500); }}>
-                  <DialogBtn label="取消连接" icon={false} />
-                </div>
-              ) : (
-                <div onClick={() => { setLh2State("disconnecting"); setTimeout(() => { setLh2State("connected"); showToast("连接成功", "success"); }, 1500); }}>
-                  <DialogBtn label="连接" icon={false} />
-                </div>
-              )
-            }
+            connected={lh2State === "connected"}
+            buttonLabel={lh2State === "disconnecting" ? "断开中..." : "连接"}
+            onButtonClick={() => {
+              if (lh2State === "disconnected") { setLh2State("disconnecting"); setTimeout(() => { setLh2State("connected"); showToast("连接成功", "success"); }, 1500); }
+            }}
+            onDisconnect={() => { setLh2State("disconnecting"); setTimeout(() => { setLh2State("disconnected"); showToast("已断开连接", "success"); }, 1500); }}
+            onDelete={() => { setDeletingClawId("lh2"); setDeletingClawName("Lighthouse"); }}
           />
           {/* 自定义外部 Claw */}
           {customClaws.map((c) => (
-            <Card
+            <ExternalClawCard
               key={c.id}
               avatar={<AvatarCircle letter={c.abbr} bg={c.bg} />}
-              name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{c.name}</span>}
+              name={c.name}
               desc={`${c.platformLabel} · ${c.apiUrl}`}
-              button={<DialogBtn label="对话" />}
+              connected={false}
+              buttonLabel="连接"
             />
           ))}
-          <CreateCard label="创建外部 Claw" onClick={() => setShowCreateExternalClaw(true)} />
+          <CreateCard label="连接外部 Claw" onClick={() => setShowCreateExternalClaw(true)} />
         </div>
       </div>
 
       {/* 创建团队弹窗 */}
       <CreateTeamDialog open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreate} />
 
-      {/* 成员管理弹窗 */}
+      {/* 团队详情弹窗 */}
       <AnimatePresence>
         {managingTeam && (
-          <MemberManageModal
-            teamName={managingTeam.name}
-            members={managingTeam.members}
+          <TeamDetailModal
+            team={managingTeam}
             onClose={() => setManagingTeamId(null)}
-            onSave={(members) => handleSaveMembers(managingTeam.id, members)}
+            onSave={(updated) => { setCustomTeams((prev) => prev.map((t) => t.id === updated.id ? updated : t)); setManagingTeamId(null); showToast("团队信息已保存", "success"); }}
           />
         )}
       </AnimatePresence>
@@ -1274,6 +1452,110 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
                 <button onClick={() => setDeletingAvatarId(null)} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
                 <button onClick={() => { setCustomAvatars((prev) => prev.filter((a) => a.id !== deletingAvatarId)); setDeletingAvatarId(null); showToast("数字分身已删除", "success"); }} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: "none", background: C.error, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>确认删除</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 删除外部 Claw 确认弹窗 */}
+      <AnimatePresence>
+        {deletingClawId && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }} onClick={() => setDeletingClawId(null)}
+            style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
+              style={{ width: 420, background: C.bgWhite, borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", fontFamily: FONT, padding: "28px 28px 24px", position: "relative" }}
+            >
+              <div onClick={() => setDeletingClawId(null)} style={{ position: "absolute", top: 16, right: 16, width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 100ms" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+              ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingRight: 32 }}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill={C.error} /><path d="M10 6v5" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" /><circle cx="10" cy="14" r="0.75" fill="#FFF" /></svg>
+                <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除外部 Claw &quot;{deletingClawName}&quot;</span>
+              </div>
+              <div style={{ fontSize: 14, color: C.textSecondary, lineHeight: "22px", marginBottom: 24 }}>
+                此操作仅会将该外部 Claw 从当前列表中移除，不会删除 {deletingClawName} 平台上的实际资源。你可以随时重新连接。
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                <button onClick={() => setDeletingClawId(null)} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+                <button onClick={() => {
+                  if (deletingClawId === "lh1") { setLh1State("disconnected"); }
+                  else if (deletingClawId === "lh2") { setLh2State("disconnected"); }
+                  else { setCustomClaws((prev) => prev.filter((c) => c.id !== deletingClawId)); }
+                  setDeletingClawId(null);
+                  showToast("已从列表中移除", "success");
+                }} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: "none", background: C.error, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>确认删除</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 大数据专家详情弹窗 */}
+      <AnimatePresence>
+        {viewingExpert && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }} onClick={() => setViewingExpert(null)}
+            style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
+              style={{ width: 640, maxHeight: "80vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
+            >
+              {/* Header */}
+              <div style={{ padding: "24px 28px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>大数据专家详情</span>
+                <div onClick={() => setViewingExpert(null)} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "background 100ms" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
+              </div>
+
+              {/* Body */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 28px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
+                {/* 名称 */}
+                <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
+                  <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80 }}>名称</span>
+                  <span style={{ fontSize: 14, fontWeight: 400, color: C.textPrimary }}>{viewingExpert.name}</span>
+                </div>
+
+                {/* 描述 */}
+                <div style={{ display: "flex", alignItems: "flex-start", minHeight: 32 }}>
+                  <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80, paddingTop: 2 }}>描述</span>
+                  <span style={{ fontSize: 14, color: C.textPrimary, lineHeight: "22px" }}>{viewingExpert.desc}</span>
+                </div>
+
+                {/* 技能 */}
+                <div style={{ display: "flex", alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80, paddingTop: 12 }}>技能</span>
+                  <div style={{ flex: 1, minWidth: 0, background: "#F7F8FB", borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+                    {/* 标题行 */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 13, color: C.textTertiary }}>已配置{viewingExpert.skills.length}条技能</span>
+                      <span onClick={() => { setViewingExpert(null); onNavigateToSkillPlaza?.(); }}
+                        style={{ fontSize: 14, fontWeight: 500, color: "#1664FF", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                      >去配置</span>
+                    </div>
+                    {/* 技能列表 + Toggle */}
+                    {viewingExpert.skills.map((s) => (
+                      <div key={s} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 12, background: C.bgWhite, border: `1px solid ${C.border}` }}>
+                        <span style={{ fontSize: 14, fontWeight: 400, color: C.textPrimary }}>{s}</span>
+                        {/* Toggle 开关（纯展示，蓝色已开启） */}
+                        <div style={{ width: 40, height: 22, borderRadius: 11, background: "#7B9EFF", position: "relative", cursor: "default", flexShrink: 0 }}>
+                          <div style={{ width: 18, height: 18, borderRadius: 9, background: "#FFFFFF", position: "absolute", top: 2, left: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.15)", transition: "left 200ms" }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>

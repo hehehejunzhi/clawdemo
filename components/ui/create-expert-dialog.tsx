@@ -278,7 +278,7 @@ export default function CreateExpertDialog({ open, onClose }: CreateExpertDialog
                   onClick={() => setMode("digital")}
                 />
                 <ModeCard
-                  title="链接外部 Claw"
+                  title="连接外部 Claw"
                   desc="接入第三方 AI 服务（如 Lighthouse、ClawPro），扩展更多能力"
                   active={mode === "external"}
                   onClick={() => setMode("external")}
