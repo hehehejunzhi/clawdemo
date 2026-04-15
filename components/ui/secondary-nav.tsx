@@ -353,7 +353,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
                 fontFamily: FONT, fontSize: 18, fontWeight: 600,
                 lineHeight: "26px", color: C.textPrimary, whiteSpace: "nowrap",
               }}>
-                ClawTeam
+                TCClawTeam
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -447,7 +447,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               />
             )}
           >
-            <TaskItem status="loading" title="ETL 开发_订单数据同步流程项目" active={activeTaskId === "t1"} onClick={() => onTaskClick?.({ id: "t1", title: "ETL 开发_订单数据同步流程项目" })} />
+            <TaskItem status="loading" title="慢SQL查询与调优" active={activeTaskId === "t1"} onClick={() => onTaskClick?.({ id: "t1", title: "慢SQL查询与调优" })} />
             <TaskItem status="pending" title="统计近 7 天各渠道用户支付金额，按天汇总" active={activeTaskId === "t2"} onClick={() => onTaskClick?.({ id: "t2", title: "统计近 7 天各渠道用户支付金额，按天汇总" })} />
             <TaskItem status="check" title="接入业务库【订单表】数据源" active={activeTaskId === "t3"} onClick={() => onTaskClick?.({ id: "t3", title: "接入业务库【订单表】数据源" })} />
             <TaskItem status="check" title="接入业务库【用户表】数据源" active={activeTaskId === "t4"} onClick={() => onTaskClick?.({ id: "t4", title: "接入业务库【用户表】数据源" })} />

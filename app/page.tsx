@@ -100,7 +100,7 @@ interface TaskConversation {
 
 const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
   t1: {
-    title: "ETL 开发_订单数据同步流程项目",
+    title: "慢SQL查询与调优",
     userMsg: "帮我搭建订单数据从业务库到数仓的 ETL 同步流程",
     thinkingText: "收到需求，我来作为调度者拆解 ETL 同步任务并分派给团队成员",
     replies: [
@@ -1010,7 +1010,7 @@ export default function Home() {
                             lineHeight: "40px",
                             color: "#000",
                             whiteSpace: "nowrap",
-                          }}>ClawTeam</span>
+                          }}>TCClawTeam</span>
                           <span style={{
                             fontFamily: FONT,
                             fontSize: 32,

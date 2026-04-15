@@ -232,13 +232,6 @@ function SkillCard({ title, desc, defaultTag, on, onToggle, onCardClick }: {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontFamily: FONT, fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{title}</span>
-            {defaultTag && (
-              <span style={{
-                fontSize: 12, fontWeight: 400, color: "#0052D9",
-                background: "#F2F3FF", borderRadius: 9999, padding: "0 8px",
-                lineHeight: "20px", flexShrink: 0,
-              }}>默认</span>
-            )}
           </div>
           <div style={{ marginTop: 4, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textTertiary, lineHeight: "20px" }}>
             {desc}
@@ -340,6 +333,20 @@ function HubCard({ title, desc, willSucceed, onCardClick, onInstallResult }: {
   );
 }
 
+// ── 已安装的 Skill（SkillHub tab 上方展示） ───────────────────
+const INSTALLED_HUB_SKILLS = [
+  { title: "指标 SQL Copilot", desc: "自动生成指标查询 SQL 并做字段解释。", category: "数据分析", version: "3.0.1", author: "WeData Team" },
+  { title: "BI 图表生成", desc: "根据结果集输出趋势图、透视表和分析摘要。", category: "数据分析", version: "2.2.0", author: "WeData Team" },
+  { title: "数据抽样诊断", desc: "快速定位异常样本、空值和分布变化。", category: "数据治理", version: "1.1.0", author: "WeData Team" },
+  { title: "ETL 流水线编排", desc: "可视化拖拽构建数据加工 DAG，自动生成调度配置。", category: "数据开发", version: "1.0.0", author: "WeData Team" },
+  { title: "Schema 变更检测", desc: "实时监控上游表结构变化，自动预警并生成迁移脚本。", category: "数据开发", version: "1.1.0", author: "WeData Team" },
+  { title: "血缘分析引擎", desc: "自动追踪字段级血缘，输出影响面评估报告。", category: "数据治理", version: "2.0.0", author: "WeData Team" },
+  { title: "集群健康监控", desc: "实时监控 HDFS/YARN/Spark 集群健康状态。", category: "运维", version: "2.1.0", author: "WeData Team" },
+  { title: "异常归因分析", desc: "自动检测指标波动并定位根因维度。", category: "数据分析", version: "1.3.0", author: "WeData Team" },
+];
+
+const INSTALLED_COLLAPSE_COUNT = 6;
+
 const HUB_SKILLS = [
   { icon: "S", iconBg: "#7B68EE", title: "self-improving-agent", desc: "记录经验教训、错误及修正以实现持续改进。适用场景：命令或操作意外失败，用户纠正错误等。", category: "智能体", version: "1.2.0", author: "WeData Team", willSucceed: true },
   { icon: "F", iconBg: "#E59858", title: "Find Skills", desc: "帮助发现并安装智能体技能，当用户需要扩展功能时自动搜索匹配的 Skill。", category: "工具", version: "2.0.1", author: "WeData Team", willSucceed: false },
@@ -361,6 +368,9 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
   const [activeCat, setActiveCat] = useState("数据开发专家");
   const [activeTab, setActiveTab] = useState<"preset" | "hub">("preset");
   const [toggleState, setToggleState] = useState<Record<string, boolean>>({});
+  const [installedExpanded, setInstalledExpanded] = useState(false);
+  const [installedList, setInstalledList] = useState(INSTALLED_HUB_SKILLS.map((s) => s.title));
+  const [availableList, setAvailableList] = useState(HUB_SKILLS.map((s) => s.title));
 
   // 弹窗状态
   const [detailSkill, setDetailSkill] = useState<SkillDetail | null>(null);
@@ -459,7 +469,7 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
           <CatItem label="数据分析专家" active={activeCat === "数据分析专家"} onClick={() => handleCatChange("数据分析专家")} />
           <CatItem label="数据运维专家" active={activeCat === "数据运维专家"} onClick={() => handleCatChange("数据运维专家")} />
 
-          <SectionLabel label="外部 Claw" />
+          <SectionLabel label="数字分身" />
           <CatItem label="专家1" active={activeCat === "专家1"} onClick={() => handleCatChange("专家1")} />
         </div>
 
@@ -556,22 +566,93 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.2, ease: EASE }}
-                  style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}
+                  style={{ display: "flex", flexDirection: "column", gap: 0 }}
                 >
-                  {filteredHubSkills.length > 0 ? filteredHubSkills.map((s) => (
-                    <HubCard
-                      key={s.title}
-                      icon={s.icon} iconBg={s.iconBg}
-                      title={s.title} desc={s.desc}
-                      willSucceed={s.willSucceed}
-                      onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
-                      onInstallResult={(ok) => showToast(ok ? "Skill 安装成功" : "Skill 安装失败", ok ? "success" : "error")}
-                    />
-                  )) : (
-                    <div style={{ width: "100%", padding: "40px 0", textAlign: "center", fontFamily: FONT, fontSize: 14, color: C.textTertiary }}>
-                      未找到匹配的 Skill
+                  {/* ── 已安装区域 ── */}
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary }}>
+                      已安装（{installedList.length}）
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}>
+                    {(() => {
+                      const installedSkills = INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title))
+                        .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
+                      const visibleInstalled = installedExpanded ? installedSkills : installedSkills.slice(0, INSTALLED_COLLAPSE_COUNT);
+                      return (
+                        <>
+                          {visibleInstalled.map((s) => (
+                            <SkillCard
+                              key={`installed-${s.title}`}
+                              title={s.title} desc={s.desc}
+                              on={isOn(`hub-installed-${s.title}`)}
+                              onToggle={() => toggle(`hub-installed-${s.title}`)}
+                              onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                            />
+                          ))}
+                          {/* 新安装的 skill 也显示在这里 */}
+                          {HUB_SKILLS.filter((s) => installedList.includes(s.title) && !INSTALLED_HUB_SKILLS.some((i) => i.title === s.title))
+                            .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
+                            .map((s) => (
+                              <SkillCard
+                                key={`new-installed-${s.title}`}
+                                title={s.title} desc={s.desc}
+                                on={isOn(`hub-installed-${s.title}`)}
+                                onToggle={() => toggle(`hub-installed-${s.title}`)}
+                                onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                              />
+                            ))}
+                        </>
+                      );
+                    })()}
+                  </div>
+                  {/* 展开更多 */}
+                  {INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title)).length > INSTALLED_COLLAPSE_COUNT && (
+                    <div
+                      onClick={() => setInstalledExpanded((v) => !v)}
+                      style={{ textAlign: "center", padding: "12px 0 4px", cursor: "pointer" }}
+                    >
+                      <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 400, color: "rgba(0,0,0,0.4)" }}>
+                        {installedExpanded ? "收起" : "显示更多"}
+                      </span>
                     </div>
                   )}
+
+                  {/* ── 分割线 ── */}
+                  <div style={{ height: 1, background: C.border, margin: "16px 0" }} />
+
+                  {/* ── 可安装区域 ── */}
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary }}>可安装</span>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}>
+                    {(() => {
+                      const avail = HUB_SKILLS.filter((s) => availableList.includes(s.title) && !installedList.includes(s.title))
+                        .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
+                      return avail.length > 0 ? avail.map((s) => (
+                        <HubCard
+                          key={s.title}
+                          icon={s.icon} iconBg={s.iconBg}
+                          title={s.title} desc={s.desc}
+                          willSucceed={s.willSucceed}
+                          onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                          onInstallResult={(ok) => {
+                            if (ok) {
+                              setInstalledList((prev) => [...prev, s.title]);
+                              setAvailableList((prev) => prev.filter((t) => t !== s.title));
+                              showToast("Skill 安装成功", "success");
+                            } else {
+                              showToast("Skill 安装失败", "error");
+                            }
+                          }}
+                        />
+                      )) : (
+                        <div style={{ width: "100%", padding: "40px 0", textAlign: "center", fontFamily: FONT, fontSize: 14, color: C.textTertiary }}>
+                          暂无可安装的 Skill
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
