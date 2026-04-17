@@ -265,6 +265,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                   <style>{`
                     @keyframes dag-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
                     @keyframes dag-flow { 0% { stroke-dashoffset: 20; } 100% { stroke-dashoffset: 0; } }
+                    @keyframes dag-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
                   `}</style>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
                     {/* 接收用户需求 */}
@@ -624,29 +625,25 @@ function ArtifactItem({ artifact, onClick }: { artifact: Artifact; onClick?: () 
   );
 }
 
-// ── DAG components ──────────────────────────────────────────────
+// ── DAG components (redesigned per figma 13_39141) ──────────────
+
+const EDGE_COLOR = "#9EACBE";
+const EDGE_DASHED = "6 4";
 
 function DagNode({ label, status }: { label: string; status: "done" | "active" | "pending" }) {
   return (
     <div style={{
-      width: 140,
+      width: 120,
       height: 40,
       background: "#FFFFFF",
       borderRadius: 8,
-      border: `1px solid ${status === "active" ? "#00C8D6" : "#D6DBE3"}`,
+      border: `1px solid #D6DBE3`,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       position: "relative",
-      boxShadow: status === "active" ? "0 0 8px rgba(0,200,214,0.3)" : "none",
+      overflow: "hidden",
     }}>
-      {status === "active" && (
-        <div style={{
-          position: "absolute", inset: -2, borderRadius: 10,
-          border: "2px solid #00C8D6",
-          animation: "dag-pulse 2s ease-in-out infinite",
-        }} />
-      )}
       <span style={{
         fontSize: 14, fontWeight: 600,
         color: status === "pending" ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.9)",
@@ -657,40 +654,61 @@ function DagNode({ label, status }: { label: string; status: "done" | "active" |
   );
 }
 
-function DagArrow() {
+// Vertical arrow (solid or dashed)
+function DagArrow({ dashed = false }: { dashed?: boolean }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", height: 32 }}>
-      <svg width="2" height="32" viewBox="0 0 2 32">
-        <line x1="1" y1="0" x2="1" y2="28" stroke="#D6DBE3" strokeWidth="2" strokeDasharray="4 3" style={{ animation: "dag-flow 1s linear infinite" }} />
-        <polygon points="0,28 2,28 1,32" fill="#D6DBE3" />
+    <div style={{ display: "flex", justifyContent: "center", height: 40 }}>
+      <svg width="6" height="40" viewBox="0 0 6 40" fill="none">
+        <line x1="3" y1="0" x2="3" y2="35" stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={dashed ? EDGE_DASHED : "none"}>
+          {!dashed && (
+            <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1.5s" repeatCount="indefinite" />
+          )}
+        </line>
+        <path d="M3 40L5.887 35H0.113L3 40Z" fill={EDGE_COLOR} />
       </svg>
     </div>
   );
 }
 
-function DagArrowFan() {
+// Fan-out from center to 3 columns (uses figma curved connectors)
+function DagArrowFan({ leftDone, centerDone, rightDone }: { leftDone?: boolean; centerDone?: boolean; rightDone?: boolean }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", height: 40, position: "relative", width: "100%" }}>
-      <svg width="100%" height="40" viewBox="0 0 500 40" preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible" }}>
-        <line x1="250" y1="0" x2="250" y2="16" stroke="#D6DBE3" strokeWidth="2" />
-        <line x1="80" y1="16" x2="420" y2="16" stroke="#D6DBE3" strokeWidth="2" />
-        <line x1="80" y1="16" x2="80" y2="40" stroke="#D6DBE3" strokeWidth="2" />
-        <line x1="250" y1="16" x2="250" y2="40" stroke="#D6DBE3" strokeWidth="2" />
-        <line x1="420" y1="16" x2="420" y2="40" stroke="#D6DBE3" strokeWidth="2" />
+    <div style={{ position: "relative", width: "100%", height: 73 }}>
+      {/* Center line: straight down */}
+      <svg style={{ position: "absolute", left: "50%", transform: "translateX(-3px)", top: 0 }} width="6" height="73" viewBox="0 0 6 73" fill="none">
+        <line x1="3" y1="0" x2="3" y2="68" stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={centerDone ? "none" : EDGE_DASHED} />
+        <path d="M3 73L5.887 68H0.113L3 73Z" fill={EDGE_COLOR} />
+      </svg>
+      {/* Left branch: center → left card (curved) */}
+      <svg style={{ position: "absolute", left: 0, top: 0, width: "50%", height: 73 }} viewBox="0 0 230 73" fill="none" preserveAspectRatio="xMaxYMin meet">
+        <path d={`M229 0V12.5C229 26 218 37 204.5 37H25C11 37 0.5 47 0.5 60.5V68`} stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={leftDone ? "none" : EDGE_DASHED} fill="none" />
+        <path d="M3 73L5.887 68H0.113L3 73Z" fill={EDGE_COLOR} />
+      </svg>
+      {/* Right branch: center → right card (curved) */}
+      <svg style={{ position: "absolute", right: 0, top: 0, width: "50%", height: 73 }} viewBox="0 0 230 73" fill="none" preserveAspectRatio="xMinYMin meet">
+        <path d={`M1 0V12.5C1 26 12 37 25.5 37H204.5C218 37 228.5 47 228.5 60.5V68`} stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={rightDone ? "none" : EDGE_DASHED} fill="none" />
+        <path d="M227 73L229.887 68H224.113L227 73Z" fill={EDGE_COLOR} />
       </svg>
     </div>
   );
 }
 
-function DagArrowMerge() {
+// Merge from 3 columns back to center
+function DagArrowMerge({ leftDone, centerDone, rightDone }: { leftDone?: boolean; centerDone?: boolean; rightDone?: boolean }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", height: 40, position: "relative", width: "100%" }}>
-      <svg width="100%" height="40" viewBox="0 0 500 40" preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible" }}>
-        <line x1="80" y1="0" x2="80" y2="24" stroke="#D6DBE3" strokeWidth="2" />
-        <line x1="250" y1="0" x2="250" y2="24" stroke="#D6DBE3" strokeWidth="2" />
-        <line x1="420" y1="0" x2="420" y2="24" stroke="#D6DBE3" strokeWidth="2" />
-        <line x1="80" y1="24" x2="420" y2="24" stroke="#D6DBE3" strokeWidth="2" />
-        <line x1="250" y1="24" x2="250" y2="40" stroke="#D6DBE3" strokeWidth="2" />
+    <div style={{ position: "relative", width: "100%", height: 73 }}>
+      {/* Center line */}
+      <svg style={{ position: "absolute", left: "50%", transform: "translateX(-3px)", top: 0 }} width="6" height="73" viewBox="0 0 6 73" fill="none">
+        <line x1="3" y1="0" x2="3" y2="68" stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={centerDone ? "none" : EDGE_DASHED} />
+        <path d="M3 73L5.887 68H0.113L3 73Z" fill={EDGE_COLOR} />
+      </svg>
+      {/* Left merge */}
+      <svg style={{ position: "absolute", left: 0, top: 0, width: "50%", height: 73 }} viewBox="0 0 230 73" fill="none" preserveAspectRatio="xMaxYMin meet">
+        <path d={`M1 0V12.5C1 26 12 37 25.5 37H204.5C218 37 228.5 47 228.5 60.5V68`} stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={leftDone ? "none" : EDGE_DASHED} fill="none" />
+      </svg>
+      {/* Right merge */}
+      <svg style={{ position: "absolute", right: 0, top: 0, width: "50%", height: 73 }} viewBox="0 0 230 73" fill="none" preserveAspectRatio="xMinYMin meet">
+        <path d={`M229 0V12.5C229 26 218 37 204.5 37H25C11 37 0.5 47 0.5 60.5V68`} stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={rightDone ? "none" : EDGE_DASHED} fill="none" />
       </svg>
     </div>
   );
@@ -733,59 +751,133 @@ interface ExpertArtifactLink {
   id: string;
 }
 
+// Status icon per figma: green check (done), blue spinner (active), gray circle (pending)
+function TaskStatusIcon({ status }: { status: "done" | "active" | "pending" }) {
+  if (status === "done") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M13.9895 4.91888L6.91842 11.9899L2.67578 7.74731L3.61859 6.8045L6.91842 10.1043L13.0467 3.97607L13.9895 4.91888Z" fill="#0CBF5B" />
+      </svg>
+    );
+  }
+  if (status === "active") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: "dag-spin 1.2s linear infinite" }}>
+        <path opacity="0.9" d="M8.342 1.342C11.864 1.521 14.665 4.433 14.665 8H13.335C13.335 5.053 10.946 2.664 7.999 2.663C5.052 2.664 2.662 5.053 2.662 8C2.662 10.947 5.052 13.336 7.999 13.336V14.666L7.655 14.658C4.247 14.484 1.514 11.752 1.341 8.343L1.332 8C1.332 4.318 4.317 1.333 7.999 1.333L8.342 1.342Z" fill="#0052D9" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path fillRule="evenodd" clipRule="evenodd" d="M8 6C6.895 6 6 6.896 6 8C6 9.105 6.895 10 8 10C9.104 10 10 9.105 10 8C10 6.896 9.104 6 8 6ZM4.666 8C4.666 6.159 6.158 4.667 8 4.667C9.84 4.667 11.333 6.159 11.333 8C11.333 9.841 9.84 11.334 8 11.334C6.158 11.334 4.666 9.841 4.666 8Z" fill="black" fillOpacity="0.3" />
+    </svg>
+  );
+}
+
 function ExpertCard({ name, tasks, artifacts, onArtifactClick }: {
   name: string;
   tasks: ExpertTask[];
   artifacts?: ExpertArtifactLink[];
   onArtifactClick?: (id: string) => void;
 }) {
+  const [hoveredTask, setHoveredTask] = React.useState<number | null>(null);
+
   return (
     <div style={{
-      flex: 1,
+      width: 200,
+      flexShrink: 0,
       background: "#FFFFFF",
       borderRadius: 8,
       border: "1px solid #D6DBE3",
-      overflow: "hidden",
+      overflow: "visible",
+      position: "relative",
     }}>
+      {/* Expert name */}
       <div style={{ padding: "10px 12px 8px", fontSize: 14, fontWeight: 600, color: "rgba(0,0,0,0.9)" }}>
         {name}
       </div>
       <div style={{ margin: "0 12px", height: 1, background: "#E6E9EF" }} />
-      <div style={{ padding: "8px 12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-        {tasks.map((t) => (
-          <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 16, height: 16, flexShrink: 0, position: "relative" }}>
-              {t.status === "active" ? (
-                <div style={{ width: 16, height: 16, animation: "dag-pulse 1.5s ease-in-out infinite" }}>
-                  <img src={t.icon} alt="" style={{ width: 16, height: 16 }} />
-                </div>
-              ) : (
-                <img src={t.icon} alt="" style={{ width: 16, height: 16 }} />
-              )}
+
+      {/* Task list */}
+      <div style={{ padding: "8px 6px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+        {tasks.map((t, i) => (
+          <div
+            key={t.label}
+            onMouseEnter={() => setHoveredTask(i)}
+            onMouseLeave={() => setHoveredTask(null)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              height: 32,
+              padding: "0 6px",
+              borderRadius: 8,
+              background: hoveredTask === i && t.status === "done" ? "#F2F4F8" : "transparent",
+              cursor: t.status === "done" ? "pointer" : "default",
+              transition: "background 0.15s",
+              position: "relative",
+            }}
+          >
+            <div style={{ width: 16, height: 16, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <TaskStatusIcon status={t.status} />
             </div>
             <span style={{
-              fontSize: 14, fontWeight: 400,
+              flex: 1, fontSize: 14, fontWeight: 400,
               color: t.status === "pending" ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.9)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>
               {t.label}
             </span>
+            {/* Chevron for done items */}
+            {t.status === "done" && hoveredTask === i && (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                <path d="M5.39 11.667L9.057 8L5.39 4.333L6.333 3.39L10.943 8L6.333 12.61L5.39 11.667Z" fill="rgba(0,0,0,0.5)" />
+              </svg>
+            )}
+
+            {/* Hover popover with artifacts */}
+            {t.status === "done" && hoveredTask === i && artifacts && artifacts.length > 0 && (
+              <div style={{
+                position: "absolute",
+                left: "100%",
+                top: 0,
+                marginLeft: 8,
+                width: 200,
+                background: "#FFFFFF",
+                borderRadius: 8,
+                border: "1px solid #E6E9EF",
+                boxShadow: "0px 4px 12px rgba(0,0,0,0.08)",
+                padding: "8px 0",
+                zIndex: 100,
+                pointerEvents: "auto",
+              }}>
+                <div style={{ padding: "0 12px 4px", fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
+                  产物
+                </div>
+                {artifacts.map((a) => (
+                  <div
+                    key={a.id}
+                    onClick={() => onArtifactClick?.(a.id)}
+                    style={{
+                      padding: "4px 12px",
+                      fontSize: 13,
+                      color: "rgba(0,0,0,0.9)",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#F2F4F8"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                  >
+                    {a.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
-      {/* Artifact text links */}
-      {artifacts && artifacts.length > 0 && (
-        <>
-          <div style={{ margin: "0 12px", height: 1, background: "#E6E9EF" }} />
-          <div style={{ padding: "8px 12px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
-            {artifacts.map((a) => (
-              <ArtifactTextLink key={a.id} label={a.label} onClick={() => onArtifactClick?.(a.id)} />
-            ))}
-          </div>
-        </>
-      )}
     </div>
   );
 }
