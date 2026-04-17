@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import ClaudeChatInput, { CHAT_INPUT_MOTION, type ChatInputHandle, type ChatInputPreviewState, type SkillChip } from "@/components/ui/claude-style-chat-input";
 import { AgentFanCards, type AgentCardPreviewState, type FanCardsConfig, DEFAULT_FAN_CONFIG, AGENT_CARD_MOTION } from "@/components/ui/agent-card";
-import HeroSection from "@/components/ui/hero-section";
+import HeroSection, { HERO_SECTION_MOTION } from "@/components/ui/hero-section";
 import MotionPanel, { MotionSelectButton, type MotionMode } from "@/components/ui/motion-panel";
 import MotionTargetOverlay from "@/components/ui/motion-target-overlay";
 import { IconCatalog, IconWorkflow, IconSQL, IconOps, IconMLExp } from "@/components/ui/wedata-icons";
@@ -629,6 +629,7 @@ export default function Home() {
   // 卡片参数配置
   const [fanConfig, setFanConfig] = useState<FanCardsConfig>(DEFAULT_FAN_CONFIG);
   const [chatInputConfig, setChatInputConfig] = useState<Record<string, number>>(CHAT_INPUT_MOTION.defaultConfig);
+  const [heroConfig, setHeroConfig] = useState<Record<string, number>>(HERO_SECTION_MOTION.defaultConfig);
   const [agentCardPreviewState, setAgentCardPreviewState] = useState<AgentCardPreviewState>("free");
   const [chatInputPreviewState, setChatInputPreviewState] = useState<ChatInputPreviewState>(
     (CHAT_INPUT_MOTION.defaultState as ChatInputPreviewState | undefined) ?? "default"
@@ -1132,6 +1133,16 @@ export default function Home() {
                 onClose={handleMotionPanelClose}
               />
             )}
+            {chatPhase === "welcome" && motionMode === "editing" && motionTarget === "hero-section" && (
+              <MotionPanel
+                targetLabel={HERO_SECTION_MOTION.label}
+                schema={HERO_SECTION_MOTION.schema}
+                config={heroConfig}
+                defaultConfig={HERO_SECTION_MOTION.defaultConfig}
+                onChange={(c) => setHeroConfig(c)}
+                onClose={handleMotionPanelClose}
+              />
+            )}
           </AnimatePresence>
           {/* 内容宽度容器 */}
           <div style={{
@@ -1197,12 +1208,12 @@ export default function Home() {
                         </div>
                         <div style={{ marginTop: -20 }}>
                           <MotionTargetOverlay
-                            targetId="agent-cards"
-                            targetLabel={AGENT_CARD_MOTION.label}
+                            targetId="hero-section"
+                            targetLabel={HERO_SECTION_MOTION.label}
                             isSelecting={motionMode === "selecting"}
                             onSelect={handleMotionSelect}
                           >
-                            <HeroSection />
+                            <HeroSection config={heroConfig} />
                           </MotionTargetOverlay>
                         </div>
                       </motion.div>
