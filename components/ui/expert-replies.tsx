@@ -817,7 +817,7 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
       )}
 
       {/* Lines */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 20 }}>
         {lines.map((line, i) => {
           if (i >= visibleLines) return null;
           return (

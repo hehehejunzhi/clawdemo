@@ -434,7 +434,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
         </div>
 
         {/* 下区：团队 & 专家列表（可折叠） */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 20 }}>
 
           {/* 大数据团队 */}
           <CollapsibleSection
