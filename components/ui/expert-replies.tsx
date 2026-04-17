@@ -426,6 +426,10 @@ interface ConfirmCardData {
 }
 
 function ConfirmCard({ data, onConfirm }: { data: ConfirmCardData; onConfirm?: () => void }) {
+  const [confirmed, setConfirmed] = React.useState(false);
+
+  if (confirmed) return null;
+
   return (
     <div style={{
       width: "100%",
@@ -450,7 +454,7 @@ function ConfirmCard({ data, onConfirm }: { data: ConfirmCardData; onConfirm?: (
       </div>
       <div style={{ marginTop: 16 }}>
         <button
-          onClick={onConfirm}
+          onClick={() => { setConfirmed(true); onConfirm?.(); }}
           style={{
           height: 44,
           padding: "0 20px",
@@ -490,7 +494,6 @@ function InlineFileTypeIcon({ ext }: { ext: string }) {
       width: 56, height: 56, flexShrink: 0,
       position: "relative", overflow: "hidden",
     }}>
-      <div style={{ position: "absolute", inset: 0, background: "#D9D9D9" }} />
       <div style={{
         position: "absolute", left: -0.47, top: 11,
         width: 42, height: 70,
@@ -515,7 +518,7 @@ function InlineFileTypeIcon({ ext }: { ext: string }) {
   );
 }
 
-// ── Inline Artifact Card (内联制品卡 — 精准还原设计稿 329_22983) ──
+// ── Inline Artifact Card (内联产物卡 — 精准还原设计稿 329_22983) ──
 interface ArtifactCardData {
   title: string;
   description: string;
@@ -540,7 +543,7 @@ function InlineArtifactCard({ artifact, onClick }: { artifact: ArtifactCardData;
       }}
     >
       {/* File icon — left:16 top:8 per Figma */}
-      <div style={{ position: "absolute", left: 16, top: 4 }}>
+      <div style={{ position: "absolute", left: 16, top: 8 }}>
         <InlineFileTypeIcon ext={artifact.iconType} />
       </div>
       {/* Text area — left:88 top:10 */}
@@ -574,7 +577,7 @@ function InlineArtifactCard({ artifact, onClick }: { artifact: ArtifactCardData;
   );
 }
 
-// ── Artifacts Section (制品展示区 — 精准还原设计稿 329_22983) ──
+// ── Artifacts Section (产物展示区 — 精准还原设计稿 329_22983) ──
 interface ArtifactsSectionData {
   count: number;
   items: ArtifactCardData[];
@@ -600,7 +603,7 @@ function ArtifactsSection({ data, onArtifactClick }: { data: ArtifactsSectionDat
           fontFamily: FONT, fontSize: 16, fontWeight: 400,
           lineHeight: "28px", color: T.primary,
         }}>
-          任务产生制品 ({data.count})
+          任务产生产物 ({data.count})
         </span>
       </div>
 
@@ -715,6 +718,8 @@ export interface ExpertLine {
   icon?: "arrow" | "check";
   text: string;
   tags?: string[];
+  /** Tags rendered inline after the text (same line) */
+  inlineTags?: string[];
   // Rich content blocks (rendered after text)
   toolCalls?: (string | { title: string; command?: string; result?: string })[];
   sqlBlock?: { title: string; code: string };
@@ -731,6 +736,10 @@ export interface ExpertReplyData {
   name: string;
   lines: ExpertLine[];
   delay?: number;
+  /** Show a horizontal divider before this expert reply block */
+  dividerBefore?: boolean;
+  /** Hide the expert name label for this reply block */
+  hideLabel?: boolean;
 }
 
 interface ExpertReplyProps extends ExpertReplyData {
@@ -749,7 +758,7 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
     if (instant) {
       setVisible(true);
       setVisibleLines(lines.length);
-      onAllLinesDone?.();
+      setTimeout(() => onAllLinesDone?.(), 0);
       return;
     }
     const t = setTimeout(() => setVisible(true), delay);
@@ -761,7 +770,7 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
     setVisibleLines((v) => {
       const next = v + 1;
       if (next >= lines.length) {
-        onAllLinesDone?.();
+        setTimeout(() => onAllLinesDone?.(), 0);
       }
       return next;
     });
@@ -830,21 +839,31 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
               {/* Bold text */}
               {line.boldText && <BoldText text={line.boldText} />}
 
-              {/* Text line */}
+              {/* Text line with optional inline tags */}
               {line.text && (
-                <span style={{
-                  fontFamily: FONT, fontSize: 16, fontWeight: 400,
-                  lineHeight: "28px", color: T.primary,
-                  textAlign: "justify",
-                  }}>
-                    {instant ? line.text : (
-                      <StreamText
-                        text={line.text}
-                        speed={25}
-                        onDone={i === visibleLines - 1 && !line.toolCalls && !line.sqlBlock && !line.table ? handleLineDone : undefined}
-                      />
-                    )}
-                  </span>
+                <div style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  flexWrap: "wrap",
+                  gap: 4,
+                }}>
+                  <span style={{
+                    fontFamily: FONT, fontSize: 16, fontWeight: 400,
+                    lineHeight: "28px", color: T.primary,
+                    textAlign: "justify",
+                    }}>
+                      {instant ? line.text : (
+                        <StreamText
+                          text={line.text}
+                          speed={25}
+                          onDone={i === visibleLines - 1 && !line.toolCalls && !line.sqlBlock && !line.table ? handleLineDone : undefined}
+                        />
+                      )}
+                    </span>
+                  {line.inlineTags && line.inlineTags.map((tag) => (
+                    <TagPill key={tag} label={tag} />
+                  ))}
+                </div>
               )}
 
               {/* Tags */}
@@ -1034,18 +1053,22 @@ export default function ExpertReplies({ instant = false, replies, onComplete, on
 
       {/* 专家回复 */}
       {data.map((reply, i) => (
-        <ExpertReply
-          key={i}
-          icon={reply.icon}
-          name={reply.name}
-          lines={reply.lines}
-          delay={reply.delay}
-          instant={instant}
-          onAllLinesDone={() => handleReplyComplete(i)}
-          onArtifactClick={onArtifactClick}
-          onConfirm={onConfirm}
-          hideLabel={allSameExpert && i > 0}
-        />
+        <React.Fragment key={i}>
+          {reply.dividerBefore && (
+            <div style={{ width: "100%", height: 1, background: "#E6E9EF" }} />
+          )}
+          <ExpertReply
+            icon={reply.icon}
+            name={reply.name}
+            lines={reply.lines}
+            delay={reply.delay}
+            instant={instant}
+            onAllLinesDone={() => handleReplyComplete(i)}
+            onArtifactClick={onArtifactClick}
+            onConfirm={onConfirm}
+            hideLabel={reply.hideLabel || (allSameExpert && i > 0)}
+          />
+        </React.Fragment>
       ))}
     </div>
   );

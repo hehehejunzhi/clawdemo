@@ -64,7 +64,7 @@ interface ArtifactGroup {
 
 const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
   {
-    expert: "数据运维专家过程制品",
+    expert: "数据运维专家过程产物",
     icon: "/icons/expert/25.svg",
     items: [
       { id: "1", title: "2025年6至7月各地区的复购率设计方案.html", description: "数据读取脚本 · 从源表读取原始数据" },
@@ -74,7 +74,7 @@ const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
     ],
   },
   {
-    expert: "数据开发专家过程制品",
+    expert: "数据开发专家过程产物",
     icon: "/icons/expert/17.svg",
     items: [
       { id: "5", title: "read_source_data.md", description: "数据读取脚本 · 从源表读取原始数据" },
@@ -98,7 +98,7 @@ interface ArtifactsPanelProps {
 // ── Component ────────────────────────────────────────────────────
 export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert = false }: ArtifactsPanelProps) {
   const [selectedArtifact, setSelectedArtifact] = React.useState<Artifact | null>(null);
-  const [activeTab, setActiveTab] = React.useState<"artifacts" | "overview" | "logs">("artifacts");
+  const [activeTab, setActiveTab] = React.useState<"artifacts" | "overview" | "logs">("overview");
 
   return (
     <AnimatePresence>
@@ -136,8 +136,8 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
             {/* Tabs */}
             <div style={{ display: "flex", alignItems: "center", gap: 24, height: "100%" }}>
               {([
-                { id: "artifacts", label: "产物" },
                 { id: "overview", label: "任务概览" },
+                { id: "artifacts", label: "产物" },
                 { id: "logs", label: "执行日志" },
               ] as const).map((tab) => (
                 <div
@@ -194,7 +194,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
           >
             {activeTab === "artifacts" && (
               <>
-                {MOCK_ARTIFACT_GROUPS.map((group) => (
+                {MOCK_ARTIFACT_GROUPS.filter((_, gi) => gi === 0 || phase >= 2).map((group) => (
                   <React.Fragment key={group.expert}>
                     {/* Group header — hidden in single expert mode */}
                     {!singleExpert && (

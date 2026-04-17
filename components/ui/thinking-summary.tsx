@@ -40,7 +40,7 @@ export default function ThinkingSummary({
       onClick={onClick}
       whileHover={onClick ? { opacity: 0.7 } : undefined}
     >
-      {/* 调度 Claw 标签 */}
+      {/* 首席专家标签 */}
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <div style={{
           width: 16, height: 16, borderRadius: 8,
@@ -56,7 +56,7 @@ export default function ThinkingSummary({
           fontSize: 12, fontWeight: 400,
           lineHeight: "20px", color: T.tertiary,
         }}>
-          调度 Claw
+          首席专家
         </span>
       </div>
 

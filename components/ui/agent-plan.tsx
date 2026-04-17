@@ -49,6 +49,8 @@ interface Task {
 }
 
 // ── Demo data ──────────────────────────────────────────────────
+const TOTAL_TASKS = 6; // figma 显示 x/6
+
 const initialTasks: Task[] = [
   {
     id: "1",
@@ -275,7 +277,7 @@ export default function Plan() {
               gap: 4, height: 24, padding: "0 6px", borderRadius: 6,
             }}>
               <span style={{ fontSize: 13, fontWeight: 400, lineHeight: "21px", color: T.tertiary, whiteSpace: "nowrap" }}>
-                {completedCount}/{tasks.length}
+                {completedCount}/{TOTAL_TASKS}
               </span>
               {headerOpen
                 ? <ChevronUp  style={{ width: 16, height: 16, color: T.tertiary }} />
@@ -341,9 +343,9 @@ export default function Plan() {
                           {/* Step title */}
                           <span style={{
                             flex: 1, minWidth: 0,
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: taskFontWeight(task.status),
-                            lineHeight: "28px",
+                            lineHeight: "22px",
                             color: taskTextColor(task.status),
                             textAlign: "justify",
                           }}>

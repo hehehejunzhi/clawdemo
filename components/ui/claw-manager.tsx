@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CreateTeamDialog from "./create-team-dialog";
 
@@ -222,14 +222,14 @@ function ConnectedBadge() {
 }
 
 // ── Main component ────────────────────────────────────────────
-type TeamMember = { id: string; name: string; abbr: string; abbrBg: string; category: string; role: "调度者" | "执行者" | "观察者"; statusColor: string };
+type TeamMember = { id: string; name: string; abbr: string; abbrBg: string; category: string; role: "调度者" | "执行者" | "观察者"; statusColor: string; avatar?: string };
 type CustomTeam = { id: string; name: string; desc: string; members: TeamMember[] };
 
 const ALL_AVAILABLE_MEMBERS: Omit<TeamMember, "role">[] = [
-  { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", statusColor: "#0CBF5B" },
-  { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", statusColor: "#0CBF5B" },
-  { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", statusColor: "#0CBF5B" },
-  { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#E8524A", category: "数字分身", statusColor: "#FF7800" },
+  { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/2a.png" },
+  { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/3a.png" },
+  { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/1a.png" },
+  { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#E8524A", category: "数字分身", statusColor: "#FF7800", avatar: "/agents/4a.png" },
   { id: "lh", name: "Lighthouse", abbr: "LH", abbrBg: "#FF7800", category: "外部 Claw", statusColor: "#0CBF5B" },
   { id: "cp", name: "ClawPro", abbr: "CP", abbrBg: "#1664FF", category: "外部 Claw", statusColor: "#0CBF5B" },
   { id: "gp", name: "ChatGPT Plugin", abbr: "GP", abbrBg: "#00B96B", category: "外部 Claw", statusColor: "#0CBF5B" },
@@ -289,73 +289,20 @@ function MoreMenu({ onManage, onDelete }: { onManage: () => void; onDelete: () =
   );
 }
 
-// ── 角色选择下拉 ──────────────────────────────────────────────
-function RoleSelect({ value, onChange }: { value: string; onChange: (v: "调度者" | "执行者" | "观察者") => void }) {
-  const [open, setOpen] = useState(false);
-  const roles: ("调度者" | "执行者" | "观察者")[] = ["调度者", "执行者", "观察者"];
-  return (
-    <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
-      <div
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
-          borderRadius: 6, border: `1px solid ${C.border}`, cursor: "pointer",
-          fontSize: 13, fontWeight: 400, color: C.textPrimary, background: C.bgWhite,
-          fontFamily: FONT, whiteSpace: "nowrap",
-        }}
-      >
-        {value}
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M3 5l3 3 3-3" stroke="rgba(0,0,0,0.4)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-      {open && (
-        <>
-          <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={() => setOpen(false)} />
-          <div style={{
-            position: "absolute", top: 32, right: 0, zIndex: 200,
-            minWidth: 100, background: C.bgWhite, borderRadius: 8,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.12)", border: `1px solid ${C.border}`,
-            padding: "4px 0",
-          }}>
-            {roles.map((r) => (
-              <div
-                key={r}
-                onClick={() => { onChange(r); setOpen(false); }}
-                style={{
-                  padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-                  fontFamily: FONT, fontSize: 13, color: C.textPrimary,
-                  background: r === value ? "rgba(22,100,255,0.06)" : "transparent",
-                  fontWeight: r === value ? 500 : 400,
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = r === value ? "rgba(22,100,255,0.06)" : "transparent"; }}
-              >
-                {r === value && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5L10 3" stroke="#1664FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                {r}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+
 
 // ── 团队详情弹窗（查看+编辑成员） ─────────────────────────────
 function TeamDetailModal({ team, onClose, onSave }: {
   team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void;
 }) {
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [editingMembers, setEditingMembers] = useState(false);
   const [formName, setFormName] = useState(team.name);
   const [formDesc, setFormDesc] = useState(team.desc);
   const [formTags, setFormTags] = useState<string[]>([]);
   const [localMembers, setLocalMembers] = useState<TeamMember[]>(() => [...team.members]);
   const [showAddPanel, setShowAddPanel] = useState(false);
-
-  const existingIds = new Set(localMembers.map((m) => m.id));
-  const addableMembers = ALL_AVAILABLE_MEMBERS.filter((m) => !existingIds.has(m.id));
+  const [pendingAdd, setPendingAdd] = useState<Set<string>>(new Set());
+  const addBtnRef = useRef<HTMLDivElement>(null);
 
   const saveField = () => { setEditingField(null); };
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -367,6 +314,9 @@ function TeamDetailModal({ team, onClose, onSave }: {
     onSave({ ...team, name: formName || team.name, desc: formDesc || team.desc, members: localMembers });
   };
 
+  // 设计稿文案：去掉"大数据"前缀，保留"专家"
+  const shortName = (name: string) => name.replace(/^大数据/, "");
+
   const editIcon = (field: string) => (
     <div onClick={() => setEditingField(field)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: 6, marginLeft: 6, transition: "background 100ms", flexShrink: 0 }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
@@ -376,33 +326,49 @@ function TeamDetailModal({ team, onClose, onSave }: {
     </div>
   );
 
-  const LABEL_W = 91;
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: C.textTertiary, flexShrink: 0, width: LABEL_W };
+  /* 设计稿尺寸: label 64px宽, 值从 left:72 起 (gap 8px) */
+  const LABEL_W = 64;
+  const GAP = 8;
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: C.textTertiary, flexShrink: 0, width: LABEL_W, marginRight: GAP };
   const inputStyle: React.CSSProperties = { width: "100%", padding: "5px 10px", borderRadius: 3, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box" as const };
+
+  const existingIds = new Set(localMembers.map((m) => m.id));
+
+  const handleConfirmAdd = () => {
+    const newMembers = ALL_AVAILABLE_MEMBERS
+      .filter((m) => pendingAdd.has(m.id) && !existingIds.has(m.id))
+      .map((m): TeamMember => ({ ...m, role: "执行者" }));
+    if (newMembers.length > 0) {
+      setLocalMembers((prev) => [...prev, ...newMembers]);
+    }
+    setPendingAdd(new Set());
+    setShowAddPanel(false);
+    setTimeout(() => handleSaveAll(), 0);
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={onClose}
       style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <motion.div initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
-        style={{ width: 640, maxHeight: "85vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column" }}>
 
-        {/* Header */}
-        <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        {/* Header: padding 24px, title + close, 间距到 body = 20px (padding-bottom 16px + body gap 4px ≈ 20) */}
+        <div style={{ padding: "24px 24px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>团队详情</span>
-          <div onClick={onClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
+          <div onClick={onClose} style={{ width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-          ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
+          ><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M7.99994 8.94275L11.5354 12.4782L12.4782 11.5354L8.94275 7.99994L12.4782 4.46445L11.5354 3.52165L7.99994 7.05713L4.46429 3.52148L3.52148 4.46429L7.05713 7.99994L3.52155 11.5355L4.46436 12.4783L7.99994 8.94275Z" fill="rgba(0,0,0,0.9)" /></svg></div>
         </div>
 
-        {/* Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16, scrollbarWidth: "none" }}>
-          {/* 团队名称 */}
-          <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
-            <span style={labelStyle}>团队名称</span>
+        {/* Body: 设计稿行间距 16px */}
+        <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* 团队名称: 行高 32px, label paddingTop 6px 垂直居中 */}
+          <div style={{ display: "flex", alignItems: "center", height: 32 }}>
+            <span style={{ ...labelStyle, paddingTop: 6 }}>团队名称</span>
             {editingField === "name" ? (
-              <input autoFocus value={formName} onChange={(e) => setFormName(e.target.value)} style={{ ...inputStyle, width: 300 }} onKeyDown={handleKeyDown} onBlur={saveField} />
+              <input autoFocus value={formName} onChange={(e) => setFormName(e.target.value)} style={{ ...inputStyle, flex: 1, height: 32 }} onKeyDown={handleKeyDown} onBlur={saveField} />
             ) : (
               <div style={{ display: "flex", alignItems: "center" }}>
                 <span style={{ fontSize: 12, color: C.textPrimary }}>{formName}</span>
@@ -411,11 +377,11 @@ function TeamDetailModal({ team, onClose, onSave }: {
             )}
           </div>
 
-          {/* 描述 */}
-          <div style={{ display: "flex", alignItems: "flex-start", minHeight: 20 }}>
+          {/* 描述: 行高 20px */}
+          <div style={{ display: "flex", alignItems: "flex-start" }}>
             <span style={labelStyle}>描述</span>
             {editingField === "desc" ? (
-              <textarea autoFocus value={formDesc} onChange={(e) => setFormDesc(e.target.value)} rows={2} style={{ ...inputStyle, resize: "none" }} onKeyDown={handleKeyDown} onBlur={saveField} />
+              <textarea autoFocus value={formDesc} onChange={(e) => setFormDesc(e.target.value)} rows={2} style={{ ...inputStyle, flex: 1, resize: "none" }} onKeyDown={handleKeyDown} onBlur={saveField} />
             ) : (
               <div style={{ display: "flex", alignItems: "flex-start" }}>
                 <span style={{ fontSize: 12, color: C.textPrimary, lineHeight: "20px" }}>{formDesc || "暂无描述"}</span>
@@ -424,87 +390,126 @@ function TeamDetailModal({ team, onClose, onSave }: {
             )}
           </div>
 
-          {/* 标签 */}
-          <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
-            <span style={labelStyle}>标签</span>
+          {/* 标签: 行高 32px, pill height 24px, border-radius 100px, padding 0 9px */}
+          <div style={{ display: "flex", alignItems: "center", height: 32 }}>
+            <span style={{ ...labelStyle, paddingTop: 6 }}>标签</span>
             {editingField === "tags" ? (
               <input autoFocus value={formTags.join("、")} onChange={(e) => setFormTags(e.target.value.split(/[,，、]/).map((s) => s.trim()).filter(Boolean))}
-                placeholder="用逗号分隔" style={{ ...inputStyle, width: 300 }} onKeyDown={handleKeyDown} onBlur={saveField} />
+                placeholder="用逗号分隔" style={{ ...inputStyle, flex: 1, height: 32 }} onKeyDown={handleKeyDown} onBlur={saveField} />
             ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                 {(formTags.length > 0 ? formTags : ["运营", "数据分析", "日报"]).map((t) => (
-                  <span key={t} style={{ fontSize: 12, fontWeight: 500, padding: "2px 9px", borderRadius: 8, background: "#F3F4F6", color: "#030213", lineHeight: "18px" }}>{t}</span>
+                  <span key={t} style={{ height: 24, display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 400, padding: "0 9px", borderRadius: 100, background: "#F2F4F8", color: "rgba(0,0,0,0.7)" }}>{t}</span>
                 ))}
                 {editIcon("tags")}
               </div>
             )}
           </div>
 
-          {/* 成员 */}
+          {/* 成员: "已添加 N 位成员" + 头像行 (28px below) */}
           <div style={{ display: "flex", alignItems: "flex-start" }}>
-            <span style={{ ...labelStyle, paddingTop: editingMembers ? 7 : 0 }}>{editingMembers ? (<>成员 <span style={{ color: C.error }}>*</span></>) : "成员"}</span>
-            <div style={{ flex: 1, background: "#F7F8FB", borderRadius: 3, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-
-              {editingMembers ? (
-                /* ── 编辑模式：下拉选择 + 添加到团队 + 成员列表可改角色/移出 + 底部取消保存 ── */
-                <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div onClick={() => setShowAddPanel((v) => !v)} style={{ flex: 1, height: 32, padding: "0 12px", borderRadius: 3, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 12, color: "#89898A", display: "flex", alignItems: "center", cursor: "pointer", boxSizing: "border-box" as const }}>
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginRight: 6, flexShrink: 0 }}><path d="M3 5l3 3 3-3" stroke="rgba(0,0,0,0.4)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      选择加入团队成员
+            <span style={labelStyle}>成员</span>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              {/* "已添加 N 位成员" — 设计稿 font 12px color tertiary */}
+              <span style={{ fontSize: 12, color: C.textTertiary, lineHeight: "20px" }}>已添加 {localMembers.length} 位成员</span>
+              {/* 头像行: 设计稿 top:28 below "已添加", 每个 60×52, gap 8px */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-start", marginTop: 8 }}>
+                {localMembers.map((m) => (
+                  <div key={m.id} style={{ width: 60, height: 52, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    {/* 头像圆: 32×32, 居中(left:14 = (60-32)/2), bg #EEEEEE, outline 0.67px #E7E7E7 */}
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 100, overflow: "hidden",
+                      background: "#EEEEEE", outline: "0.67px solid #E7E7E7",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                    }}>
+                      {m.avatar ? (
+                        <img src={m.avatar} alt={m.name} style={{ width: 34, height: 34, objectFit: "cover", marginLeft: -1, marginTop: -1 }} />
+                      ) : (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#FFF", background: m.abbrBg, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 100 }}>{m.abbr}</span>
+                      )}
                     </div>
-                    <span style={{ fontSize: 12, color: "#265BED", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>添加到团队</span>
+                    {/* 名称: font 10px, color tertiary, 紧贴头像下方 */}
+                    <span style={{ fontSize: 10, color: C.textTertiary, textAlign: "center", whiteSpace: "nowrap", lineHeight: "20px" }}>{shortName(m.name)}</span>
                   </div>
-
-                  {showAddPanel && (
-                    <div style={{ background: C.bgWhite, borderRadius: 8, border: `1px solid ${C.border}`, padding: "4px 0", maxHeight: 200, overflowY: "auto" }}>
-                      {addableMembers.length === 0 ? (
-                        <div style={{ padding: "8px 12px", fontSize: 12, color: C.textTertiary }}>暂无可添加成员</div>
-                      ) : addableMembers.map((m) => (
-                        <div key={m.id} onClick={() => { setLocalMembers((prev) => [...prev, { ...m, role: "执行者" }]); setShowAddPanel(false); }}
-                          style={{ padding: "6px 12px", cursor: "pointer", fontSize: 14, color: C.textPrimary, fontFamily: FONT, transition: "background 100ms" }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                        >{m.name}</div>
-                      ))}
-                    </div>
-                  )}
-
-                  <span style={{ fontSize: 12, color: C.textTertiary }}>已添加成员：</span>
-                  {localMembers.map((m) => (
-                    <div key={m.id} style={{ display: "flex", alignItems: "center", height: 38, padding: "0 16px", borderRadius: 10 }}>
-                      <span style={{ fontSize: 14, color: "#0A0A0A", minWidth: 120 }}>{m.name}</span>
-                      <div style={{ flex: 1 }} />
-                      <RoleSelect value={m.role} onChange={(r) => setLocalMembers((prev) => prev.map((x) => x.id === m.id ? { ...x, role: r } : x))} />
-                      <div style={{ flex: 1 }} />
-                      <span onClick={() => setLocalMembers((prev) => prev.filter((x) => x.id !== m.id))}
-                        style={{ fontSize: 12, color: "#265BED", cursor: "pointer", flexShrink: 0 }}>移出团队</span>
-                    </div>
-                  ))}
-
-                  {/* 编辑模式底部按钮 */}
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 8 }}>
-                    <button onClick={() => { setEditingMembers(false); setLocalMembers([...team.members]); setShowAddPanel(false); }}
-                      style={{ height: 32, padding: "0 16px", borderRadius: 32, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 13, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-                    <button onClick={() => { setEditingMembers(false); setShowAddPanel(false); handleSaveAll(); }}
-                      style={{ height: 32, padding: "0 16px", borderRadius: 32, border: "none", background: C.textPrimary, fontFamily: FONT, fontSize: 13, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>保存</button>
+                ))}
+                {/* 添加成员按钮: 60×52, 圆 32×32 outline 1px #BCC4D0 */}
+                <div ref={addBtnRef} style={{ width: 60, height: 52, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                  <div onClick={() => { setShowAddPanel((v) => !v); setPendingAdd(new Set()); }}
+                    style={{
+                      width: 32, height: 32, borderRadius: 100,
+                      outline: "1px solid #BCC4D0", outlineOffset: -1,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", transition: "background 100ms",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="rgba(0,0,0,0.5)" strokeWidth="1.2" strokeLinecap="round" /></svg>
                   </div>
-                </>
-              ) : (
-                /* ── 查看模式：成员列表只读 + 编辑按钮 ── */
-                <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 12, color: C.textTertiary }}>已添加{localMembers.length}位成员</span>
-                    <span onClick={() => setEditingMembers(true)} style={{ fontSize: 14, fontWeight: 500, color: "#265BED", cursor: "pointer" }}>编辑</span>
-                  </div>
-                  {localMembers.map((m) => (
-                    <div key={m.id} style={{ display: "flex", alignItems: "center", height: 38, padding: "0 16px", borderRadius: 10 }}>
-                      <span style={{ fontSize: 14, color: "#0A0A0A", flex: 1 }}>{m.name}</span>
-                      <span style={{ fontSize: 12, color: "#1A1A1A" }}>{m.role}</span>
-                    </div>
-                  ))}
-                </>
-              )}
+                  <span style={{ fontSize: 10, color: C.textTertiary, textAlign: "center", whiteSpace: "nowrap", lineHeight: "20px" }}>添加成员</span>
+
+                  {/* 添加成员浮窗: 240×352px, border-radius 16px, checkbox 列表 */}
+                  <AnimatePresence>
+                    {showAddPanel && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                        transition={{ duration: 0.15 }}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          position: "absolute", top: 56, left: -8, width: 240, zIndex: 100,
+                          background: C.bgWhite, borderRadius: 16,
+                          boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)",
+                          display: "flex", flexDirection: "column",
+                        }}
+                      >
+                        {/* Checkbox 列表: 每行 32px 高, padding 8px, 行内 checkbox at (8,8), 文字 at (32,5) */}
+                        <div style={{ padding: "8px 8px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+                          {ALL_AVAILABLE_MEMBERS.map((m) => {
+                            const alreadyIn = existingIds.has(m.id);
+                            const checked = pendingAdd.has(m.id) || alreadyIn;
+                            return (
+                              <div key={m.id}
+                                onClick={() => {
+                                  if (alreadyIn) return;
+                                  setPendingAdd((prev) => { const n = new Set(prev); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); return n; });
+                                }}
+                                style={{
+                                  display: "flex", alignItems: "center", height: 32, padding: "0 8px",
+                                  borderRadius: 8, cursor: alreadyIn ? "default" : "pointer",
+                                  opacity: alreadyIn ? 0.4 : 1,
+                                  transition: "background 100ms",
+                                }}
+                                onMouseEnter={(e) => { if (!alreadyIn) (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                              >
+                                {/* Checkbox 16×16 */}
+                                <div style={{
+                                  width: 16, height: 16, borderRadius: 3, flexShrink: 0,
+                                  border: `1.5px solid ${checked ? "#1664FF" : "#D6DBE3"}`,
+                                  background: checked ? "#1664FF" : "transparent",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  transition: "all 100ms",
+                                }}>
+                                  {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                                </div>
+                                <span style={{ fontSize: 14, color: C.textPrimary, marginLeft: 8 }}>{m.name}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {/* 底部按钮: 取消 80×32 + 添加 80×32, gap 8px, 右对齐 */}
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "12px 8px 8px" }}>
+                          <button onClick={() => { setShowAddPanel(false); setPendingAdd(new Set()); }}
+                            style={{ width: 80, height: 32, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+                          <button onClick={handleConfirmAdd}
+                            style={{ width: 80, height: 32, borderRadius: 32, border: "none", background: pendingAdd.size > 0 ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: pendingAdd.size > 0 ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>添加</button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1219,7 +1224,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
           <Card
             avatar={<GridAvatar />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>大数据团队 (3)</span>}
-            desc="包含大数据分析专家和大数据运维专家的协作团队"
+            desc="包含数据开发专家、数据分析专家、数据运维专家的协作团队"
           />
           {/* 动态创建的团队卡片 */}
           {customTeams.map((team) => (

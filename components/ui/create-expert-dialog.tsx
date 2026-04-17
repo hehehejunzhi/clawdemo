@@ -369,7 +369,7 @@ export default function CreateExpertDialog({ open, onClose }: CreateExpertDialog
                   transition: "background 150ms",
                 }}
               >
-                确认添加
+                创建
               </button>
             </div>
           </motion.div>

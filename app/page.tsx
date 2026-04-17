@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import ClaudeChatInput, { CHAT_INPUT_MOTION, type ChatInputHandle, type ChatInputPreviewState, type SkillChip } from "@/components/ui/claude-style-chat-input";
 import { AgentFanCards, type AgentCardPreviewState, type FanCardsConfig, DEFAULT_FAN_CONFIG, AGENT_CARD_MOTION } from "@/components/ui/agent-card";
+import HeroSection from "@/components/ui/hero-section";
 import MotionPanel, { MotionSelectButton, type MotionMode } from "@/components/ui/motion-panel";
 import MotionTargetOverlay from "@/components/ui/motion-target-overlay";
 import { IconCatalog, IconWorkflow, IconSQL, IconOps, IconMLExp } from "@/components/ui/wedata-icons";
@@ -96,7 +97,7 @@ interface TaskConversation {
   userMsg: string;
   thinkingText: string;
   replies: ExpertReplyDataType[];
-  /** 单专家模式：不显示调度Claw、Plan、任务已分派 */
+  /** 单专家模式：不显示首席专家、Plan、任务已分派 */
   singleExpert?: boolean;
 }
 
@@ -110,7 +111,12 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         icon: "/icons/expert/25.svg", name: "数据运维专家",
         lines: [
           {
-            text: "我需要通过 DescribeSparkQueries 接口获取广州地域集群 emr-ccrnhw11 的慢 SQL。让我先验证鉴权，然后查询。",
+            text: "让我先加载EMR技能来查看SQL",
+            inlineTags: ["EMR-skill"],
+          },
+          {
+            text: "我需要通过 DescribeSparkQueries 接口获取广州地域集群 emr-ccrnhw11 的慢 SQL。让我先验证鉴权，再查询。",
+            inlineTags: ["tcapi"],
             toolCalls: [{ title: "验证 tccli 鉴权是否有效", command: "tccli configure list", result: "secretId: AKIDz8k***\nsecretKey: Gu5t***\nregion: ap-guangzhou\noutput: json" }],
           },
           {
@@ -122,7 +128,6 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
           },
           {
             text: "好的，接口参数很清楚。时间限制是 EndTime - StartTime ≤ 1 天。让我先查最近一天的所有 Spark 查询，按完成状态获取：",
-            tags: ["TaskDecompose(slow_sql_analysis)", "ClusterValidate(emr-ccrnhw11)", "TodoWrite(4_phases)"],
             toolCalls: [{ title: "查询广州集群 emr-ccrnhw11 最近一天的所有 Spark 查询", command: "tccli emr DescribeSparkQueries \\\n  --InstanceId emr-ccrnhw11 \\\n  --StartTime 2026-04-14T00:00:00Z \\\n  --EndTime 2026-04-15T00:00:00Z \\\n  --PageSize 20", result: "Total: 11\nQueryList: [{...}, ...] 11 rows selected" }],
           },
           {
@@ -137,6 +142,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
       {
         icon: "/icons/expert/25.svg", name: "数据运维专家",
         delay: 6000,
+        dividerBefore: true,
         lines: [
           { text: "数据齐全了，让我生成一个清晰的报告。" },
           { text: "以下是广州地域集群 emr-ccrnhw11 最近 24 小时的全部 Spark 查询记录（共 11 条，按耗时从高到低排列）：", boldText: "Spark 查询一览（按耗时降序）" },
@@ -159,6 +165,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
       {
         icon: "/icons/expert/17.svg", name: "数据开发专家",
         delay: 10000,
+        hideLabel: true,
         lines: [
           { text: "", boldText: "Top 3 慢 SQL 详情" },
           {
@@ -617,6 +624,7 @@ export default function Home() {
   // 确认后的二阶段对话
   const [confirmPhase, setConfirmPhase] = useState(false);
   const [phase2Replies, setPhase2Replies] = useState<ExpertReplyDataType[] | undefined>(undefined);
+  const [phase2Complete, setPhase2Complete] = useState(false);
   const [isSingleExpert, setIsSingleExpert] = useState(false);
   // 卡片参数配置
   const [fanConfig, setFanConfig] = useState<FanCardsConfig>(DEFAULT_FAN_CONFIG);
@@ -839,6 +847,7 @@ export default function Home() {
     setIsSingleExpert(false);
     setConfirmPhase(false);
     setPhase2Replies(undefined);
+    setPhase2Complete(false);
     chatInputRef.current?.resetAgent();
   }, []);
 
@@ -869,6 +878,7 @@ export default function Home() {
     setIsSingleExpert(conv?.singleExpert ?? false);
     setConfirmPhase(false);
     setPhase2Replies(undefined);
+    setPhase2Complete(false);
     // 即时模式：自动打开产物面板
     setArtifactsPanelOpen(true);
     // 滚动到顶部
@@ -1089,7 +1099,7 @@ export default function Home() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: chatPhase === "welcome" ? "center" : "flex-start",
-          scrollbarWidth: "thin",
+          scrollbarWidth: "none",
           transition: "justify-content 0.3s",
           position: "relative",
           backgroundColor: C.rightBg,
@@ -1126,7 +1136,7 @@ export default function Home() {
           {/* 内容宽度容器 */}
           <div style={{
             width: "100%",
-            maxWidth: "min(880px, 100%)",
+            maxWidth: "min(928px, 100%)",
             boxSizing: "border-box",
             padding: chatPhase === "welcome" ? "0 24px 24px" : "24px 24px 160px",
           }}>
@@ -1153,9 +1163,11 @@ export default function Home() {
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
-                          gap: 8,
+                          gap: 4,
                           padding: "40px 0 24px",
                           transform: "translateY(-60px)",
+                          height: 40,
+                          overflow: "visible",
                         }}>
                           <span style={{
                             fontFamily: "'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -1165,6 +1177,15 @@ export default function Home() {
                             color: "#000",
                             whiteSpace: "nowrap",
                           }}>TCClawTeam</span>
+                          <img
+                            src="/icons/welcome-mascot.svg"
+                            alt=""
+                            style={{
+                              width: 60,
+                              height: 60,
+                              flexShrink: 0,
+                            }}
+                          />
                           <span style={{
                             fontFamily: FONT,
                             fontSize: 32,
@@ -1181,12 +1202,7 @@ export default function Home() {
                             isSelecting={motionMode === "selecting"}
                             onSelect={handleMotionSelect}
                           >
-                            <AgentFanCards
-                              config={fanConfig}
-                              previewState={motionMode === "editing" && motionTarget === "agent-cards" && agentCardPreviewState !== "free" ? agentCardPreviewState : undefined}
-                              onSkillClick={handleSkillClick}
-                              onSummon={handleSummon}
-                            />
+                            <HeroSection />
                           </MotionTargetOverlay>
                         </div>
                       </motion.div>
@@ -1238,8 +1254,27 @@ export default function Home() {
                       initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.15 }}
+                      style={{ display: "flex", flexDirection: "column", gap: 12 }}
                     >
                       <Plan />
+                      {/* Transition tags between Plan and dispatch */}
+                      <div style={{
+                        display: "flex", flexWrap: "wrap", gap: 8,
+                      }}>
+                        {["TaskDecompose(slow_sql_analysis)", "ClusterValidate(emr-ccrnhw11)", "TodoWrite(4_phases)"].map((tag) => (
+                          <div key={tag} style={{
+                            display: "inline-flex", alignItems: "center",
+                            height: 24, padding: "0 8px",
+                            background: "#EDF0F5", borderRadius: 40,
+                            flexShrink: 0,
+                          }}>
+                            <span style={{
+                              fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                              color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap",
+                            }}>{tag}</span>
+                          </div>
+                        ))}
+                      </div>
                     </motion.div>
                   )}
 
@@ -1269,7 +1304,7 @@ export default function Home() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35, ease: EASE, delay: 0.3 }}
                       >
-                        <ExpertReplies replies={phase2Replies} onArtifactClick={() => setArtifactsPanelOpen(true)} hideDispatch />
+                        <ExpertReplies replies={phase2Replies} onArtifactClick={() => setArtifactsPanelOpen(true)} onComplete={() => setPhase2Complete(true)} hideDispatch />
                       </motion.div>
                     </>
                   )}
@@ -1300,7 +1335,7 @@ export default function Home() {
             justifyContent: "center",
             pointerEvents: "none",
           }}>
-          <div style={{ width: "100%", maxWidth: "min(880px, 100%)", position: "relative", pointerEvents: "auto" }}>
+          <div style={{ width: "100%", maxWidth: 880, position: "relative", pointerEvents: "auto" }}>
             {/* ── Agent 召唤引导：头像从输入框后面伸出（仅 welcome 阶段） ── */}
             <AnimatePresence>
               {chatPhase === "welcome" && summonedAgent && (
@@ -1383,51 +1418,6 @@ export default function Home() {
             </AnimatePresence>
 
             {/* ── 快捷提问标签：仅 welcome 阶段 + 无 agent 召唤时显示 ── */}
-            <AnimatePresence>
-              {chatPhase === "welcome" && !summonedAgent && activeSkills.length === 0 && (
-                <motion.div
-                  key="quick-prompts"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.25, ease: EASE }}
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    marginBottom: 12,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {["帮我分析存储趋势", "帮我检查集群健康状况"].map((text) => (
-                    <button
-                      key={text}
-                      onClick={() => handleSendMessage({ message: text, files: [] })}
-                      style={{
-                        height: 36,
-                        padding: "0 12px",
-                        background: "#FFFFFF",
-                        borderRadius: 18,
-                        border: "1px solid #E6E9EF",
-                        boxShadow: "0px 2px 3px rgba(0, 18, 97, 0.03)",
-                        cursor: "pointer",
-                        fontFamily: FONT,
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: "rgba(0,0,0,0.9)",
-                        whiteSpace: "nowrap",
-                        outline: "none",
-                        transition: "background 100ms",
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#F2F4F8"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "#FFFFFF"; }}
-                    >
-                      {text}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             {/* 输入框：不设 zIndex，避免创建 stacking context，让内部 glow 的负 z-index 能逃逸到父级 */}
             <div style={{ position: "relative" }}>
               <MotionTargetOverlay
@@ -1479,7 +1469,7 @@ export default function Home() {
           <ArtifactsPanel
             open={artifactsPanelOpen}
             onClose={() => setArtifactsPanelOpen(false)}
-            phase={confirmPhase ? 2 : 1}
+            phase={phase2Complete ? 2 : 1}
             singleExpert={isSingleExpert}
           />
         )}
