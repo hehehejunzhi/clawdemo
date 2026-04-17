@@ -1007,7 +1007,7 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
     name: "数据开发专家",
     delay: 15000,
     lines: [
-      { text: "产出物归档完成：SQL 模板已沉淀至知识库，标签为「华东区、用户活跃、7日趋势」。" },
+      { text: "产出物归档完成：SQL 模板已沉淀至知识库，标签为「华东区、用户活跃、7 日趋势」。" },
       { text: "定时任务已创建：每日 09:00 自动刷新数据并推送至运营周报看板。", tags: ["knowledge_base", "scheduled_task"] },
     ],
   },

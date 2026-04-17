@@ -185,7 +185,7 @@ export default function ArtifactDetailDrawer({ artifact, allArtifacts, onBack, o
         <div style={{ paddingTop: 20, display: "flex", flexDirection: "column", gap: 4, textAlign: "justify", color: TEXT_PRIMARY }}>
           <h2 style={h2Style}>一、数据来源与分析方法</h2>
           <p style={bodyStyle}>
-            数据来源于公司内部的销售管理系统以及用户信息数据库，涵盖了最近一个月（2025年6月10号至2025年7月10号）内所有地区的交易记录和用户数据。在分析方法上，主要运用了数据透视表、图表可视化等工具，对原始数据进行汇总、对比和趋势分析。
+            数据来源于公司内部的销售管理系统以及用户信息数据库，涵盖了最近一个月（2025 年 6 月 10 号至 2025 年 7 月 10 号）内所有地区的交易记录和用户数据。在分析方法上，主要运用了数据透视表、图表可视化等工具，对原始数据进行汇总、对比和趋势分析。
           </p>
         </div>
 
@@ -332,7 +332,7 @@ export default function ArtifactDetailDrawer({ artifact, allArtifacts, onBack, o
 
           {/* 图注 */}
           <p style={{ fontSize: 14, fontWeight: 400, lineHeight: "22px", color: TEXT_TERTIARY, textAlign: "center", width: "100%", margin: 0 }}>
-            图1 2025年6至7月各地区销售额总览
+            图 1 2025 年 6 至 7 月各地区销售额总览
           </p>
         </div>
       </div>

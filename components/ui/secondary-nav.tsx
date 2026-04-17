@@ -430,7 +430,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           gap: 2,
         }}>
           <NavMenuItem icon="/icons/nav/5.svg" label="技能广场" active={activeMenu === "skill-plaza"} onClick={onSkillPlaza} />
-          <NavMenuItem icon="/icons/nav/6.svg" label="Claw广场" active={activeMenu === "claw-manager"} onClick={onClawManager} />
+          <NavMenuItem icon="/icons/nav/6.svg" label="Claw 广场" active={activeMenu === "claw-manager"} onClick={onClawManager} />
         </div>
 
         {/* 下区：团队 & 专家列表（可折叠） */}
@@ -447,12 +447,12 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               />
             )}
           >
-            <TaskItem status="pending" title="慢SQL查询与调优" active={activeTaskId === "t1"} onClick={() => onTaskClick?.({ id: "t1", title: "慢SQL查询与调优" })} />
+            <TaskItem status="pending" title="慢 SQL 查询与调优" active={activeTaskId === "t1"} onClick={() => onTaskClick?.({ id: "t1", title: "慢 SQL 查询与调优" })} />
             <TaskItem status="pending" title="统计近 7 天各渠道用户支付金额，按天汇总" active={activeTaskId === "t2"} onClick={() => onTaskClick?.({ id: "t2", title: "统计近 7 天各渠道用户支付金额，按天汇总" })} />
             <TaskItem status="check" title="接入业务库【订单表】数据源" active={activeTaskId === "t3"} onClick={() => onTaskClick?.({ id: "t3", title: "接入业务库【订单表】数据源" })} />
             <TaskItem status="check" title="接入业务库【用户表】数据源" active={activeTaskId === "t4"} onClick={() => onTaskClick?.({ id: "t4", title: "接入业务库【用户表】数据源" })} />
             <TaskItem status="check" title="猫眼_客户留存指标分析" active={activeTaskId === "t5"} onClick={() => onTaskClick?.({ id: "t5", title: "猫眼_客户留存指标分析" })} />
-            <TaskItem status="check" title="T+1调度工作流编排" active={activeTaskId === "t6"} onClick={() => onTaskClick?.({ id: "t6", title: "T+1调度工作流编排" })} />
+            <TaskItem status="check" title="T+1 调度工作流编排" active={activeTaskId === "t6"} onClick={() => onTaskClick?.({ id: "t6", title: "T+1 调度工作流编排" })} />
           </CollapsibleSection>
 
           {/* Rigel·数据运维专家 */}

@@ -1214,12 +1214,12 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         height: 50, flexShrink: 0, display: "flex", alignItems: "center",
         padding: "0 24px", borderBottom: `1px solid ${C.border}`, background: C.bg,
       }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>Claw广场</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>Claw 广场</span>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", scrollbarWidth: "none" }}>
         {/* 团队 */}
-        <SectionTitle title="团队" desc="拉取不同种Claw组建团队，协作完成复杂任务" />
+        <SectionTitle title="团队" desc="拉取不同种 Claw 组建团队，协作完成复杂任务" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap", alignItems: "stretch" }}>
           <Card
             avatar={<GridAvatar />}
@@ -1287,7 +1287,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         </div>
 
         {/* 外部 Claw */}
-        <SectionTitle title="外部 Claw" desc="连接外部AI平台的Agent" />
+        <SectionTitle title="外部 Claw" desc="连接外部 AI 平台的 Agent" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 24px", flexWrap: "wrap", alignItems: "stretch" }}>
           <ExternalClawCard
             avatar={<AvatarCircle letter="L" bg="#0BD1E2" />}
