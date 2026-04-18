@@ -1159,7 +1159,7 @@ export default function Home() {
                   animate={{ y: 0 }}
                   exit={{ opacity: 0, y: -16 }}
                   transition={{ duration: 0.3, ease: EASE }}
-                  style={{ marginTop: -190, position: "relative" }}
+                  style={{ marginTop: -130, position: "relative" }}
                 >
                   {/* ── 欢迎标题 + 卡片 — 选中技能后一起退出，叉掉后恢复 ── */}
                   <AnimatePresence>
