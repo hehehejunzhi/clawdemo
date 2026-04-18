@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import type { MotionTargetDef } from "@/components/ui/motion-panel";
 
 // ── Expert IDs ────────────────────────────────────────────────
@@ -67,6 +67,11 @@ export default function HeroSection({
   config = HERO_SECTION_MOTION.defaultConfig,
 }: HeroSectionProps) {
   const [activeExpert, setActiveExpert] = useState<ExpertId | null>(null);
+  const pendingRef = useRef<ExpertId | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const ENTER_DELAY = 300;
+  const LEAVE_DELAY = 100;
 
   const crossfadeDuration = config.crossfadeDuration ?? 0.5;
   const maxWidth = config.maxWidth ?? 880;
@@ -80,7 +85,7 @@ export default function HeroSection({
   // Mouse position → percentage of actual rendered width → match trigger zone
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width; // 0~1, scales with any container size
+    const pct = (e.clientX - rect.left) / rect.width;
     let found: ExpertId | null = null;
     for (const zone of TRIGGER_ZONES) {
       if (pct >= zone.startPct && pct <= zone.endPct) {
@@ -88,10 +93,28 @@ export default function HeroSection({
         break;
       }
     }
-    setActiveExpert(found);
+
+    // Skip if target hasn't changed
+    if (found === pendingRef.current) return;
+    pendingRef.current = found;
+
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    const delay = found !== null ? ENTER_DELAY : LEAVE_DELAY;
+    timerRef.current = setTimeout(() => {
+      setActiveExpert(found);
+      timerRef.current = null;
+    }, delay);
   }, []);
 
-  const handleMouseLeave = useCallback(() => setActiveExpert(null), []);
+  const handleMouseLeave = useCallback(() => {
+    pendingRef.current = null;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setActiveExpert(null);
+      timerRef.current = null;
+    }, LEAVE_DELAY);
+  }, []);
 
   return (
     <div
