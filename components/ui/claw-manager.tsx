@@ -1050,7 +1050,7 @@ function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
         <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 0", display: "flex", flexDirection: "column", gap: 20, scrollbarWidth: "none" }}>
           {/* 名称 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={labelStyle}>数字分身名称</span>
+            <span style={labelStyle}>数字分身名称 <span style={{ color: "#F64041" }}>*</span></span>
             <input value={formName} onChange={(e) => setFormName(e.target.value)}
               style={inputBase}
               onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
