@@ -117,19 +117,19 @@ export const AGENT_CARD_MOTION: MotionTargetDef = {
     // Hover 悬浮
     { key: "dist1X", label: "近邻推开", min: 0, max: 60, step: 1, group: "Hover 悬浮" },
     { key: "hoverHeight", label: "悬浮高度", min: 0, max: 1.4, step: 0.05, group: "Hover 悬浮" },
-    { key: "yFactor", label: "Y偏移系数", min: 0, max: 80, step: 1, group: "Hover 悬浮" },
+    { key: "yFactor", label: "Y 偏移系数", min: 0, max: 80, step: 1, group: "Hover 悬浮" },
     { key: "scaleFactor", label: "放大系数", min: 0, max: 0.8, step: 0.02, group: "Hover 悬浮" },
     { key: "fanTransitionDuration", label: "推开时长", min: 0.1, max: 1.0, step: 0.05, group: "Hover 悬浮" },
     { key: "hoverTransitionDuration", label: "浮起时长", min: 0.1, max: 1.0, step: 0.05, group: "Hover 悬浮" },
     // Hover 投影
     { key: "shadowBlur1Range", label: "主投影模糊", min: 0, max: 300, step: 2, group: "Hover 投影" },
-    { key: "shadowY1Range", label: "主投影Y偏移", min: 0, max: 150, step: 1, group: "Hover 投影" },
+    { key: "shadowY1Range", label: "主投影 Y 偏移", min: 0, max: 150, step: 1, group: "Hover 投影" },
     { key: "shadowAlpha1Range", label: "主投影透明度", min: 0, max: 0.5, step: 0.01, group: "Hover 投影" },
     { key: "shadowBlur2Range", label: "副投影模糊", min: 0, max: 150, step: 2, group: "Hover 投影" },
-    { key: "shadowY2Range", label: "副投影Y偏移", min: 0, max: 80, step: 1, group: "Hover 投影" },
+    { key: "shadowY2Range", label: "副投影 Y 偏移", min: 0, max: 80, step: 1, group: "Hover 投影" },
     { key: "shadowAlpha2Range", label: "副投影透明度", min: 0, max: 0.3, step: 0.01, group: "Hover 投影" },
     // 静态投影
-    { key: "restShadowY", label: "投影Y", min: 0, max: 20, step: 1, group: "静态投影" },
+    { key: "restShadowY", label: "投影 Y", min: 0, max: 20, step: 1, group: "静态投影" },
     { key: "restShadowBlur", label: "投影模糊", min: 0, max: 40, step: 1, group: "静态投影" },
     { key: "restShadowAlpha", label: "投影透明度", min: 0, max: 0.2, step: 0.01, group: "静态投影" },
     // 信息区毛玻璃

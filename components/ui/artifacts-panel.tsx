@@ -67,7 +67,7 @@ const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
     expert: "数据运维专家过程产物",
     icon: "/icons/expert/25.svg",
     items: [
-      { id: "1", title: "2025年6至7月各地区的复购率设计方案.html", description: "数据读取脚本 · 从源表读取原始数据" },
+      { id: "1", title: "2025 年 6 至 7 月各地区的复购率设计方案.html", description: "数据读取脚本 · 从源表读取原始数据" },
       { id: "2", title: "clean_null_value.sql", description: "数据清洗脚本 · 空值过滤与格式标准化" },
       { id: "3", title: "read_source_data.sql", description: "数据读取脚本 · 从源表读取原始数据" },
       { id: "4", title: "clean_null_value.md", description: "数据清洗脚本 · 空值过滤与格式标准化" },
@@ -225,7 +225,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                   <div style={{ display: "flex" }}>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>执行 Claw</span>
-                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>{singleExpert ? "数据运维专家 (1人)" : "大数据团队 (3人)"}</span>
+                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>{singleExpert ? "数据运维专家 (1 人)" : "大数据团队 (3 人)"}</span>
                     </div>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>状态</span>
@@ -243,7 +243,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                     </div>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>已用时长</span>
-                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>3分24秒</span>
+                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>3 分 24 秒</span>
                     </div>
                   </div>
                 </div>
@@ -313,13 +313,13 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                               { label: "数据探索", icon: "/icons/dag/8.svg", status: phase >= 1 ? "done" : "pending" },
                             ]}
                             artifacts={phase >= 1 ? [
-                              { label: "Spark查询报告.md", id: "r1" },
+                              { label: "Spark 查询报告.md", id: "r1" },
                               { label: "emr_query_stats.sql", id: "r2" },
                               { label: "dau_wau_east_7d.sql", id: "r3" },
                               { label: "query_trend_chart.png", id: "r4" },
                             ] : undefined}
                             onArtifactClick={(id) => {
-                              const a = MOCK_ALL_ARTIFACTS.find((x) => x.id === id) ?? { id, title: "Spark查询报告.md", description: "业务结论报告 · Markdown 可下载" };
+                              const a = MOCK_ALL_ARTIFACTS.find((x) => x.id === id) ?? { id, title: "Spark 查询报告.md", description: "业务结论报告 · Markdown 可下载" };
                               setSelectedArtifact(a);
                             }}
                           />
@@ -379,7 +379,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                     { time: "14:32:05", level: "INFO", agent: "Rigel", msg: "任务启动，开始分析需求..." },
                     { time: "14:32:08", level: "INFO", agent: "Rigel", msg: "解析用户需求：华东区过去 7 天用户活跃度趋势" },
                     { time: "14:32:12", level: "INFO", agent: "Rigel", msg: "检查数据源表 dw_user_behavior 可用性..." },
-                    { time: "14:32:54", level: "INFO", agent: "Rigel", msg: "数据源验证通过，共2,847,312 条记录" },
+                    { time: "14:32:54", level: "INFO", agent: "Rigel", msg: "数据源验证通过，共 2,847,312 条记录" },
                     { time: "14:33:05", level: "INFO", agent: "Rigel", msg: "开始设计 DWD 层数据模型" },
                     { time: "14:38:05", level: "INFO", agent: "Rigel", msg: "模型设计完成，生成建表 SQL" },
                     { time: "14:40:01", level: "WARN", agent: "Rigel", msg: "检测到字段 order_time 存在 NULL 值（0.3%），已添加过滤逻辑" },

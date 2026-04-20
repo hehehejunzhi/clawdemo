@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import ClaudeChatInput, { CHAT_INPUT_MOTION, type ChatInputHandle, type ChatInputPreviewState, type SkillChip } from "@/components/ui/claude-style-chat-input";
 import { AgentFanCards, type AgentCardPreviewState, type FanCardsConfig, DEFAULT_FAN_CONFIG, AGENT_CARD_MOTION } from "@/components/ui/agent-card";
-import HeroSection from "@/components/ui/hero-section";
+import HeroSection, { HERO_SECTION_MOTION } from "@/components/ui/hero-section";
 import MotionPanel, { MotionSelectButton, type MotionMode } from "@/components/ui/motion-panel";
 import MotionTargetOverlay from "@/components/ui/motion-target-overlay";
 import { IconCatalog, IconWorkflow, IconSQL, IconOps, IconMLExp } from "@/components/ui/wedata-icons";
@@ -103,15 +103,15 @@ interface TaskConversation {
 
 const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
   t1: {
-    title: "慢SQL查询与调优",
-    userMsg: "查看广州地域集群emr-ccrnhw11的所有慢SQL，给出优化建议并执行，最后给我一份报告",
+    title: "慢 SQL 查询与调优",
+    userMsg: "查看广州地域集群 emr-ccrnhw11 的所有慢 SQL，给出优化建议并执行，最后给我一份报告",
     thinkingText: "收到慢 SQL 检索与调优任务，我来作为调度者拆解任务并分派给团队成员",
     replies: [
       {
         icon: "/icons/expert/25.svg", name: "数据运维专家",
         lines: [
           {
-            text: "让我先加载EMR技能来查看SQL",
+            text: "让我先加载 EMR 技能来查看 SQL",
             inlineTags: ["EMR-skill"],
           },
           {
@@ -133,7 +133,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
           {
             text: "查到了 11 条 Spark 查询记录。不过输出被截断了，让我把完整数据导出来处理",
             toolCalls: [
-              { title: "导出并按耗时降序排列所有 Spark 查询，展示慢 SQL 概况", command: "cat /tmp/spark_queries.json | jq \\\n  'sort_by(-.Duration) | .[] |\n  {Id, Statement: .Statement[:60], Duration, ScanRows}'", result: "#1  56.5s  品牌年度销售汇总  29.5亿行\n#2  14.5s  品牌年度-CTE优化  29.5亿行\n#3  12.8s  全表 count        29.5亿行\n...共 11 条" },
+              { title: "导出并按耗时降序排列所有 Spark 查询，展示慢 SQL 概况", command: "cat /tmp/spark_queries.json | jq \\\n  'sort_by(-.Duration) | .[] |\n  {Id, Statement: .Statement[:60], Duration, ScanRows}'", result: "#1  56.5s  品牌年度销售汇总  29.5 亿行\n#2  14.5s  品牌年度-CTE 优化  29.5 亿行\n#3  12.8s  全表 count        29.5 亿行\n...共 11 条" },
               { title: "输出所有查询的完整 SQL 用于详细分析", command: "for id in $(seq 1 11); do\n  echo \"=== Query #$id ===\"\n  jq -r \".[$id-1].Statement\" /tmp/spark_queries.json\n  echo\ndone", result: "=== Query #1 ===\nINSERT OVERWRITE TABLE dwd_trade.seller_monthly_wide\nPARTITION (dt = '2026-03')\nSELECT s.seller_id, ...\n\n=== Query #2 ===\nWITH filtered AS (\n  SELECT * FROM store_sales WHERE ...\n)\n..." },
             ],
           },
@@ -151,12 +151,12 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
             table: {
               headers: ["序号", "查询标题", "耗时(秒)", "扫描量", "状态"],
               rows: [
-                ["#1", "品牌年度销售汇总-隐式三表 JOIN", "56.5", "store_sales 29.5亿行", "已完成"],
-                ["#2", "品牌年度销售汇总-CTE优化版", "14.5", "store_sales 29.5亿行", "已完成"],
-                ["#3", "全表 count（store_sales）", "12.8", "29.5亿行 113.6GB", "已完成"],
-                ["#4", "门店日均客流统计", "8.3", "store_sales 12亿行", "已完成"],
-                ["#5", "折扣金额统计-含相关子查询", "11.2", "store_sales 8.7亿行", "已完成"],
-                ["#6", "折扣金额统计-CTE优化版", "6.9", "store_sales 8.7亿行", "已完成"],
+                ["#1", "品牌年度销售汇总-隐式三表 JOIN", "56.5", "store_sales 29.5 亿行", "已完成"],
+                ["#2", "品牌年度销售汇总-CTE 优化版", "14.5", "store_sales 29.5 亿行", "已完成"],
+                ["#3", "全表 count（store_sales）", "12.8", "29.5 亿行 113.6 GB", "已完成"],
+                ["#4", "门店日均客流统计", "8.3", "store_sales 12 亿行", "已完成"],
+                ["#5", "折扣金额统计-含相关子查询", "11.2", "store_sales 8.7 亿行", "已完成"],
+                ["#6", "折扣金额统计-CTE 优化版", "6.9", "store_sales 8.7 亿行", "已完成"],
               ],
             },
           },
@@ -181,14 +181,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
             text: "",
             numberedHeading: { num: 2, text: "慢 SQL #3：12.8秒" },
             sqlBlock: {
-              title: "全表 count —— store_sales表（29.5亿行，113.6GB）",
+              title: "全表 count —— store_sales 表（29.5 亿行，113.6 GB）",
               code: "INSERT OVERWRITE TABLE dwd_trade.seller_monthly_wide PARTITION (dt = '2026-03') SELECT\n    s.seller_id,",
             },
           },
           { text: "同查询的优化版（#2）只用 14.5 秒，提升了 74%。优化手段：CTE 预过滤 + 隐式 JOIN → 显式 INNER JOIN。" },
           {
             text: "",
-            numberedHeading: { num: 3, text: "慢 SQL #5：11.2秒" },
+            numberedHeading: { num: 3, text: "慢 SQL #5：11.2 秒" },
             sqlBlock: {
               title: "折扣金额统计 —— 含相关子查询",
               code: "INSERT OVERWRITE TABLE dwd_trade.seller_monthly_wide PARTITION (dt = '2026-03') SELECT\n    s.seller_id,",
@@ -573,7 +573,7 @@ const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
         artifacts: {
           count: 3,
           items: [
-            { title: "慢SQL #1 深度调优分析.md", description: "业务结论报告 · Markdown 可下载", iconType: "md" as const },
+            { title: "慢 SQL #1 深度调优分析.md", description: "业务结论报告 · Markdown 可下载", iconType: "md" as const },
             { title: "dau_wau_east_7d.sql", description: "数据读取脚本 · 从源表读取原始数据", iconType: "sql" as const },
             { title: "dau_wau_trend_chart.png", description: "DAU/WAU 趋势图", iconType: "png" as const },
           ],
@@ -629,6 +629,7 @@ export default function Home() {
   // 卡片参数配置
   const [fanConfig, setFanConfig] = useState<FanCardsConfig>(DEFAULT_FAN_CONFIG);
   const [chatInputConfig, setChatInputConfig] = useState<Record<string, number>>(CHAT_INPUT_MOTION.defaultConfig);
+  const [heroConfig, setHeroConfig] = useState<Record<string, number>>(HERO_SECTION_MOTION.defaultConfig);
   const [agentCardPreviewState, setAgentCardPreviewState] = useState<AgentCardPreviewState>("free");
   const [chatInputPreviewState, setChatInputPreviewState] = useState<ChatInputPreviewState>(
     (CHAT_INPUT_MOTION.defaultState as ChatInputPreviewState | undefined) ?? "default"
@@ -1132,6 +1133,16 @@ export default function Home() {
                 onClose={handleMotionPanelClose}
               />
             )}
+            {chatPhase === "welcome" && motionMode === "editing" && motionTarget === "hero-section" && (
+              <MotionPanel
+                targetLabel={HERO_SECTION_MOTION.label}
+                schema={HERO_SECTION_MOTION.schema}
+                config={heroConfig}
+                defaultConfig={HERO_SECTION_MOTION.defaultConfig}
+                onChange={(c) => setHeroConfig(c)}
+                onClose={handleMotionPanelClose}
+              />
+            )}
           </AnimatePresence>
           {/* 内容宽度容器 */}
           <div style={{
@@ -1148,7 +1159,7 @@ export default function Home() {
                   animate={{ y: 0 }}
                   exit={{ opacity: 0, y: -16 }}
                   transition={{ duration: 0.3, ease: EASE }}
-                  style={{ marginTop: -190, position: "relative" }}
+                  style={{ marginTop: -130, position: "relative" }}
                 >
                   {/* ── 欢迎标题 + 卡片 — 选中技能后一起退出，叉掉后恢复 ── */}
                   <AnimatePresence>
@@ -1197,12 +1208,12 @@ export default function Home() {
                         </div>
                         <div style={{ marginTop: -20 }}>
                           <MotionTargetOverlay
-                            targetId="agent-cards"
-                            targetLabel={AGENT_CARD_MOTION.label}
+                            targetId="hero-section"
+                            targetLabel={HERO_SECTION_MOTION.label}
                             isSelecting={motionMode === "selecting"}
                             onSelect={handleMotionSelect}
                           >
-                            <HeroSection />
+                            <HeroSection config={heroConfig} />
                           </MotionTargetOverlay>
                         </div>
                       </motion.div>

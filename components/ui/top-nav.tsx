@@ -190,7 +190,7 @@ export default function TopNav({ activeId, onMenuClick }: TopNavProps) {
           color: C.textPlaceholder, whiteSpace: "nowrap",
           flex: 1,
         }}>
-          搜索云产品、文档、云API...
+          搜索云产品、文档、云 API...
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
           <span style={{ fontFamily: FONT, fontSize: 10, fontWeight: 400, color: C.textSecondary }}>快捷键</span>
