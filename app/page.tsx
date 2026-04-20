@@ -1072,7 +1072,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: EASE }}
             style={{
-              height: 84,
+              height: 50,
               flexShrink: 0,
               display: "flex",
               alignItems: "center",

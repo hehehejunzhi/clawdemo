@@ -1237,16 +1237,18 @@ function ExpertCard({ name, tasks, artifacts, onArtifactClick, artifactsLoading 
                 left: "100%",
                 bottom: 0,
                 marginLeft: 8,
-                width: 220,
+                minWidth: 180,
                 background: "#FFFFFF",
-                borderRadius: 8,
-                border: "1px solid #E6E9EF",
-                boxShadow: "0px 4px 12px rgba(0,0,0,0.08)",
-                padding: "8px 0",
+                borderRadius: 16,
+                boxShadow: "0px 8px 24px -4px rgba(0,0,0,0.1), 0px 8px 12px -8px rgba(0,0,0,0.05)",
+                padding: 8,
                 zIndex: 100,
                 pointerEvents: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
               }}>
-                <div style={{ padding: "0 12px 4px", fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
+                <div style={{ padding: "5px 8px", fontSize: 12, color: "rgba(0,0,0,0.5)", lineHeight: "20px" }}>
                   产物列表
                 </div>
                 {artifacts.map((a) => (
@@ -1254,13 +1256,18 @@ function ExpertCard({ name, tasks, artifacts, onArtifactClick, artifactsLoading 
                     key={a.id}
                     onClick={(e) => { e.stopPropagation(); onArtifactClick?.(a.id); }}
                     style={{
-                      padding: "4px 12px",
-                      fontSize: 13,
+                      height: 32,
+                      padding: "0 8px",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 400,
+                      lineHeight: "32px",
                       color: "rgba(0,0,0,0.9)",
                       cursor: "pointer",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
+                      transition: "background 0.15s",
                     }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#F2F4F8"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}

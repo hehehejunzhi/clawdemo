@@ -627,18 +627,28 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                     </div>
                   </div>
                   {showAgentMenu && (
+                    <>
+                      {/* 透明遮罩：阻止所有鼠标事件穿透到下层 Hero 区域 */}
+                      <div
+                        style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                        onClick={(e) => { e.stopPropagation(); setShowAgentMenu(false); }}
+                        onMouseMove={(e) => e.stopPropagation()}
+                        onMouseEnter={(e) => e.stopPropagation()}
+                        onMouseOver={(e) => e.stopPropagation()}
+                      />
                     <div ref={agentMenuRef} style={{
                       position: "absolute",
                       bottom: "calc(100% + 8px)",
                       left: 0,
                       backgroundColor: "#FFFFFF",
                       borderRadius: 16,
-                      padding: "4px 0",
-                      boxShadow: "0px 8px 12px rgba(0,0,0,0.05), 0px 8px 24px rgba(0,0,0,0.1)",
+                      padding: 8,
+                      boxShadow: "0px 8px 24px -4px rgba(0,0,0,0.1), 0px 8px 12px -8px rgba(0,0,0,0.05)",
                       display: "flex",
                       flexDirection: "column",
+                      gap: 2,
                       zIndex: 100,
-                      minWidth: 200,
+                      minWidth: 152,
                       animation: "ci-menu-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
                     }}>
                       {/* 主要选项 */}
@@ -656,18 +666,19 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            height: 44,
-                            padding: "0 20px",
+                            height: 32,
+                            padding: "0 8px",
+                            borderRadius: 8,
                             cursor: "pointer",
                             transition: "background 0.15s ease",
                             backgroundColor: selectedAgent === item.label ? "#F2F4F8" : undefined,
                           }}
                         >
-                          <span style={{ fontSize: 16, fontWeight: 400, lineHeight: "24px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
+                          <span style={{ fontSize: 14, fontWeight: 400, lineHeight: "22px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
                         </div>
                       ))}
                       {/* 分割线 */}
-                      <div style={{ height: 1, backgroundColor: "#E6E9EF", margin: "4px 16px" }} />
+                      <div style={{ height: 1, backgroundColor: "#E6E9EF", margin: "2px 0" }} />
                       {/* 创建选项 */}
                       {[
                         { id: "create-expert", label: "创建专家" },
@@ -685,16 +696,18 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            height: 44,
-                            padding: "0 20px",
+                            height: 32,
+                            padding: "0 8px",
+                            borderRadius: 8,
                             cursor: "pointer",
                             transition: "background 0.15s ease",
                           }}
                         >
-                          <span style={{ fontSize: 16, fontWeight: 400, lineHeight: "24px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
+                          <span style={{ fontSize: 14, fontWeight: 400, lineHeight: "22px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
                         </div>
                       ))}
                     </div>
+                    </>
                   )}
                 </div>
 
