@@ -138,7 +138,6 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
               {([
                 { id: "overview", label: "任务概览" },
                 { id: "artifacts", label: "产物" },
-                { id: "logs", label: "执行日志" },
               ] as const).map((tab) => (
                 <div
                   key={tab.id}
