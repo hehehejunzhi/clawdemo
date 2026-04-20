@@ -858,6 +858,8 @@ export default function Home() {
   }, []);
 
   const handleTaskClick = useCallback((task: { id: string; title: string }) => {
+    // 这些已完成任务不可点击交互
+    if (["t4", "t5", "t6"].includes(task.id)) return;
     const conv = TASK_CONVERSATIONS[task.id];
     setActiveTaskId(task.id);
     setShowSkillPlaza(false);
@@ -1480,7 +1482,7 @@ export default function Home() {
           <ArtifactsPanel
             open={artifactsPanelOpen}
             onClose={() => setArtifactsPanelOpen(false)}
-            phase={phase2Complete ? 2 : 1}
+            phase={phase2Complete ? 2 : confirmPhase ? 1.5 : 1}
             singleExpert={isSingleExpert}
           />
         )}

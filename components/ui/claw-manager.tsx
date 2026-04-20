@@ -266,7 +266,7 @@ function MoreMenu({ onManage, onDelete }: { onManage: () => void; onDelete: () =
             padding: "4px 0", overflow: "hidden",
           }}>
             {[
-              { label: "团队详情", action: onManage },
+              { label: "编辑", action: onManage },
               { label: "删除团队", action: onDelete },
             ].map((item) => (
               <div
@@ -291,59 +291,45 @@ function MoreMenu({ onManage, onDelete }: { onManage: () => void; onDelete: () =
 
 
 
-// ── 团队详情弹窗（查看+编辑成员） ─────────────────────────────
+// ── 编辑团队弹窗（全编辑态） ─────────────────────────────
 function TeamDetailModal({ team, onClose, onSave }: {
   team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void;
 }) {
-  const [editingField, setEditingField] = useState<string | null>(null);
   const [formName, setFormName] = useState(team.name);
   const [formDesc, setFormDesc] = useState(team.desc);
-  const [formTags, setFormTags] = useState<string[]>([]);
-  const [localMembers, setLocalMembers] = useState<TeamMember[]>(() => [...team.members]);
-  const [showAddPanel, setShowAddPanel] = useState(false);
-  const [pendingAdd, setPendingAdd] = useState<Set<string>>(new Set());
-  const addBtnRef = useRef<HTMLDivElement>(null);
-
-  const saveField = () => { setEditingField(null); };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveField(); }
-    if (e.key === "Escape") { setFormName(team.name); setFormDesc(team.desc); setEditingField(null); }
-  };
-
-  const handleSaveAll = () => {
-    onSave({ ...team, name: formName || team.name, desc: formDesc || team.desc, members: localMembers });
-  };
-
-  // 设计稿文案：去掉"大数据"前缀，保留"专家"
-  const shortName = (name: string) => name.replace(/^大数据/, "");
-
-  const editIcon = (field: string) => (
-    <div onClick={() => setEditingField(field)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: 6, marginLeft: 6, transition: "background 100ms", flexShrink: 0 }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M12.9961 12.9277H6.34765V11.7637H12.9961V12.9277ZM8.51367 1.29687C8.88733 0.992206 9.42616 0.992173 9.7998 1.29687L9.87793 1.36621L11.7139 3.20312C12.1117 3.60121 12.1118 4.24653 11.7139 4.64453L4.70605 11.6523C4.56284 11.7955 4.3794 11.8926 4.18066 11.9316L1.92383 12.375C1.21758 12.5135 0.593333 11.8961 0.724608 11.1885L1.14844 8.9082L1.1875 8.75878C1.2378 8.61418 1.32049 8.48224 1.42969 8.37304L8.43555 1.36621L8.51367 1.29687ZM2.2832 9.16503L1.90723 11.1914L3.91308 10.7978L8.91504 5.79492L7.28418 4.1621L2.2832 9.16503ZM8.10742 3.33984L9.73828 4.97167L10.7881 3.92285L9.15625 2.29101L8.10742 3.33984Z" fill="rgba(0,0,0,0.7)" /></svg>
-    </div>
+  const [formTags, setFormTags] = useState(
+    team.members.length > 0 ? "运营, 数据分析, 日报" : ""
+  );
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
+    () => new Set(team.members.map((m) => m.id))
   );
 
-  /* 设计稿尺寸: label 64px宽, 值从 left:72 起 (gap 8px) */
-  const LABEL_W = 64;
-  const GAP = 8;
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: C.textTertiary, flexShrink: 0, width: LABEL_W, marginRight: GAP };
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "5px 10px", borderRadius: 3, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box" as const };
+  const toggleMember = (id: string) => {
+    setSelectedMembers((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
 
-  const existingIds = new Set(localMembers.map((m) => m.id));
-
-  const handleConfirmAdd = () => {
-    const newMembers = ALL_AVAILABLE_MEMBERS
-      .filter((m) => pendingAdd.has(m.id) && !existingIds.has(m.id))
+  const handleSave = () => {
+    const members = ALL_AVAILABLE_MEMBERS
+      .filter((m) => selectedMembers.has(m.id))
       .map((m): TeamMember => ({ ...m, role: "执行者" }));
-    if (newMembers.length > 0) {
-      setLocalMembers((prev) => [...prev, ...newMembers]);
-    }
-    setPendingAdd(new Set());
-    setShowAddPanel(false);
-    setTimeout(() => handleSaveAll(), 0);
+    onSave({ ...team, name: formName || team.name, desc: formDesc || team.desc, members });
+  };
+
+  const inputBase: React.CSSProperties = {
+    width: "100%", padding: "8px 12px", borderRadius: 8,
+    border: `1px solid #D6DBE3`, background: "#FFFFFF",
+    fontFamily: FONT, fontSize: 14, color: "rgba(0,0,0,0.9)",
+    outline: "none", boxSizing: "border-box" as const,
+    transition: "border-color 150ms",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 14, color: "rgba(0,0,0,0.9)", fontWeight: 400,
+    width: 72, flexShrink: 0,
   };
 
   return (
@@ -351,167 +337,187 @@ function TeamDetailModal({ team, onClose, onSave }: {
       style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <motion.div initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
-        style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column" }}>
+        style={{ width: 560, background: "#FFFFFF", borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1)", fontFamily: FONT, display: "flex", flexDirection: "column" }}>
 
-        {/* Header: padding 24px, title + close, 间距到 body = 20px (padding-bottom 16px + body gap 4px ≈ 20) */}
+        {/* Header */}
         <div style={{ padding: "24px 24px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>团队详情</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: "rgba(0,0,0,0.9)" }}>编辑团队</span>
           <div onClick={onClose} style={{ width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
           ><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M7.99994 8.94275L11.5354 12.4782L12.4782 11.5354L8.94275 7.99994L12.4782 4.46445L11.5354 3.52165L7.99994 7.05713L4.46429 3.52148L3.52148 4.46429L7.05713 7.99994L3.52155 11.5355L4.46436 12.4783L7.99994 8.94275Z" fill="rgba(0,0,0,0.9)" /></svg></div>
         </div>
 
-        {/* Body: 设计稿行间距 16px */}
-        <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* 团队名称: 行高 32px, label paddingTop 6px 垂直居中 */}
-          <div style={{ display: "flex", alignItems: "center", height: 32 }}>
-            <span style={{ ...labelStyle, paddingTop: 6 }}>团队名称</span>
-            {editingField === "name" ? (
-              <input autoFocus value={formName} onChange={(e) => setFormName(e.target.value)} style={{ ...inputStyle, flex: 1, height: 32 }} onKeyDown={handleKeyDown} onBlur={saveField} />
-            ) : (
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: C.textPrimary }}>{formName}</span>
-                {editIcon("name")}
-              </div>
-            )}
+        {/* Body */}
+        <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* 团队名称 */}
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span style={labelStyle}>团队名称 <span style={{ color: "#F64041" }}>*</span></span>
+            <input value={formName} onChange={(e) => setFormName(e.target.value)}
+              placeholder="例如：大数据"
+              style={inputBase}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#1664FF"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
+            />
           </div>
 
-          {/* 描述: 行高 20px */}
+          {/* 描述 */}
           <div style={{ display: "flex", alignItems: "flex-start" }}>
-            <span style={labelStyle}>描述</span>
-            {editingField === "desc" ? (
-              <textarea autoFocus value={formDesc} onChange={(e) => setFormDesc(e.target.value)} rows={2} style={{ ...inputStyle, flex: 1, resize: "none" }} onKeyDown={handleKeyDown} onBlur={saveField} />
-            ) : (
-              <div style={{ display: "flex", alignItems: "flex-start" }}>
-                <span style={{ fontSize: 12, color: C.textPrimary, lineHeight: "20px" }}>{formDesc || "暂无描述"}</span>
-                {editIcon("desc")}
-              </div>
-            )}
+            <span style={{ ...labelStyle, paddingTop: 8 }}>描述</span>
+            <textarea value={formDesc} onChange={(e) => setFormDesc(e.target.value)}
+              placeholder="简要描述数字分身目标和用途"
+              rows={3}
+              style={{ ...inputBase, resize: "none" }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#1664FF"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
+            />
           </div>
 
-          {/* 标签: 行高 32px, pill height 24px, border-radius 100px, padding 0 9px */}
-          <div style={{ display: "flex", alignItems: "center", height: 32 }}>
-            <span style={{ ...labelStyle, paddingTop: 6 }}>标签</span>
-            {editingField === "tags" ? (
-              <input autoFocus value={formTags.join("、")} onChange={(e) => setFormTags(e.target.value.split(/[,，、]/).map((s) => s.trim()).filter(Boolean))}
-                placeholder="用逗号分隔" style={{ ...inputStyle, flex: 1, height: 32 }} onKeyDown={handleKeyDown} onBlur={saveField} />
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                {(formTags.length > 0 ? formTags : ["运营", "数据分析", "日报"]).map((t) => (
-                  <span key={t} style={{ height: 24, display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 400, padding: "0 9px", borderRadius: 100, background: "#F2F4F8", color: "rgba(0,0,0,0.7)" }}>{t}</span>
-                ))}
-                {editIcon("tags")}
-              </div>
-            )}
+          {/* 标签 */}
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span style={labelStyle}>标签</span>
+            <input value={formTags} onChange={(e) => setFormTags(e.target.value)}
+              placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化"
+              style={inputBase}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#1664FF"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
+            />
           </div>
 
-          {/* 成员: "已添加 N 位成员" + 头像行 (28px below) */}
+          {/* 成员 */}
           <div style={{ display: "flex", alignItems: "flex-start" }}>
-            <span style={labelStyle}>成员</span>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              {/* "已添加 N 位成员" — 设计稿 font 12px color tertiary */}
-              <span style={{ fontSize: 12, color: C.textTertiary, lineHeight: "20px" }}>已添加 {localMembers.length} 位成员</span>
-              {/* 头像行: 设计稿 top:28 below "已添加", 每个 60×52, gap 8px */}
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-start", marginTop: 8 }}>
-                {localMembers.map((m) => (
-                  <div key={m.id} style={{ width: 60, height: 52, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    {/* 头像圆: 32×32, 居中(left:14 = (60-32)/2), bg #EEEEEE, outline 0.67px #E7E7E7 */}
+            <span style={{ ...labelStyle, paddingTop: 2 }}>成员 <span style={{ color: "#F64041" }}>*</span></span>
+            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px 0" }}>
+              {ALL_AVAILABLE_MEMBERS.map((m) => {
+                const checked = selectedMembers.has(m.id);
+                return (
+                  <div key={m.id} onClick={() => toggleMember(m.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
                     <div style={{
-                      width: 32, height: 32, borderRadius: 100, overflow: "hidden",
-                      background: "#EEEEEE", outline: "0.67px solid #E7E7E7",
+                      width: 16, height: 16, borderRadius: 3, flexShrink: 0,
+                      border: `1.5px solid ${checked ? "#1664FF" : "#D6DBE3"}`,
+                      background: checked ? "#1664FF" : "transparent",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
+                      transition: "all 100ms",
                     }}>
-                      {m.avatar ? (
-                        <img src={m.avatar} alt={m.name} style={{ width: 34, height: 34, objectFit: "cover", marginLeft: -1, marginTop: -1 }} />
-                      ) : (
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "#FFF", background: m.abbrBg, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 100 }}>{m.abbr}</span>
-                      )}
+                      {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                     </div>
-                    {/* 名称: font 10px, color tertiary, 紧贴头像下方 */}
-                    <span style={{ fontSize: 10, color: C.textTertiary, textAlign: "center", whiteSpace: "nowrap", lineHeight: "20px" }}>{shortName(m.name)}</span>
+                    <span style={{ fontSize: 14, color: "rgba(0,0,0,0.9)" }}>{m.name}</span>
                   </div>
-                ))}
-                {/* 添加成员按钮: 60×52, 圆 32×32 outline 1px #BCC4D0 */}
-                <div ref={addBtnRef} style={{ width: 60, height: 52, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-                  <div onClick={() => { setShowAddPanel((v) => !v); setPendingAdd(new Set()); }}
-                    style={{
-                      width: 32, height: 32, borderRadius: 100,
-                      outline: "1px solid #BCC4D0", outlineOffset: -1,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      cursor: "pointer", transition: "background 100ms",
-                    }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="rgba(0,0,0,0.5)" strokeWidth="1.2" strokeLinecap="round" /></svg>
-                  </div>
-                  <span style={{ fontSize: 10, color: C.textTertiary, textAlign: "center", whiteSpace: "nowrap", lineHeight: "20px" }}>添加成员</span>
-
-                  {/* 添加成员浮窗: 240×352px, border-radius 16px, checkbox 列表 */}
-                  <AnimatePresence>
-                    {showAddPanel && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                        transition={{ duration: 0.15 }}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          position: "absolute", top: 56, left: -8, width: 240, zIndex: 100,
-                          background: C.bgWhite, borderRadius: 16,
-                          boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)",
-                          display: "flex", flexDirection: "column",
-                        }}
-                      >
-                        {/* Checkbox 列表: 每行 32px 高, padding 8px, 行内 checkbox at (8,8), 文字 at (32,5) */}
-                        <div style={{ padding: "8px 8px 0", display: "flex", flexDirection: "column", gap: 8 }}>
-                          {ALL_AVAILABLE_MEMBERS.map((m) => {
-                            const alreadyIn = existingIds.has(m.id);
-                            const checked = pendingAdd.has(m.id) || alreadyIn;
-                            return (
-                              <div key={m.id}
-                                onClick={() => {
-                                  if (alreadyIn) return;
-                                  setPendingAdd((prev) => { const n = new Set(prev); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); return n; });
-                                }}
-                                style={{
-                                  display: "flex", alignItems: "center", height: 32, padding: "0 8px",
-                                  borderRadius: 8, cursor: alreadyIn ? "default" : "pointer",
-                                  opacity: alreadyIn ? 0.4 : 1,
-                                  transition: "background 100ms",
-                                }}
-                                onMouseEnter={(e) => { if (!alreadyIn) (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                              >
-                                {/* Checkbox 16×16 */}
-                                <div style={{
-                                  width: 16, height: 16, borderRadius: 3, flexShrink: 0,
-                                  border: `1.5px solid ${checked ? "#1664FF" : "#D6DBE3"}`,
-                                  background: checked ? "#1664FF" : "transparent",
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                  transition: "all 100ms",
-                                }}>
-                                  {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                                </div>
-                                <span style={{ fontSize: 14, color: C.textPrimary, marginLeft: 8 }}>{m.name}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {/* 底部按钮: 取消 80×32 + 添加 80×32, gap 8px, 右对齐 */}
-                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "12px 8px 8px" }}>
-                          <button onClick={() => { setShowAddPanel(false); setPendingAdd(new Set()); }}
-                            style={{ width: 80, height: 32, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-                          <button onClick={handleConfirmAdd}
-                            style={{ width: 80, height: 32, borderRadius: 32, border: "none", background: pendingAdd.size > 0 ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: pendingAdd.size > 0 ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>添加</button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
+        </div>
+
+        {/* Footer: 取消 + 保存 */}
+        <div style={{ padding: "0 24px 24px", display: "flex", justifyContent: "flex-end", gap: 12 }}>
+          <button onClick={onClose}
+            style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "1px solid #D6DBE3", background: "#FFFFFF", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(0,0,0,0.9)", cursor: "pointer", outline: "none" }}>
+            取消
+          </button>
+          <button onClick={handleSave}
+            style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "none", background: "rgba(0,0,0,0.9)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFFFFF", cursor: "pointer", outline: "none" }}>
+            保存
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── 大数据专家编辑弹窗 ──────────────────────────────────────────
+function ExpertEditModal({ expert, onClose, onNavigateToSkillPlaza }: {
+  expert: { name: string; desc: string; skills: string[] };
+  onClose: () => void;
+  onNavigateToSkillPlaza?: () => void;
+}) {
+  const [skillStates, setSkillStates] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {};
+    expert.skills.forEach((s) => { m[s] = true; });
+    return m;
+  });
+
+  const toggleSkill = (skill: string) => {
+    setSkillStates((prev) => ({ ...prev, [skill]: !prev[skill] }));
+  };
+
+  const enabledCount = Object.values(skillStates).filter(Boolean).length;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }} onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
+        transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
+        style={{ width: 640, maxHeight: "80vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
+      >
+        {/* Header */}
+        <div style={{ padding: "24px 28px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>编辑大数据专家</span>
+          <div onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "background 100ms" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+          ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 0", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
+          {/* 名称 */}
+          <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
+            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80 }}>名称</span>
+            <span style={{ fontSize: 14, fontWeight: 400, color: C.textPrimary }}>{expert.name}</span>
+          </div>
+
+          {/* 描述 */}
+          <div style={{ display: "flex", alignItems: "flex-start", minHeight: 32 }}>
+            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80, paddingTop: 2 }}>描述</span>
+            <span style={{ fontSize: 14, color: C.textPrimary, lineHeight: "22px" }}>{expert.desc}</span>
+          </div>
+
+          {/* 技能 */}
+          <div style={{ display: "flex", alignItems: "flex-start" }}>
+            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80, paddingTop: 12 }}>技能</span>
+            <div style={{ flex: 1, minWidth: 0, background: "#F7F8FB", borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* 标题行 */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 13, color: C.textTertiary }}>已配置{enabledCount}条技能</span>
+                <span onClick={() => { onClose(); onNavigateToSkillPlaza?.(); }}
+                  style={{ fontSize: 14, fontWeight: 500, color: "#0052D9", cursor: "pointer", textDecoration: "none" }}
+                >去配置</span>
+              </div>
+              {/* 技能列表 + 可交互 Toggle */}
+              {expert.skills.map((s) => {
+                const on = skillStates[s] ?? true;
+                return (
+                  <div key={s} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 12, background: C.bgWhite, border: `1px solid ${C.border}` }}>
+                    <span style={{ fontSize: 14, fontWeight: 400, color: on ? C.textPrimary : C.textTertiary }}>{s}</span>
+                    <div
+                      onClick={() => toggleSkill(s)}
+                      style={{ width: 40, height: 22, borderRadius: 11, background: on ? "#0052D9" : "#D6DBE3", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background 200ms" }}
+                    >
+                      <div style={{ width: 18, height: 18, borderRadius: 9, background: "#FFFFFF", position: "absolute", top: 2, left: on ? 20 : 2, boxShadow: "0 1px 3px rgba(0,0,0,0.15)", transition: "left 200ms" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer: 取消 + 保存 */}
+        <div style={{ padding: "20px 28px 24px", display: "flex", justifyContent: "flex-end", gap: 12, flexShrink: 0 }}>
+          <button onClick={onClose}
+            style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "1px solid #D6DBE3", background: "#FFFFFF", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(0,0,0,0.9)", cursor: "pointer", outline: "none" }}>
+            取消
+          </button>
+          <button onClick={onClose}
+            style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "none", background: "rgba(0,0,0,0.9)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFFFFF", cursor: "pointer", outline: "none" }}>
+            保存
+          </button>
         </div>
       </motion.div>
     </motion.div>
@@ -938,7 +944,7 @@ function ExpertDetailMenu({ onDetail }: { onDetail: () => void }) {
               style={{ padding: "5px 8px", borderRadius: 8, cursor: "pointer", fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, transition: "background 100ms" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-            >查看详情</div>
+            >编辑</div>
           </div>
         </>
       )}
@@ -964,7 +970,7 @@ function AvatarMoreMenu({ onDetail, onDelete }: { onDetail: () => void; onDelete
           <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setOpen(false)} />
           <div style={{ position: "absolute", top: 28, right: 0, zIndex: 100, width: 152, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", padding: 8 }}>
             {[
-              { label: "查看详情", action: onDetail },
+              { label: "编辑", action: onDetail },
               { label: "删除数字分身", action: onDelete },
             ].map((item) => (
               <div key={item.label} onClick={() => { setOpen(false); item.action(); }}
@@ -980,39 +986,44 @@ function AvatarMoreMenu({ onDetail, onDelete }: { onDetail: () => void; onDelete
   );
 }
 
-// ── 数字分身详情弹窗 ──────────────────────────────────────────
+// ── 编辑数字分身弹窗 ──────────────────────────────────────────
 type AvatarData = { name: string; desc: string; tags: string[]; skills: { name: string; enabled: boolean }[] };
 
 function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
   data: AvatarData; onClose: () => void; onSave: (d: AvatarData) => void; onConfigSkill?: () => void;
 }) {
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [form, setForm] = useState<AvatarData>({ ...data, tags: [...data.tags], skills: data.skills.map((s) => ({ ...s })) });
+  const [formName, setFormName] = useState(data.name);
+  const [formDesc, setFormDesc] = useState(data.desc);
+  const [formTags, setFormTags] = useState(data.tags.join(", "));
+  const [skillStates, setSkillStates] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {};
+    data.skills.forEach((s) => { m[s.name] = s.enabled; });
+    return m;
+  });
 
-  const save = () => { onSave(form); setEditingField(null); };
-  const cancel = () => { setForm({ ...data, tags: [...data.tags], skills: data.skills.map((s) => ({ ...s })) }); setEditingField(null); };
-
-  const editIcon = (field: string) => (
-    <div onClick={() => setEditingField(field)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: 6, marginLeft: 6, transition: "background 100ms", flexShrink: 0 }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path fillRule="evenodd" clipRule="evenodd" d="M12.9961 12.9277H6.34765V11.7637H12.9961V12.9277ZM8.51367 1.29687C8.88733 0.992206 9.42616 0.992173 9.7998 1.29687L9.87793 1.36621L11.7139 3.20312C12.1117 3.60121 12.1118 4.24653 11.7139 4.64453L4.70605 11.6523C4.56284 11.7955 4.3794 11.8926 4.18066 11.9316L1.92383 12.375C1.21758 12.5135 0.593333 11.8961 0.724608 11.1885L1.14844 8.9082L1.1875 8.75878C1.2378 8.61418 1.32049 8.48224 1.42969 8.37304L8.43555 1.36621L8.51367 1.29687ZM2.2832 9.16503L1.90723 11.1914L3.91308 10.7978L8.91504 5.79492L7.28418 4.1621L2.2832 9.16503ZM8.10742 3.33984L9.73828 4.97167L10.7881 3.92285L9.15625 2.29101L8.10742 3.33984Z" fill="rgba(0,0,0,0.7)" />
-      </svg>
-    </div>
-  );
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); save(); }
-    if (e.key === "Escape") cancel();
+  const toggleSkill = (name: string) => {
+    setSkillStates((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "6px 10px", borderRadius: 8,
-    border: `1px solid ${C.border}`, background: "#FAFBFC",
-    fontFamily: FONT, fontSize: 14, color: C.textPrimary,
-    outline: "none", boxSizing: "border-box",
+  const enabledCount = Object.values(skillStates).filter(Boolean).length;
+
+  const handleSave = () => {
+    const tags = formTags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean);
+    const skills = data.skills.map((s) => ({ ...s, enabled: skillStates[s.name] ?? s.enabled }));
+    onSave({ name: formName, desc: formDesc, tags, skills });
+  };
+
+  const inputBase: React.CSSProperties = {
+    width: "100%", padding: "8px 12px", borderRadius: 8,
+    border: "1px solid #D6DBE3", background: "#FFFFFF",
+    fontFamily: FONT, fontSize: 14, color: "rgba(0,0,0,0.9)",
+    outline: "none", boxSizing: "border-box" as const,
+    transition: "border-color 150ms",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 14, color: "rgba(0,0,0,0.5)", fontWeight: 400,
+    width: 100, flexShrink: 0,
   };
 
   return (
@@ -1024,11 +1035,11 @@ function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
-        style={{ width: 560, maxHeight: "80vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
+        style={{ width: 560, maxHeight: "80vh", background: "#FFFFFF", borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         {/* Header */}
-        <div style={{ padding: "24px 28px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>数字分身详情</span>
+        <div style={{ padding: "24px 28px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <span style={{ fontSize: 18, fontWeight: 600, color: "rgba(0,0,0,0.9)" }}>编辑数字分身</span>
           <div onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "background 100ms" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
@@ -1036,82 +1047,80 @@ function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 28px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 0", display: "flex", flexDirection: "column", gap: 20, scrollbarWidth: "none" }}>
           {/* 名称 */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 32 }}>
-            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 100 }}>数字分身名称</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {editingField === "name" ? (
-                <input autoFocus value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} style={inputStyle}
-                  onKeyDown={handleKeyDown} onBlur={save} />
-              ) : (
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: C.textPrimary }}>{data.name}</span>
-                  {editIcon("name")}
-                </div>
-              )}
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={labelStyle}>数字分身名称</span>
+            <input value={formName} onChange={(e) => setFormName(e.target.value)}
+              style={inputBase}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
+            />
           </div>
 
           {/* 描述 */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minHeight: 32 }}>
-            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 100, paddingTop: 2 }}>描述</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {editingField === "desc" ? (
-                <textarea autoFocus value={form.desc} onChange={(e) => setForm((f) => ({ ...f, desc: e.target.value }))} rows={2}
-                  style={{ ...inputStyle, resize: "none" }} onKeyDown={handleKeyDown} onBlur={save} />
-              ) : (
-                <div style={{ display: "flex", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 14, color: C.textPrimary, lineHeight: "22px" }}>{data.desc || <span style={{ color: C.textDisabled }}>暂无描述</span>}</span>
-                  {editIcon("desc")}
-                </div>
-              )}
-            </div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <span style={{ ...labelStyle, paddingTop: 8 }}>描述</span>
+            <textarea value={formDesc} onChange={(e) => setFormDesc(e.target.value)}
+              rows={3}
+              style={{ ...inputBase, resize: "none" }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
+            />
           </div>
 
           {/* 标签 */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 32 }}>
-            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 100 }}>标签</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {editingField === "tags" ? (
-                <input autoFocus value={form.tags.join("、")} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value.split("、").map((s) => s.trim()).filter(Boolean) }))}
-                  placeholder="用「、」分隔" style={inputStyle} onKeyDown={handleKeyDown} onBlur={save} />
-              ) : (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  {data.tags.length > 0 ? data.tags.map((t) => (
-                    <span key={t} style={{ fontSize: 13, padding: "2px 10px", borderRadius: 6, background: "#F2F4F8", color: C.textPrimary, border: `1px solid ${C.border}`, lineHeight: "20px" }}>{t}</span>
-                  )) : <span style={{ fontSize: 14, color: C.textDisabled }}>暂无标签</span>}
-                  {editIcon("tags")}
-                </div>
-              )}
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={labelStyle}>标签</span>
+            <input value={formTags} onChange={(e) => setFormTags(e.target.value)}
+              placeholder="输入标签，多个用逗号分隔"
+              style={inputBase}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
+            />
           </div>
 
           {/* 技能 */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 100, paddingTop: 12 }}>技能</span>
+            <span style={{ ...labelStyle, paddingTop: 12 }}>技能</span>
             <div style={{ flex: 1, minWidth: 0, background: "#F7F8FB", borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* 标题行 */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 13, color: C.textTertiary }}>已配置{data.skills.length}条技能</span>
+                <span style={{ fontSize: 13, color: "rgba(0,0,0,0.5)" }}>已配置{enabledCount}条技能</span>
                 <span onClick={() => { onClose(); onConfigSkill?.(); }}
-                  style={{ fontSize: 14, fontWeight: 500, color: "#1664FF", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                  style={{ fontSize: 14, fontWeight: 500, color: "#0052D9", cursor: "pointer" }}
                 >去配置</span>
               </div>
-              {/* 技能列表 + Toggle */}
-              {data.skills.map((s) => (
-                <div key={s.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 12, background: C.bgWhite, border: `1px solid ${C.border}` }}>
-                  <span style={{ fontSize: 14, fontWeight: 400, color: C.textPrimary }}>{s.name}</span>
-                  <div style={{ width: 40, height: 22, borderRadius: 11, background: s.enabled ? "#7B9EFF" : "#D6DBE3", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background 200ms" }}>
-                    <div style={{ width: 18, height: 18, borderRadius: 9, background: "#FFFFFF", position: "absolute", top: 2, left: s.enabled ? 20 : 2, boxShadow: "0 1px 3px rgba(0,0,0,0.15)", transition: "left 200ms" }} />
+              {data.skills.map((s) => {
+                const on = skillStates[s.name] ?? s.enabled;
+                return (
+                  <div key={s.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 12, background: "#FFFFFF", border: "1px solid #E6E9EF" }}>
+                    <span style={{ fontSize: 14, fontWeight: 400, color: on ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.5)" }}>{s.name}</span>
+                    <div
+                      onClick={() => toggleSkill(s.name)}
+                      style={{ width: 40, height: 22, borderRadius: 11, background: on ? "#0052D9" : "#D6DBE3", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background 200ms" }}
+                    >
+                      <div style={{ width: 18, height: 18, borderRadius: 9, background: "#FFFFFF", position: "absolute", top: 2, left: on ? 20 : 2, boxShadow: "0 1px 3px rgba(0,0,0,0.15)", transition: "left 200ms" }} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {data.skills.length === 0 && (
-                <span style={{ fontSize: 13, color: C.textTertiary }}>暂无已配置技能</span>
+                <span style={{ fontSize: 13, color: "rgba(0,0,0,0.5)" }}>暂无已配置技能</span>
               )}
             </div>
           </div>
+        </div>
+
+        {/* Footer: 取消 + 保存 */}
+        <div style={{ padding: "20px 28px 24px", display: "flex", justifyContent: "flex-end", gap: 12, flexShrink: 0 }}>
+          <button onClick={onClose}
+            style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "1px solid #D6DBE3", background: "#FFFFFF", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(0,0,0,0.9)", cursor: "pointer", outline: "none" }}>
+            取消
+          </button>
+          <button onClick={handleSave}
+            style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "none", background: "rgba(0,0,0,0.9)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFFFFF", cursor: "pointer", outline: "none" }}>
+            保存
+          </button>
         </div>
       </motion.div>
     </motion.div>
@@ -1502,68 +1511,10 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         )}
       </AnimatePresence>
 
-      {/* 大数据专家详情弹窗 */}
+      {/* 大数据专家编辑弹窗 */}
       <AnimatePresence>
         {viewingExpert && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }} onClick={() => setViewingExpert(null)}
-            style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
-              transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
-              style={{ width: 640, maxHeight: "80vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
-            >
-              {/* Header */}
-              <div style={{ padding: "24px 28px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-                <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>大数据专家详情</span>
-                <div onClick={() => setViewingExpert(null)} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "background 100ms" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
-              </div>
-
-              {/* Body */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 28px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
-                {/* 名称 */}
-                <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
-                  <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80 }}>名称</span>
-                  <span style={{ fontSize: 14, fontWeight: 400, color: C.textPrimary }}>{viewingExpert.name}</span>
-                </div>
-
-                {/* 描述 */}
-                <div style={{ display: "flex", alignItems: "flex-start", minHeight: 32 }}>
-                  <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80, paddingTop: 2 }}>描述</span>
-                  <span style={{ fontSize: 14, color: C.textPrimary, lineHeight: "22px" }}>{viewingExpert.desc}</span>
-                </div>
-
-                {/* 技能 */}
-                <div style={{ display: "flex", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 14, color: C.textTertiary, flexShrink: 0, width: 80, paddingTop: 12 }}>技能</span>
-                  <div style={{ flex: 1, minWidth: 0, background: "#F7F8FB", borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-                    {/* 标题行 */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 13, color: C.textTertiary }}>已配置{viewingExpert.skills.length}条技能</span>
-                      <span onClick={() => { setViewingExpert(null); onNavigateToSkillPlaza?.(); }}
-                        style={{ fontSize: 14, fontWeight: 500, color: "#1664FF", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
-                      >去配置</span>
-                    </div>
-                    {/* 技能列表 + Toggle */}
-                    {viewingExpert.skills.map((s) => (
-                      <div key={s} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 12, background: C.bgWhite, border: `1px solid ${C.border}` }}>
-                        <span style={{ fontSize: 14, fontWeight: 400, color: C.textPrimary }}>{s}</span>
-                        {/* Toggle 开关（纯展示，蓝色已开启） */}
-                        <div style={{ width: 40, height: 22, borderRadius: 11, background: "#7B9EFF", position: "relative", cursor: "default", flexShrink: 0 }}>
-                          <div style={{ width: 18, height: 18, borderRadius: 9, background: "#FFFFFF", position: "absolute", top: 2, left: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.15)", transition: "left 200ms" }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
+          <ExpertEditModal expert={viewingExpert} onClose={() => setViewingExpert(null)} onNavigateToSkillPlaza={() => { setViewingExpert(null); onNavigateToSkillPlaza?.(); }} />
         )}
       </AnimatePresence>
 

@@ -225,7 +225,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                   <div style={{ display: "flex" }}>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>执行 Claw</span>
-                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>{singleExpert ? "数据运维专家 (1 人)" : "大数据团队 (3 人)"}</span>
+                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>{singleExpert ? "数据运维专家" : "大数据团队"}</span>
                     </div>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>状态</span>
@@ -253,14 +253,8 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                   <span style={{ fontSize: 14, fontWeight: 500, color: TEXT_PRIMARY }}>执行流程</span>
                 </div>
 
-                {/* DAG 流程图 */}
-                <div style={{
-                  background: "#FAFBFC",
-                  borderRadius: 16,
-                  padding: "40px 24px",
-                  overflow: "hidden",
-                  position: "relative",
-                }}>
+                {/* DAG 流程图 — 支持缩放 / 拖拽 */}
+                <DagZoomContainer>
                   <style>{`
                     @keyframes dag-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
                     @keyframes dag-flow { 0% { stroke-dashoffset: 20; } 100% { stroke-dashoffset: 0; } }
@@ -302,67 +296,24 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                       <>
                         {/* 多专家模式：任务解析与调度 → 三个专家卡片 → 结果融合 */}
                         <DagNode label="任务解析与调度" status="done" />
-                        <DagArrowFan />
+                        <DagArrowFan leftDone centerDone={phase >= 2} rightDone={false} />
 
-                        <div style={{ display: "flex", gap: 16, width: "100%" }}>
-                          <ExpertCard
-                            name="数据分析专家"
-                            tasks={[
-                              { label: "权限验证", icon: "/icons/dag/6.svg", status: "done" },
-                              { label: "SQL 生成", icon: "/icons/dag/7.svg", status: phase >= 1 ? "done" : "active" },
-                              { label: "数据探索", icon: "/icons/dag/8.svg", status: phase >= 1 ? "done" : "pending" },
-                            ]}
-                            artifacts={phase >= 1 ? [
-                              { label: "Spark 查询报告.md", id: "r1" },
-                              { label: "emr_query_stats.sql", id: "r2" },
-                              { label: "dau_wau_east_7d.sql", id: "r3" },
-                              { label: "query_trend_chart.png", id: "r4" },
-                            ] : undefined}
-                            onArtifactClick={(id) => {
-                              const a = MOCK_ALL_ARTIFACTS.find((x) => x.id === id) ?? { id, title: "Spark 查询报告.md", description: "业务结论报告 · Markdown 可下载" };
-                              setSelectedArtifact(a);
-                            }}
-                          />
-                          <ExpertCard
-                            name="数据开发专家"
-                            tasks={[
-                              { label: "HDFS 完整性检查", icon: "/icons/dag/12.svg", status: phase >= 1 ? "done" : "done" },
-                              { label: "血缘追踪", icon: "/icons/dag/13.svg", status: phase >= 2 ? "done" : phase >= 1 ? "active" : "pending" },
-                              { label: "质量检查", icon: "/icons/dag/14.svg", status: phase >= 2 ? "done" : "pending" },
-                            ]}
-                            artifacts={phase >= 2 ? [
-                              { label: "慢SQL #1 调优分析.md", id: "r5" },
-                              { label: "optimized_query.sql", id: "r6" },
-                              { label: "execution_plan.png", id: "r7" },
-                              { label: "performance_diff.md", id: "r8" },
-                            ] : undefined}
-                            onArtifactClick={(id) => {
-                              const a = MOCK_ALL_ARTIFACTS.find((x) => x.id === id) ?? { id, title: "慢SQL #1 调优.md", description: "深度调优分析报告" };
-                              setSelectedArtifact(a);
-                            }}
-                          />
-                          <ExpertCard
-                            name="数据运维专家"
-                            tasks={[
-                              { label: "资源监控", icon: "/icons/dag/9.svg", status: phase >= 1 ? "done" : "pending" },
-                              { label: "自动扩缩容", icon: "/icons/dag/10.svg", status: phase >= 2 ? "done" : "pending" },
-                              { label: "故障预警", icon: "/icons/dag/11.svg", status: phase >= 2 ? "active" : "pending" },
-                            ]}
-                          />
-                        </div>
-
-                        <DagArrowMerge />
+                        <DagCardRowWithMerge
+                          phase={phase}
+                          setSelectedArtifact={setSelectedArtifact}
+                          allArtifacts={MOCK_ALL_ARTIFACTS}
+                        />
 
                         {/* 结果融合 */}
-                        <DagNode label="结果融合" status={phase >= 2 ? "active" : "pending"} />
-                        <DagArrow />
+                        <DagNode label="结果融合" status="pending" />
+                        <DagArrow dashed />
                       </>
                     )}
 
                     {/* 报告生成 */}
                     <DagNode label="报告生成" status="pending" />
                   </div>
-                </div>
+                </DagZoomContainer>
               </div>
             )}
             {activeTab === "logs" && (
@@ -628,6 +579,390 @@ function ArtifactItem({ artifact, onClick }: { artifact: Artifact; onClick?: () 
 
 const EDGE_COLOR = "#9EACBE";
 const EDGE_DASHED = "6 4";
+const EDGE_W = "0.87";
+
+// ── DAG zoom / pan container ────────────────────────────────────
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 3;
+const ZOOM_STEP = 0.15;
+
+function DagZoomContainer({ children }: { children: React.ReactNode }) {
+  const [scale, setScale] = React.useState(1);
+  const [translate, setTranslate] = React.useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = React.useState(false);
+  const [initScale, setInitScale] = React.useState(1);
+  const dragStart = React.useRef({ x: 0, y: 0, tx: 0, ty: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const canvasRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-fit width on mount (retry to handle late renders)
+  React.useEffect(() => {
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    const doFit = () => {
+      const cw = container.clientWidth;
+      const prev = canvas.style.transform;
+      canvas.style.transform = "none";
+      const sw = canvas.scrollWidth;
+      canvas.style.transform = prev;
+      if (sw > 0 && cw > 0) {
+        const fit = Math.min(cw / sw, 1);
+        setInitScale(fit);
+        setScale(fit);
+        setTranslate({ x: 0, y: 0 });
+        return true;
+      }
+      return false;
+    };
+
+    // Try multiple times in case content hasn't rendered
+    let attempts = 0;
+    const tryFit = () => {
+      if (doFit() || attempts > 10) return;
+      attempts++;
+      setTimeout(tryFit, 100);
+    };
+    const timer = setTimeout(tryFit, 80);
+
+    // Also re-fit when canvas resizes (e.g. cards rendered)
+    const observer = new ResizeObserver(() => doFit());
+    observer.observe(canvas);
+
+    return () => { clearTimeout(timer); observer.disconnect(); };
+  }, []);
+
+  const clampScale = (s: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
+
+  const handleWheel = React.useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+    setScale((prev) => {
+      const next = clampScale(prev + delta);
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        const factor = next / prev;
+        setTranslate((t) => ({
+          x: cx - factor * (cx - t.x),
+          y: cy - factor * (cy - t.y),
+        }));
+      }
+      return next;
+    });
+  }, []);
+
+  const handlePointerDown = React.useCallback((e: React.PointerEvent) => {
+    if (e.button === 1 || (e.button === 0 && (e.target as HTMLElement).closest("[data-dag-canvas]"))) {
+      setDragging(true);
+      dragStart.current = { x: e.clientX, y: e.clientY, tx: translate.x, ty: translate.y };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
+  }, [translate]);
+
+  const handlePointerMove = React.useCallback((e: React.PointerEvent) => {
+    if (!dragging) return;
+    setTranslate({
+      x: dragStart.current.tx + (e.clientX - dragStart.current.x),
+      y: dragStart.current.ty + (e.clientY - dragStart.current.y),
+    });
+  }, [dragging]);
+
+  const handlePointerUp = React.useCallback(() => {
+    setDragging(false);
+  }, []);
+
+  const resetView = React.useCallback(() => {
+    setScale(initScale);
+    setTranslate({ x: 0, y: 0 });
+  }, [initScale]);
+
+  const zoomIn = React.useCallback(() => {
+    setScale((s) => clampScale(s + ZOOM_STEP));
+  }, []);
+
+  const zoomOut = React.useCallback(() => {
+    setScale((s) => clampScale(s - ZOOM_STEP));
+  }, []);
+
+  const scalePercent = initScale > 0 ? Math.round((scale / initScale) * 100) : 100;
+
+  return (
+    <div style={{
+      background: "#FAFBFC",
+      borderRadius: 16,
+      overflow: "hidden",
+      position: "relative",
+      cursor: dragging ? "grabbing" : "grab",
+      touchAction: "none",
+      userSelect: "none",
+    }}
+      ref={containerRef}
+      onWheel={handleWheel}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    >
+      {/* Transformable canvas */}
+      <div
+        ref={canvasRef}
+        data-dag-canvas
+        style={{
+          padding: "40px 24px",
+          transformOrigin: "0 0",
+          transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+          transition: dragging ? "none" : "transform 0.1s ease-out",
+        }}
+      >
+        {children}
+      </div>
+
+      {/* Zoom controls — bottom-right */}
+      <div style={{
+        position: "absolute",
+        bottom: 12,
+        right: 12,
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        background: "#FFFFFF",
+        borderRadius: 8,
+        border: "1px solid #E6E9EF",
+        boxShadow: "0px 2px 8px rgba(0,0,0,0.06)",
+        padding: "2px 4px",
+        zIndex: 10,
+        pointerEvents: "auto",
+      }}>
+        <ZoomBtn label="−" onClick={zoomOut} disabled={scale <= MIN_SCALE} />
+        <div
+          onClick={resetView}
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            color: "rgba(0,0,0,0.6)",
+            minWidth: 40,
+            textAlign: "center",
+            cursor: "pointer",
+            lineHeight: "24px",
+            userSelect: "none",
+          }}
+          title="重置缩放"
+        >
+          {scalePercent}%
+        </div>
+        <ZoomBtn label="+" onClick={zoomIn} disabled={scale >= MAX_SCALE} />
+        {/* Divider */}
+        <div style={{ width: 1, height: 16, background: "#E6E9EF", margin: "0 2px" }} />
+        {/* Reset button — fit-to-view icon */}
+        <div
+          onClick={resetView}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.06)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+          title="重置视图"
+          style={{
+            width: 24, height: 24, borderRadius: 4,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", background: "transparent",
+            transition: "background 0.1s", userSelect: "none",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 4.5V1.5C1 1.224 1.224 1 1.5 1H4.5" stroke="rgba(0,0,0,0.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M9.5 1H12.5C12.776 1 13 1.224 13 1.5V4.5" stroke="rgba(0,0,0,0.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M13 9.5V12.5C13 12.776 12.776 13 12.5 13H9.5" stroke="rgba(0,0,0,0.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M4.5 13H1.5C1.224 13 1 12.776 1 12.5V9.5" stroke="rgba(0,0,0,0.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ZoomBtn({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <div
+      onClick={disabled ? undefined : onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: 4,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: disabled ? "not-allowed" : "pointer",
+        background: hovered && !disabled ? "rgba(0,0,0,0.06)" : "transparent",
+        color: disabled ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.7)",
+        fontSize: 16,
+        fontWeight: 600,
+        lineHeight: 1,
+        userSelect: "none",
+        transition: "background 0.1s",
+      }}
+    >
+      {label}
+    </div>
+  );
+}
+
+// Card row + dynamic merge lines that connect from each card's actual bottom center
+function DagCardRowWithMerge({ phase, setSelectedArtifact, allArtifacts }: {
+  phase: number;
+  setSelectedArtifact: (a: { id: string; title: string; description: string }) => void;
+  allArtifacts: { id: string; title: string; description: string }[];
+}) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const card1Ref = React.useRef<HTMLDivElement>(null);
+  const card2Ref = React.useRef<HTMLDivElement>(null);
+  const card3Ref = React.useRef<HTMLDivElement>(null);
+  const [mergeLines, setMergeLines] = React.useState<{ x: number; y: number; done: boolean }[]>([]);
+  const [containerW, setContainerW] = React.useState(0);
+  const [maxCardH, setMaxCardH] = React.useState(0);
+
+  React.useEffect(() => {
+    const measure = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      const cRect = container.getBoundingClientRect();
+      setContainerW(cRect.width);
+
+      const refs = [card1Ref, card2Ref, card3Ref];
+      const doneFlags = [false, false, false]; // merge lines always dashed (flow not complete)
+      const lines: { x: number; y: number; done: boolean }[] = [];
+      let mh = 0;
+
+      refs.forEach((ref, i) => {
+        const el = ref.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const cx = r.left - cRect.left + r.width / 2;
+        const cy = r.top - cRect.top + r.height;
+        lines.push({ x: cx, y: cy, done: doneFlags[i] });
+        if (r.height > mh) mh = r.height;
+      });
+
+      setMergeLines(lines);
+      setMaxCardH(mh);
+    };
+
+    const timer = setTimeout(measure, 60);
+    const observer = new ResizeObserver(() => setTimeout(measure, 30));
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => { clearTimeout(timer); observer.disconnect(); };
+  }, [phase]);
+
+  // Merge SVG height: from max card bottom to the merge point (72px below max card)
+  const mergeH = 72;
+  const totalH = maxCardH + mergeH;
+  const mergeCx = containerW / 2;
+  // Unified horizontal Y: all branches bend at same height (maxCardH + 20)
+  const unifiedMidY = maxCardH + 20;
+
+  const makePath = (sx: number, sy: number) => {
+    const endY = totalH - 5;
+    if (Math.abs(sx - mergeCx) < 2) {
+      // Center: straight line from card bottom to arrow
+      return `M${sx} ${sy}V${endY}`;
+    }
+    // Side branches: down from card bottom → bend at unifiedMidY → horizontal to center → down
+    const bendR = 13;
+    const goingRight = sx < mergeCx;
+    if (goingRight) {
+      return `M${sx} ${sy}V${unifiedMidY - bendR}C${sx} ${unifiedMidY},${sx + bendR} ${unifiedMidY},${sx + bendR} ${unifiedMidY}H${mergeCx - bendR}C${mergeCx} ${unifiedMidY},${mergeCx} ${unifiedMidY + bendR},${mergeCx} ${unifiedMidY + bendR}V${endY}`;
+    } else {
+      return `M${sx} ${sy}V${unifiedMidY - bendR}C${sx} ${unifiedMidY},${sx - bendR} ${unifiedMidY},${sx - bendR} ${unifiedMidY}H${mergeCx + bendR}C${mergeCx} ${unifiedMidY},${mergeCx} ${unifiedMidY + bendR},${mergeCx} ${unifiedMidY + bendR}V${endY}`;
+    }
+  };
+
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+      {/* Card row */}
+      <div style={{ display: "flex", gap: 16, width: "100%", alignItems: "flex-start" }}>
+        <div ref={card1Ref} style={{ flex: 1, minWidth: 0 }}>
+          <ExpertCard
+            name="数据分析专家"
+            tasks={[
+              { label: "验证鉴权", icon: "/icons/dag/6.svg", status: "done" },
+              { label: "Spark 查询", icon: "/icons/dag/7.svg", status: "done" },
+              { label: "处理数据", icon: "/icons/dag/8.svg", status: "done" },
+            ]}
+            artifacts={[
+              { label: "Spark 查询报告.md", id: "r1" },
+              { label: "emr_query_stats.sql", id: "r2" },
+              { label: "dau_wau_east_7d.sql", id: "r3" },
+              { label: "query_trend_chart.png", id: "r4" },
+            ]}
+            onArtifactClick={(id) => {
+              const a = allArtifacts.find((x) => x.id === id) ?? { id, title: "Spark 查询报告.md", description: "业务结论报告 · Markdown 可下载" };
+              setSelectedArtifact(a);
+            }}
+          />
+        </div>
+        <div ref={card2Ref} style={{ flex: 1, minWidth: 0 }}>
+          <ExpertCard
+            name="数据开发专家"
+            tasks={[
+              { label: "HDFS 完整性检查", icon: "/icons/dag/12.svg", status: phase >= 2 ? "done" : phase >= 1.5 ? "active" : "pending" },
+              { label: "血缘追踪", icon: "/icons/dag/13.svg", status: phase >= 2 ? "done" : phase >= 1.5 ? "active" : "pending" },
+              { label: "质量检查", icon: "/icons/dag/14.svg", status: phase >= 2 ? "done" : phase >= 1.5 ? "active" : "pending" },
+            ]}
+            artifacts={phase >= 2 ? [
+              { label: "慢SQL #1 调优分析.md", id: "r5" },
+              { label: "optimized_query.sql", id: "r6" },
+              { label: "execution_plan.png", id: "r7" },
+              { label: "performance_diff.md", id: "r8" },
+            ] : undefined}
+            onArtifactClick={(id) => {
+              const a = allArtifacts.find((x) => x.id === id) ?? { id, title: "慢SQL #1 调优.md", description: "深度调优分析报告" };
+              setSelectedArtifact(a);
+            }}
+          />
+        </div>
+        <div ref={card3Ref} style={{ flex: 1, minWidth: 0 }}>
+          <ExpertCard
+            name="数据运维专家"
+            tasks={[
+              { label: "资源监控", icon: "/icons/dag/9.svg", status: "pending" },
+              { label: "自动扩缩容", icon: "/icons/dag/10.svg", status: "pending" },
+              { label: "故障预警", icon: "/icons/dag/11.svg", status: "pending" },
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* Dynamic merge SVG overlay */}
+      {mergeLines.length === 3 && totalH > 0 && (
+        <svg
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: totalH, pointerEvents: "none" }}
+          viewBox={`0 0 ${containerW} ${totalH}`}
+          fill="none"
+        >
+          {mergeLines.map((l, i) => {
+            const d = makePath(l.x, l.y);
+            return l.done ? (
+              <path key={i} d={d} stroke={EDGE_COLOR} strokeWidth="1" fill="none" />
+            ) : (
+              <path key={i} d={d} stroke={EDGE_COLOR} strokeWidth="1" fill="none" strokeDasharray="3 3">
+                <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite" />
+              </path>
+            );
+          })}
+          {/* Arrow at merge point */}
+          <path d={`M${mergeCx} ${totalH}L${mergeCx + 2.887} ${totalH - 5}H${mergeCx - 2.887}Z`} fill={EDGE_COLOR} />
+        </svg>
+      )}
+
+      {/* Spacer for merge area */}
+      <div style={{ height: mergeH }} />
+    </div>
+  );
+}
 
 function DagNode({ label, status }: { label: string; status: "done" | "active" | "pending" }) {
   return (
@@ -653,61 +988,83 @@ function DagNode({ label, status }: { label: string; status: "done" | "active" |
   );
 }
 
-// Vertical arrow (solid or dashed)
+// Vertical arrow — matches figma 1.svg / 2.svg style
 function DagArrow({ dashed = false }: { dashed?: boolean }) {
   return (
     <div style={{ display: "flex", justifyContent: "center", height: 40 }}>
       <svg width="6" height="40" viewBox="0 0 6 40" fill="none">
-        <line x1="3" y1="0" x2="3" y2="35" stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={dashed ? EDGE_DASHED : "none"}>
-          {!dashed && (
-            <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1.5s" repeatCount="indefinite" />
-          )}
-        </line>
-        <path d="M3 40L5.887 35H0.113L3 40Z" fill={EDGE_COLOR} />
+        {dashed ? (
+          // Dashed line with flow animation
+          <line x1="3" y1="0" x2="3" y2="35" stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray="3 3">
+            <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite" />
+          </line>
+        ) : (
+          <rect x="2.5" y="0" width="1" height="35.5" fill={EDGE_COLOR} />
+        )}
+        <path d="M3 40L5.773 35H0.227L3 40Z" fill={EDGE_COLOR} />
       </svg>
     </div>
   );
 }
 
-// Fan-out from center to 3 columns (uses figma curved connectors)
+// Fan-out: center → 3 columns, right-angle paths with rounded corners
+// viewBox 600×72; columns at 100 (1/6), 300 (1/2), 500 (5/6) to match flex:1 card centers
 function DagArrowFan({ leftDone, centerDone, rightDone }: { leftDone?: boolean; centerDone?: boolean; rightDone?: boolean }) {
+  const leftPath = "M300 0V12.5C300 25.48 289.48 36 276.5 36H123.5C110.52 36 100 46.52 100 59.5V67";
+  const centerPath = "M300 0V67";
+  const rightPath = "M300 0V12.5C300 25.48 310.52 36 323.5 36H476.5C489.48 36 500 46.52 500 59.5V67";
+
+  const arrow = (cx: number) => (
+    <path d={`M${cx} 72L${cx + 2.887} 67H${cx - 2.887}L${cx} 72Z`} fill={EDGE_COLOR} />
+  );
+
+  const line = (d: string, done?: boolean) => done ? (
+    <path d={d} stroke={EDGE_COLOR} strokeWidth="1" fill="none" />
+  ) : (
+    <path d={d} stroke={EDGE_COLOR} strokeWidth="1" fill="none" strokeDasharray="3 3">
+      <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite" />
+    </path>
+  );
+
   return (
-    <div style={{ position: "relative", width: "100%", height: 73 }}>
-      {/* Center line: straight down */}
-      <svg style={{ position: "absolute", left: "50%", transform: "translateX(-3px)", top: 0 }} width="6" height="73" viewBox="0 0 6 73" fill="none">
-        <line x1="3" y1="0" x2="3" y2="68" stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={centerDone ? "none" : EDGE_DASHED} />
-        <path d="M3 73L5.887 68H0.113L3 73Z" fill={EDGE_COLOR} />
-      </svg>
-      {/* Left branch: center → left card (curved) */}
-      <svg style={{ position: "absolute", left: 0, top: 0, width: "50%", height: 73 }} viewBox="0 0 230 73" fill="none" preserveAspectRatio="xMaxYMin meet">
-        <path d={`M229 0V12.5C229 26 218 37 204.5 37H25C11 37 0.5 47 0.5 60.5V68`} stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={leftDone ? "none" : EDGE_DASHED} fill="none" />
-        <path d="M3 73L5.887 68H0.113L3 73Z" fill={EDGE_COLOR} />
-      </svg>
-      {/* Right branch: center → right card (curved) */}
-      <svg style={{ position: "absolute", right: 0, top: 0, width: "50%", height: 73 }} viewBox="0 0 230 73" fill="none" preserveAspectRatio="xMinYMin meet">
-        <path d={`M1 0V12.5C1 26 12 37 25.5 37H204.5C218 37 228.5 47 228.5 60.5V68`} stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={rightDone ? "none" : EDGE_DASHED} fill="none" />
-        <path d="M227 73L229.887 68H224.113L227 73Z" fill={EDGE_COLOR} />
+    <div style={{ width: "100%", height: 72 }}>
+      <svg width="100%" height="72" viewBox="0 0 600 72" fill="none" preserveAspectRatio="none">
+        {line(leftPath, leftDone)}
+        {arrow(100)}
+        {line(centerPath, centerDone)}
+        {arrow(300)}
+        {line(rightPath, rightDone)}
+        {arrow(500)}
       </svg>
     </div>
   );
 }
 
-// Merge from 3 columns back to center
+// Merge: 3 columns → center
 function DagArrowMerge({ leftDone, centerDone, rightDone }: { leftDone?: boolean; centerDone?: boolean; rightDone?: boolean }) {
+  const leftPath = "M100 0V12.5C100 25.48 110.52 36 123.5 36H276.5C289.48 36 300 46.52 300 59.5V67";
+  const centerPath = "M300 0V67";
+  const rightPath = "M500 0V12.5C500 25.48 489.48 36 476.5 36H323.5C310.52 36 300 46.52 300 59.5V67";
+
+  const arrow = (cx: number) => (
+    <path d={`M${cx} 72L${cx + 2.887} 67H${cx - 2.887}L${cx} 72Z`} fill={EDGE_COLOR} />
+  );
+
+  const line = (d: string, done?: boolean) => done ? (
+    <path d={d} stroke={EDGE_COLOR} strokeWidth="1" fill="none" />
+  ) : (
+    <path d={d} stroke={EDGE_COLOR} strokeWidth="1" fill="none" strokeDasharray="3 3">
+      <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite" />
+    </path>
+  );
+
   return (
-    <div style={{ position: "relative", width: "100%", height: 73 }}>
-      {/* Center line */}
-      <svg style={{ position: "absolute", left: "50%", transform: "translateX(-3px)", top: 0 }} width="6" height="73" viewBox="0 0 6 73" fill="none">
-        <line x1="3" y1="0" x2="3" y2="68" stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={centerDone ? "none" : EDGE_DASHED} />
-        <path d="M3 73L5.887 68H0.113L3 73Z" fill={EDGE_COLOR} />
-      </svg>
-      {/* Left merge */}
-      <svg style={{ position: "absolute", left: 0, top: 0, width: "50%", height: 73 }} viewBox="0 0 230 73" fill="none" preserveAspectRatio="xMaxYMin meet">
-        <path d={`M1 0V12.5C1 26 12 37 25.5 37H204.5C218 37 228.5 47 228.5 60.5V68`} stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={leftDone ? "none" : EDGE_DASHED} fill="none" />
-      </svg>
-      {/* Right merge */}
-      <svg style={{ position: "absolute", right: 0, top: 0, width: "50%", height: 73 }} viewBox="0 0 230 73" fill="none" preserveAspectRatio="xMinYMin meet">
-        <path d={`M229 0V12.5C229 26 218 37 204.5 37H25C11 37 0.5 47 0.5 60.5V68`} stroke={EDGE_COLOR} strokeWidth="1" strokeDasharray={rightDone ? "none" : EDGE_DASHED} fill="none" />
+    <div style={{ width: "100%", height: 72 }}>
+      <svg width="100%" height="72" viewBox="0 0 600 72" fill="none" preserveAspectRatio="none">
+        {line(leftPath, leftDone)}
+        {line(centerPath, centerDone)}
+        {line(rightPath, rightDone)}
+        {arrow(300)}
       </svg>
     </div>
   );
@@ -773,18 +1130,22 @@ function TaskStatusIcon({ status }: { status: "done" | "active" | "pending" }) {
   );
 }
 
-function ExpertCard({ name, tasks, artifacts, onArtifactClick }: {
+function ExpertCard({ name, tasks, artifacts, onArtifactClick, artifactsLoading }: {
   name: string;
   tasks: ExpertTask[];
   artifacts?: ExpertArtifactLink[];
   onArtifactClick?: (id: string) => void;
+  artifactsLoading?: boolean;
 }) {
-  const [hoveredTask, setHoveredTask] = React.useState<number | null>(null);
+  const [artifactHover, setArtifactHover] = React.useState(false);
+
+  const artifactCount = artifacts?.length ?? 0;
+  const showArtifactRow = artifactCount > 0 || artifactsLoading;
 
   return (
     <div style={{
-      width: 200,
-      flexShrink: 0,
+      flex: 1,
+      minWidth: 0,
       background: "#FFFFFF",
       borderRadius: 8,
       border: "1px solid #D6DBE3",
@@ -795,15 +1156,14 @@ function ExpertCard({ name, tasks, artifacts, onArtifactClick }: {
       <div style={{ padding: "10px 12px 8px", fontSize: 14, fontWeight: 600, color: "rgba(0,0,0,0.9)" }}>
         {name}
       </div>
-      <div style={{ margin: "0 12px", height: 1, background: "#E6E9EF" }} />
+      {/* Divider under name */}
+      <div style={{ margin: "0 6px", height: 1, background: "#E6E9EF" }} />
 
-      {/* Task list */}
-      <div style={{ padding: "8px 6px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
-        {tasks.map((t, i) => (
+      {/* Task list — execution steps only */}
+      <div style={{ padding: "8px 6px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+        {tasks.map((t) => (
           <div
             key={t.label}
-            onMouseEnter={() => setHoveredTask(i)}
-            onMouseLeave={() => setHoveredTask(null)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -811,10 +1171,6 @@ function ExpertCard({ name, tasks, artifacts, onArtifactClick }: {
               height: 32,
               padding: "0 6px",
               borderRadius: 8,
-              background: hoveredTask === i && t.status === "done" ? "#F2F4F8" : "transparent",
-              cursor: t.status === "done" ? "pointer" : "default",
-              transition: "background 0.15s",
-              position: "relative",
             }}
           >
             <div style={{ width: 16, height: 16, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -827,21 +1183,61 @@ function ExpertCard({ name, tasks, artifacts, onArtifactClick }: {
             }}>
               {t.label}
             </span>
-            {/* Chevron for done items */}
-            {t.status === "done" && hoveredTask === i && (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M5.39 11.667L9.057 8L5.39 4.333L6.333 3.39L10.943 8L6.333 12.61L5.39 11.667Z" fill="rgba(0,0,0,0.5)" />
-              </svg>
-            )}
+          </div>
+        ))}
+      </div>
 
-            {/* Hover popover with artifacts */}
-            {t.status === "done" && hoveredTask === i && artifacts && artifacts.length > 0 && (
+      {/* Artifacts row — separated from steps */}
+      {showArtifactRow && (
+        <>
+          {/* Divider above artifacts */}
+          <div style={{ margin: "2px 6px", height: 1, background: "#E6E9EF" }} />
+
+          <div
+            style={{ padding: "0 6px 6px", position: "relative" }}
+            onMouseEnter={() => !artifactsLoading && setArtifactHover(true)}
+            onMouseLeave={() => setArtifactHover(false)}
+          >
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              height: 32,
+              padding: "0 6px",
+              borderRadius: 8,
+              background: !artifactsLoading && artifactHover ? "#F2F4F8" : "transparent",
+              cursor: artifactsLoading ? "default" : "pointer",
+              transition: "background 0.15s",
+            }}>
+              {/* File icon */}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                <path d="M14 10V5C14 4.06812 14 3.60218 13.8478 3.23463C13.6448 2.74458 13.2554 2.35523 12.7654 2.15224C12.3978 2 11.9319 2 11 2H6C4.11438 2 3.17157 2 2.58579 2.58579C2 3.17157 2 4.11438 2 6V10C2 11.8856 2 12.8284 2.58579 13.4142C3.17157 14 4.11438 14 6 14H10C11.8856 14 12.8284 14 13.4142 13.4142C14 12.8284 14 11.8856 14 10Z" stroke={artifactsLoading ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.7)"} strokeWidth="1.33" fill="none" />
+                <path d="M4.5 6.5H9" stroke={artifactsLoading ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.7)"} strokeWidth="1.33" fill="none" />
+                <path d="M4.5 9.5H11.5" stroke={artifactsLoading ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.7)"} strokeWidth="1.33" fill="none" />
+              </svg>
+              <span style={{
+                flex: 1, fontSize: 14, fontWeight: 400,
+                color: artifactsLoading ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.9)",
+                whiteSpace: "nowrap",
+              }}>
+                {artifactsLoading ? "产物生成中..." : `产物 (${artifactCount})`}
+              </span>
+              {/* Chevron right — hidden when loading */}
+              {!artifactsLoading && (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                  <path d="M6.33659 11.667L9.66992 8.33366L6.33659 5.00033" stroke="rgba(0,0,0,0.9)" strokeWidth="1.33333" strokeLinecap="square" fill="none" />
+                </svg>
+              )}
+            </div>
+
+            {/* Hover popover — only when not loading */}
+            {!artifactsLoading && artifactHover && artifacts && artifacts.length > 0 && (
               <div style={{
                 position: "absolute",
                 left: "100%",
-                top: 0,
+                bottom: 0,
                 marginLeft: 8,
-                width: 200,
+                width: 220,
                 background: "#FFFFFF",
                 borderRadius: 8,
                 border: "1px solid #E6E9EF",
@@ -851,12 +1247,12 @@ function ExpertCard({ name, tasks, artifacts, onArtifactClick }: {
                 pointerEvents: "auto",
               }}>
                 <div style={{ padding: "0 12px 4px", fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
-                  产物
+                  产物列表
                 </div>
                 {artifacts.map((a) => (
                   <div
                     key={a.id}
-                    onClick={() => onArtifactClick?.(a.id)}
+                    onClick={(e) => { e.stopPropagation(); onArtifactClick?.(a.id); }}
                     style={{
                       padding: "4px 12px",
                       fontSize: 13,
@@ -875,8 +1271,8 @@ function ExpertCard({ name, tasks, artifacts, onArtifactClick }: {
               </div>
             )}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }

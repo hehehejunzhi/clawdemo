@@ -49,7 +49,7 @@ interface Task {
 }
 
 // ── Demo data ──────────────────────────────────────────────────
-const TOTAL_TASKS = 6; // figma 显示 x/6
+const TOTAL_TASKS = 4; // figma 显示 x/4
 
 const initialTasks: Task[] = [
   {
