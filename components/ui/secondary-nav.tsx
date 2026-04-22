@@ -351,7 +351,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               <img src="/icons/logo-icon.svg" alt="" style={{ width: 20, height: 20, flexShrink: 0 }} />
               <span style={{
                 fontFamily: FONT, fontSize: 18, fontWeight: 600,
-                lineHeight: "26px", color: C.textPrimary, whiteSpace: "nowrap",
+                lineHeight: "26px", color: C.textPrimary, whiteSpace: "nowrap", letterSpacing: "-0.5px",
               }}>
                 DataTeam
               </span>
