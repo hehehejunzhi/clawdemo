@@ -1233,7 +1233,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
           <Card
             avatar={<GridAvatar />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>大数据团队 (3)</span>}
-            desc="包含大数据分析专家和大数据运维专家的协作团队"
+            desc="包含数据开发、分析、运维专家的协作团队"
           />
           {/* 动态创建的团队卡片 */}
           {customTeams.map((team) => (
