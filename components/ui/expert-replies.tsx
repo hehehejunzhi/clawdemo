@@ -15,21 +15,23 @@ const T = {
 } as const;
 
 // ── Streaming text effect ─────────────────────────────────────
-function StreamText({ text, speed = 30, onDone }: { text: string; speed?: number; onDone?: () => void }) {
+function StreamText({ text, speed = 30, onDone, cancelled = false }: { text: string; speed?: number; onDone?: () => void; cancelled?: boolean }) {
   const [displayed, setDisplayed] = useState("");
   const doneRef = React.useRef(false);
+  const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     let i = 0;
     doneRef.current = false;
     setDisplayed("");
     const charsPerTick = speed <= 15 ? 3 : speed <= 25 ? 2 : 1;
     const interval = Math.max(16, speed);
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       i += charsPerTick;
       if (i >= text.length) {
         i = text.length;
         setDisplayed(text);
-        clearInterval(timer);
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = null;
         if (!doneRef.current) {
           doneRef.current = true;
           onDone?.();
@@ -38,9 +40,18 @@ function StreamText({ text, speed = 30, onDone }: { text: string; speed?: number
         setDisplayed(text.slice(0, i));
       }
     }, interval);
-    return () => clearInterval(timer);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); timerRef.current = null; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, speed]);
+
+  // cancelled 变化时清除定时器，冻结当前输出
+  useEffect(() => {
+    if (cancelled && timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [cancelled]);
+
   return <>{displayed}</>;
 }
 
@@ -60,6 +71,28 @@ function TagPill({ label }: { label: string }) {
       <span style={{
         fontFamily: FONT, fontSize: 12, fontWeight: 400,
         color: T.primary, whiteSpace: "nowrap",
+      }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ── Skill Call Tag (icon + 文字，换行展示) ────────────────────
+function SkillCallTag({ label }: { label: string }) {
+  return (
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      height: 28,
+      gap: 4,
+    }}>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        <path d="M9.14404 1.77954C10.3702 0.553359 12.3592 0.553393 13.5854 1.77954C14.8116 3.00574 14.8116 4.99475 13.5854 6.22095L6.27295 13.5325C5.94873 13.8567 5.71264 14.0991 5.42725 14.2737C5.18997 14.4188 4.93104 14.5259 4.66064 14.5911C4.33525 14.6694 3.99644 14.6653 3.5376 14.6653H0.699707V11.8274C0.699707 11.3685 0.695579 11.0298 0.773926 10.7043C0.839087 10.4339 0.946177 10.175 1.09131 9.93774C1.26592 9.65235 1.50829 9.41626 1.83252 9.09204L9.14404 1.77954ZM12.8589 8.99438C12.9414 9.00224 13.0051 9.09803 13.1323 9.28931C13.4113 9.70893 13.5514 9.91888 13.729 10.0833C13.8535 10.1985 13.9914 10.2973 14.1411 10.3772C14.3546 10.4911 14.5988 10.5539 15.0864 10.6799C15.3091 10.7375 15.4211 10.7666 15.4556 10.842C15.4789 10.8933 15.4808 10.9573 15.4614 11.0217C15.4328 11.1166 15.3258 11.2132 15.1118 11.4055C14.643 11.8267 14.4087 12.0377 14.2075 12.2795C14.0665 12.4492 13.9377 12.6297 13.8237 12.8186C13.6612 13.0879 13.5387 13.3783 13.2944 13.9592C13.183 14.2243 13.1276 14.3571 13.0474 14.4153C12.9926 14.4549 12.9308 14.4744 12.8745 14.469C12.792 14.4611 12.7284 14.3645 12.6011 14.1731C12.3222 13.7536 12.183 13.5435 12.0054 13.3792C11.8808 13.2638 11.7421 13.1661 11.5923 13.0862C11.3788 12.9723 11.1348 12.9095 10.647 12.7834C10.4244 12.726 10.3134 12.6967 10.2788 12.6213C10.2553 12.5699 10.2525 12.5054 10.272 12.4407C10.3006 12.3459 10.4078 12.2499 10.6216 12.0579C11.0905 11.6366 11.3257 11.4257 11.5269 11.1838C11.6678 11.0143 11.7957 10.8335 11.9097 10.6448C12.0722 10.3754 12.1947 10.0843 12.439 9.50317C12.5504 9.23813 12.6068 9.10618 12.687 9.0481C12.7416 9.00857 12.8027 8.98913 12.8589 8.99438ZM2.77295 10.0325C2.40397 10.4015 2.29917 10.5126 2.22607 10.6321C2.15342 10.7509 2.09953 10.8805 2.06689 11.0159C2.03412 11.1521 2.02979 11.3052 2.02979 11.8274V13.3352H3.5376C4.05973 13.3352 4.21294 13.3309 4.34912 13.2981C4.4845 13.2655 4.6141 13.2116 4.73291 13.1389C4.85239 13.0658 4.96353 12.961 5.33252 12.592L6.42334 11.5002L3.86377 8.94067L2.77295 10.0325ZM12.644 2.72095C11.9372 2.01419 10.7922 2.01416 10.0854 2.72095L4.80518 7.99927L7.36475 10.5588L12.644 5.27954C13.3508 4.57274 13.3508 3.42775 12.644 2.72095ZM4.17725 1.13013C4.2377 1.13588 4.28428 1.20582 4.37744 1.34595C4.58192 1.6535 4.68477 1.80751 4.81494 1.92798C4.90611 2.01233 5.00714 2.08431 5.1167 2.14282C5.27318 2.22632 5.45248 2.27309 5.81006 2.36548C5.97293 2.40756 6.0542 2.42855 6.07959 2.48364C6.09682 2.52133 6.09875 2.56905 6.08447 2.61646C6.06332 2.68581 5.98497 2.75626 5.82861 2.89673C5.48494 3.20547 5.31296 3.36009 5.16553 3.53735C5.06212 3.66169 4.96785 3.79441 4.88428 3.93286C4.76523 4.13016 4.67553 4.34315 4.49658 4.7688C4.4149 4.96308 4.37376 5.06021 4.31494 5.10278C4.27496 5.13167 4.23009 5.14568 4.18896 5.14185C4.12846 5.13609 4.08112 5.06541 3.98779 4.92505C3.7836 4.61793 3.68131 4.46438 3.55127 4.34399C3.45996 4.25949 3.3583 4.18675 3.24854 4.12817C3.09218 4.04484 2.91334 3.99878 2.55615 3.90649C2.39313 3.86438 2.31101 3.84348 2.28564 3.78833C2.26841 3.75065 2.26746 3.70292 2.28174 3.65552C2.30277 3.58609 2.3811 3.51584 2.5376 3.37524C2.88121 3.06656 3.05327 2.91184 3.20068 2.73462C3.30411 2.61027 3.39835 2.47758 3.48193 2.33911C3.60103 2.14178 3.69065 1.92889 3.86963 1.50317C3.95135 1.3088 3.99244 1.21177 4.05127 1.16919C4.09132 1.14023 4.13605 1.12624 4.17725 1.13013Z" fill="rgba(0,0,0,0.9)" />
+      </svg>
+      <span style={{
+        fontFamily: FONT, fontSize: 16, fontWeight: 400,
+        lineHeight: "28px", color: T.primary,
       }}>
         {label}
       </span>
@@ -419,13 +452,13 @@ function DataTable({ data }: { data: TableData }) {
 }
 
 // ── Confirm Card (暖色底确认卡) ──────────────────────────────
-interface ConfirmCardData {
+export interface ConfirmCardData {
   title: string;
   description: string;
   buttonText: string;
 }
 
-function ConfirmCard({ data, onConfirm }: { data: ConfirmCardData; onConfirm?: () => void }) {
+export function ConfirmCard({ data, onConfirm }: { data: ConfirmCardData; onConfirm?: () => void }) {
   const [confirmed, setConfirmed] = React.useState(false);
 
   if (confirmed) return null;
@@ -475,44 +508,43 @@ function ConfirmCard({ data, onConfirm }: { data: ConfirmCardData; onConfirm?: (
   );
 }
 
-// ── File type icon for inline artifact cards (from design 329_22983) ──
-// md icon (3.svg): 26×26 tilted code file
-const ARTIFACT_ICON_MD = "M13.254 2.79016L2.76172 5.60156L7.74399 24.1956L22.9573 20.1192L19.24 6.24619L13.254 2.79016ZM13.9534 8.4909L12.9343 4.68757L17.7567 7.4718L13.9534 8.4909ZM11.9774 18.7197L8.54046 16.7354L10.5248 13.2985L12.0403 14.1735L10.931 16.0948L12.8524 17.2041L11.9774 18.7197ZM15.0377 16.6185L16.147 14.6972L14.2256 13.5879L15.1006 12.0723L18.5375 14.0566L16.5532 17.4935L15.0377 16.6185Z";
-// sql/png icon (5.svg): 26×26 tilted database
-const ARTIFACT_ICON_DB: string[] = [
-  "M18.5971 8.2319C17.0089 9.28055 14.7956 10.2279 12.3306 10.8884C9.86554 11.5489 7.47513 11.8351 5.57533 11.7211C4.81325 11.6753 4.06301 11.5616 3.39372 11.343L4.36867 14.9815C4.78558 16.5375 8.90758 16.7849 13.5754 15.5342C18.2432 14.2834 21.6893 12.0082 21.2724 10.4522L20.2974 6.81368C19.8271 7.33759 19.2342 7.81125 18.5971 8.2319Z",
-  "M21.9952 13.1498C21.5248 13.6737 20.932 14.1474 20.2949 14.568C18.7066 15.6167 16.4934 16.564 14.0283 17.2245C11.5633 17.885 9.17289 18.1712 7.27309 18.0572C6.51102 18.0115 5.76078 17.8977 5.09149 17.6791L6.14338 21.6048C6.56029 23.1608 10.6823 23.4082 15.3501 22.1575C20.0179 20.9067 23.464 18.6315 23.0471 17.0755L23.0447 17.0668L21.9952 13.1498Z",
-  "M11.8776 9.19803C7.20982 10.4488 3.08782 10.2014 2.6709 8.64541L2.67017 8.64266C2.25805 7.08678 5.70279 4.81346 10.3679 3.56346C13.8687 2.6254 17.0626 2.53006 18.6166 3.19743C19.1346 3.41989 19.4704 3.72709 19.5746 4.11608C19.9915 5.67202 16.5455 7.94729 11.8776 9.19803Z",
-];
-
+// ── File type icon for inline artifact cards ──
 function InlineFileTypeIcon({ ext }: { ext: string }) {
   const isMd = ext === "md" || ext === "html";
-  const paths = isMd ? [ARTIFACT_ICON_MD] : ARTIFACT_ICON_DB;
 
   return (
     <div style={{
-      width: 56, height: 56, flexShrink: 0,
-      position: "relative", overflow: "hidden",
+      width: 40, height: 48, flexShrink: 0,
+      position: "relative",
     }}>
+      {/* Tilted card background */}
       <div style={{
-        position: "absolute", left: -0.47, top: 11,
-        width: 42, height: 70,
-        transform: "rotate(-15deg)", transformOrigin: "top left",
+        position: "absolute",
+        width: 36, height: 46,
+        left: 2, top: 1,
+        borderRadius: 6,
+        background: "#FFFFFF",
+        boxShadow: "0px 2px 6px -1px rgba(0,0,0,0.10)",
+        transform: "rotate(-8deg)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}>
-        <div style={{ position: "relative", width: 42, height: 70 }}>
-          <div style={{
-            position: "absolute", width: 58.69, height: 78.49,
-            left: 0, top: 0,
-            borderRadius: 10.5,
-            background: "linear-gradient(224deg, rgba(100,230,195,0.20) 0%, rgba(100,230,195,0) 100%), #FFFFFF",
-            boxShadow: "0px 3.5px 3.5px -1.75px rgba(0,0,0,0.16)",
-          }} />
-          <svg viewBox="0 0 26 26" fill="none" style={{
-            position: "absolute", left: 14.67, top: 19.62, width: 26, height: 26,
-          }}>
-            {paths.map((d, i) => <path key={i} d={d} fill="#D3D9E5" />)}
+        {isMd ? (
+          /* Code / Markdown icon */
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M6.5 13.5L3 10L6.5 6.5" stroke="#C8CDD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M13.5 6.5L17 10L13.5 13.5" stroke="#C8CDD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M11.5 4L8.5 16" stroke="#C8CDD8" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
-        </div>
+        ) : (
+          /* Database icon */
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <ellipse cx="10" cy="5.5" rx="6" ry="2.5" stroke="#C8CDD8" strokeWidth="1.8" />
+            <path d="M4 5.5V10C4 11.38 6.69 12.5 10 12.5C13.31 12.5 16 11.38 16 10V5.5" stroke="#C8CDD8" strokeWidth="1.8" />
+            <path d="M4 10V14.5C4 15.88 6.69 17 10 17C13.31 17 16 15.88 16 14.5V10" stroke="#C8CDD8" strokeWidth="1.8" />
+          </svg>
+        )}
       </div>
     </div>
   );
@@ -535,18 +567,17 @@ function InlineArtifactCard({ artifact, onClick }: { artifact: ArtifactCardData;
         height: 64,
         background: "#F2F4F8",
         borderRadius: 16,
-        outline: "0.5px solid #E6E9EF",
-        outlineOffset: -0.5,
         overflow: "hidden",
         position: "relative",
         cursor: onClick ? "pointer" : "default",
+        border: "0.5px solid #E6E9EF",
       }}
     >
-      {/* File icon — left:16 top:8 per Figma */}
-      <div style={{ position: "absolute", left: 16, top: 8 }}>
+      {/* File icon — 56x56 区域 */}
+      <div style={{ position: "absolute", left: 16, top: 8, width: 56, height: 56, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <InlineFileTypeIcon ext={artifact.iconType} />
       </div>
-      {/* Text area — left:88 top:10 */}
+      {/* Text area — 从 left:88 开始 */}
       <div style={{
         position: "absolute", left: 88, top: 10,
         right: 40,
@@ -567,7 +598,7 @@ function InlineArtifactCard({ artifact, onClick }: { artifact: ArtifactCardData;
           {artifact.description}
         </span>
       </div>
-      {/* Arrow-right-up icon (2.svg from design) — filled, not stroke */}
+      {/* Arrow-right-up icon */}
       <div style={{ position: "absolute", right: 16, top: 24 }}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M3.99219 11.0645L9.45378 5.60286L5.21114 5.60286L5.21114 4.26953L11.7299 4.26953V10.7883L10.3966 10.7883V6.54567L4.935 12.0073L3.99219 11.0645Z" fill="rgba(0,0,0,0.7)" />
@@ -584,15 +615,22 @@ interface ArtifactsSectionData {
 }
 
 function ArtifactsSection({ data, onArtifactClick }: { data: ArtifactsSectionData; onArtifactClick?: () => void }) {
-  const pageSize = 3; // 每页：1个全宽 + 2个半宽
+  // 每页 2 张，两列并排
+  const pageSize = 2;
   const totalPages = Math.ceil(data.items.length / pageSize);
   const [page, setPage] = useState(0);
+
   const start = page * pageSize;
   const pageItems = data.items.slice(start, start + pageSize);
+  // 将当前页 items 分成两列一行
+  const pageRows: ArtifactCardData[][] = [];
+  for (let i = 0; i < pageItems.length; i += 2) {
+    pageRows.push(pageItems.slice(i, i + 2));
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {/* Header — checkmark icon + text, h28 */}
+      {/* Header — checkmark icon + "任务产生制品 (N)" */}
       <div style={{ display: "flex", alignItems: "center", height: 28, gap: 4 }}>
         <div style={{ width: 16, height: 28, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -603,27 +641,23 @@ function ArtifactsSection({ data, onArtifactClick }: { data: ArtifactsSectionDat
           fontFamily: FONT, fontSize: 16, fontWeight: 400,
           lineHeight: "28px", color: T.primary,
         }}>
-          任务产生产物 ({data.count})
+          任务产生制品 ({data.count})
         </span>
       </div>
 
-      {/* Cards area — top: 40px from header top = marginTop 12 */}
+      {/* Cards area — 全部两列并排 */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
-        {/* Full-width card */}
-        {pageItems.length > 0 && (
-          <InlineArtifactCard artifact={pageItems[0]} onClick={onArtifactClick} />
-        )}
-        {/* Two-column cards */}
-        {pageItems.length > 1 && (
-          <div style={{ display: "flex", gap: 12 }}>
-            {pageItems.slice(1, 3).map((item, i) => (
-              <InlineArtifactCard key={i} artifact={item} onClick={onArtifactClick} />
+        {pageRows.map((row, ri) => (
+          <div key={ri} style={{ display: "flex", gap: 12 }}>
+            {row.map((item, ci) => (
+              <InlineArtifactCard key={ci} artifact={item} onClick={onArtifactClick} />
             ))}
+            {row.length === 1 && <div style={{ flex: 1 }} />}
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Pagination — design: top:188 = 180 + 8px gap */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 8 }}>
           {/* Left arrow */}
@@ -720,6 +754,8 @@ export interface ExpertLine {
   tags?: string[];
   /** Tags rendered inline after the text (same line) */
   inlineTags?: string[];
+  /** Skill 调用标签 — icon + 文字，换行展示 */
+  skillCalls?: string[];
   // Rich content blocks (rendered after text)
   toolCalls?: (string | { title: string; command?: string; result?: string })[];
   sqlBlock?: { title: string; code: string };
@@ -736,6 +772,8 @@ export interface ExpertReplyData {
   name: string;
   lines: ExpertLine[];
   delay?: number;
+  /** 概述文字 — 显示在标题行下方（tertiary 色），不传则不提取第一行 */
+  overview?: string;
   /** Show a horizontal divider before this expert reply block */
   dividerBefore?: boolean;
   /** Hide the expert name label for this reply block */
@@ -747,10 +785,14 @@ interface ExpertReplyProps extends ExpertReplyData {
   onAllLinesDone?: () => void;
   onArtifactClick?: () => void;
   onConfirm?: () => void;
+  onConfirmCardReady?: (data: ConfirmCardData) => void;
   hideLabel?: boolean;
+  cancelled?: boolean;
+  dividerBefore?: boolean;
+  overview?: string;
 }
 
-function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLinesDone, onArtifactClick, onConfirm, hideLabel = false }: ExpertReplyProps) {
+function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLinesDone, onArtifactClick, onConfirm, onConfirmCardReady, hideLabel = false, cancelled = false, dividerBefore = false, overview }: ExpertReplyProps) {
   const [visible, setVisible] = useState(instant);
   const [visibleLines, setVisibleLines] = useState(instant ? lines.length : 0);
 
@@ -761,12 +803,14 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
       setTimeout(() => onAllLinesDone?.(), 0);
       return;
     }
+    if (cancelled) return; // 取消后不再延迟显示
     const t = setTimeout(() => setVisible(true), delay);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [delay, instant, lines.length]);
+  }, [delay, instant, lines.length, cancelled]);
 
   const handleLineDone = () => {
+    if (cancelled) return; // 取消后不再推进行
     setVisibleLines((v) => {
       const next = v + 1;
       if (next >= lines.length) {
@@ -778,12 +822,12 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
 
   // Auto-start first line
   useEffect(() => {
-    if (!instant && visible && visibleLines === 0) setVisibleLines(1);
-  }, [visible, visibleLines, instant]);
+    if (!instant && visible && visibleLines === 0 && !cancelled) setVisibleLines(1);
+  }, [visible, visibleLines, instant, cancelled]);
 
   // Auto-advance lines that have no streamable text (empty text, only boldText/divider/heading/artifacts/confirmCard)
   useEffect(() => {
-    if (instant || !visible || visibleLines === 0 || visibleLines > lines.length) return;
+    if (instant || !visible || visibleLines === 0 || visibleLines > lines.length || cancelled) return;
     const currentLine = lines[visibleLines - 1];
     if (!currentLine) return;
     // If line has no text to stream, auto-advance after a short delay
@@ -792,32 +836,53 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
       return () => clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleLines, visible, instant, lines]);
+  }, [visibleLines, visible, instant, lines, cancelled]);
 
   if (!visible) return null;
+
+  // 是否有显式概述
+  const hasOverview = !hideLabel && !!overview;
 
   return (
     <motion.div
       initial={instant ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: instant ? 0 : 0.4, ease: EASE }}
-      style={{ display: "flex", flexDirection: "column", gap: 4 }}
+      style={{ display: "flex", flexDirection: "column", gap: 0 }}
     >
-      {/* Expert label */}
+      {/* 分割线 — 在当前回复块顶部，上方无额外间距（gap:32已提供），下方32px到内容 */}
+      {dividerBefore && (
+        <div style={{ width: "100%", height: 1, background: "#E6E9EF", marginBottom: 32 }} />
+      )}
+
+      {/* 标题行：头像 + 角色名 + 概述（gap:2px） */}
       {!hideLabel && (
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        <img src={icon} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
-        <span style={{
-          fontFamily: FONT, fontSize: 12, fontWeight: 400,
-          color: T.tertiary, whiteSpace: "nowrap",
-        }}>
-          {name}
-        </span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <img src={icon} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
+          <span style={{
+            fontFamily: FONT, fontSize: 12, fontWeight: 400,
+            color: T.tertiary, whiteSpace: "nowrap",
+          }}>
+            {name}
+          </span>
+        </div>
+        {/* 概述行 — 显式 overview 字段，tertiary 色 */}
+        {hasOverview && (
+          <span style={{
+            fontFamily: FONT, fontSize: 16, fontWeight: 400,
+            lineHeight: "28px", color: T.tertiary, textAlign: "justify",
+          }}>
+            {instant ? overview : (
+              <StreamText text={overview} speed={25} cancelled={cancelled} />
+            )}
+          </span>
+        )}
       </div>
       )}
 
-      {/* Lines */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 20 }}>
+      {/* 详情内容 — 标题行到详情 12px, 内容元素间 12px */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: !hideLabel ? 12 : 0 }}>
         {lines.map((line, i) => {
           if (i >= visibleLines) return null;
           return (
@@ -826,10 +891,14 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
               initial={instant ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: instant ? 0 : 0.2 }}
-              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+              style={{ display: "flex", flexDirection: "column", gap: 12 }}
             >
-              {/* Divider */}
-              {line.divider && <Divider />}
+              {/* Divider — 上下各 32px 间距（减去容器 gap 12px） */}
+              {line.divider && (
+                <div style={{ margin: "20px 0" }}>
+                  <Divider />
+                </div>
+              )}
 
               {/* Numbered heading */}
               {line.numberedHeading && (
@@ -839,30 +908,41 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
               {/* Bold text */}
               {line.boldText && <BoldText text={line.boldText} />}
 
-              {/* Text line with optional inline tags */}
+              {/* Text line with optional inline tags + skill calls (一组, gap:8px) */}
               {line.text && (
-                <div style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  flexWrap: "wrap",
-                  gap: 4,
-                }}>
-                  <span style={{
-                    fontFamily: FONT, fontSize: 16, fontWeight: 400,
-                    lineHeight: "28px", color: T.primary,
-                    textAlign: "justify",
-                    }}>
-                      {instant ? line.text : (
-                        <StreamText
-                          text={line.text}
-                          speed={25}
-                          onDone={i === visibleLines - 1 && !line.toolCalls && !line.sqlBlock && !line.table ? handleLineDone : undefined}
-                        />
-                      )}
-                    </span>
-                  {line.inlineTags && line.inlineTags.map((tag) => (
-                    <TagPill key={tag} label={tag} />
-                  ))}
+                <div style={{ display: "flex", flexDirection: "column", gap: line.skillCalls ? 8 : 0 }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    flexWrap: "wrap",
+                    gap: 4,
+                  }}>
+                    <span style={{
+                      fontFamily: FONT, fontSize: 16, fontWeight: 400,
+                      lineHeight: "28px", color: T.primary,
+                      textAlign: "justify",
+                      }}>
+                        {instant ? line.text : (
+                          <StreamText
+                            text={line.text}
+                            speed={25}
+                            onDone={i === visibleLines - 1 && !line.toolCalls && !line.sqlBlock && !line.table ? handleLineDone : undefined}
+                            cancelled={cancelled}
+                          />
+                        )}
+                      </span>
+                    {line.inlineTags && line.inlineTags.map((tag) => (
+                      <TagPill key={tag} label={tag} />
+                    ))}
+                  </div>
+                  {/* Skill calls — icon + 文字，换行展示，与文案一组 */}
+                  {line.skillCalls && line.skillCalls.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      {line.skillCalls.map((skill) => (
+                        <SkillCallTag key={skill} label={skill} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -891,11 +971,14 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
               {/* Data table */}
               {line.table && <DataTable data={line.table} />}
 
-              {/* Confirm card */}
-              {line.confirmCard && <ConfirmCard data={line.confirmCard} onConfirm={onConfirm} />}
+              {/* Confirm card — 不在对话流中渲染，由 page.tsx 在输入框上方渲染 */}
 
-              {/* Artifacts section */}
-              {line.artifacts && <ArtifactsSection data={line.artifacts} onArtifactClick={onArtifactClick} />}
+              {/* Artifacts section — 上间距 32px (产物区与前文), 下间距由容器 gap 控制 */}
+              {line.artifacts && (
+                <div style={{ marginTop: 20 }}>
+                  <ArtifactsSection data={line.artifacts} onArtifactClick={onArtifactClick} />
+                </div>
+              )}
             </motion.div>
           );
         })}
@@ -905,7 +988,7 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
 }
 
 // ── Dispatch transition text ──────────────────────────────────
-function DispatchText({ delay = 0, instant = false }: { delay?: number; instant?: boolean }) {
+export function DispatchText({ delay = 0, instant = false }: { delay?: number; instant?: boolean }) {
   const [visible, setVisible] = useState(instant);
   useEffect(() => {
     if (instant) { setVisible(true); return; }
@@ -1020,10 +1103,13 @@ interface ExpertRepliesProps {
   onComplete?: () => void;
   onArtifactClick?: () => void;
   onConfirm?: () => void;
+  onConfirmCardReady?: (data: ConfirmCardData) => void;
   hideDispatch?: boolean;
+  /** 取消对话流，冻结所有输出 */
+  cancelled?: boolean;
 }
 
-export default function ExpertReplies({ instant = false, replies, onComplete, onArtifactClick, onConfirm, hideDispatch = false }: ExpertRepliesProps) {
+export default function ExpertReplies({ instant = false, replies, onComplete, onArtifactClick, onConfirm, onConfirmCardReady, hideDispatch = false, cancelled = false }: ExpertRepliesProps) {
   const data = replies ?? DEFAULT_REPLIES;
   const completedRef = React.useRef(false);
 
@@ -1047,16 +1133,21 @@ export default function ExpertReplies({ instant = false, replies, onComplete, on
   const allSameExpert = data.length > 1 && data.every((r) => r.name === data[0].name);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       {/* 过渡文案 */}
       {!hideDispatch && <DispatchText delay={500} instant={instant} />}
 
       {/* 专家回复 */}
-      {data.map((reply, i) => (
-        <React.Fragment key={i}>
-          {reply.dividerBefore && (
-            <div style={{ width: "100%", height: 1, background: "#E6E9EF" }} />
-          )}
+      {data.map((reply, i) => {
+        const isHiddenLabel = reply.hideLabel || (allSameExpert && i > 0);
+        // 第一个元素的 marginTop 取决于是否有 DispatchText
+        const isFirst = i === 0;
+        const topSpacing = isFirst && !hideDispatch ? 32
+          : isFirst ? 0
+          : isHiddenLabel && !reply.dividerBefore ? 12
+          : 32;
+        return (
+        <div key={i} style={{ marginTop: topSpacing }}>
           <ExpertReply
             icon={reply.icon}
             name={reply.name}
@@ -1066,10 +1157,15 @@ export default function ExpertReplies({ instant = false, replies, onComplete, on
             onAllLinesDone={() => handleReplyComplete(i)}
             onArtifactClick={onArtifactClick}
             onConfirm={onConfirm}
-            hideLabel={reply.hideLabel || (allSameExpert && i > 0)}
+            onConfirmCardReady={onConfirmCardReady}
+            hideLabel={isHiddenLabel}
+            cancelled={cancelled}
+            dividerBefore={reply.dividerBefore}
+            overview={reply.overview}
           />
-        </React.Fragment>
-      ))}
+        </div>
+        );
+      })}
     </div>
   );
 }

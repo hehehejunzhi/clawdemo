@@ -353,7 +353,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
                 fontFamily: FONT, fontSize: 18, fontWeight: 600,
                 lineHeight: "26px", color: C.textPrimary, whiteSpace: "nowrap",
               }}>
-                TCClawTeam
+                DataTeam
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 2 }}>

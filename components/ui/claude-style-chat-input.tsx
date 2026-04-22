@@ -215,6 +215,10 @@ interface ChatInputProps {
   onSelectAgent?: (agentId: string, agentLabel: string) => void;
   /** 置灰 Agent 选择器（流式输出/对话阶段） */
   disableAgentSelector?: boolean;
+  /** AI 正在生成回复中 */
+  isGenerating?: boolean;
+  /** 点击停止按钮的回调 */
+  onStop?: () => void;
 }
 
 export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ClaudeChatInput({
@@ -230,6 +234,8 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   onCreateTeam,
   onSelectAgent,
   disableAgentSelector = false,
+  isGenerating = false,
+  onStop,
 }, ref) {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<AttachedFile[]>([]);
@@ -715,31 +721,59 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
               </div>
             </div>
 
-            {/* 右侧：发送按钮 */}
+            {/* 右侧：发送/停止按钮 */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", borderRadius: 12 }}>
-              <button
-                onClick={handleSend}
-                disabled={!hasContent}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  border: "none",
-                  background: hasContent ? "#1D2129" : "#E8EAED",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: hasContent ? "pointer" : "default",
-                  color: "#FFFFFF",
-                  transition: "background 0.2s ease",
-                  flexShrink: 0,
-                  padding: 0,
-                }}
-                type="button"
-                aria-label="发送"
-              >
-                <SendIcon size={16} color="#FFFFFF" />
-              </button>
+              {isGenerating ? (
+                <button
+                  onClick={onStop}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    border: "none",
+                    background: "#1D2129",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#FFFFFF",
+                    transition: "background 0.2s ease",
+                    flexShrink: 0,
+                    padding: 0,
+                  }}
+                  type="button"
+                  aria-label="停止"
+                >
+                  {/* 停止图标：实心方块 */}
+                  <svg width={14} height={14} viewBox="0 0 14 14" fill="none">
+                    <rect x="0" y="0" width="14" height="14" rx="2" fill="#FFFFFF" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  disabled={!hasContent}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    border: "none",
+                    background: hasContent ? "#1D2129" : "#E8EAED",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: hasContent ? "pointer" : "default",
+                    color: "#FFFFFF",
+                    transition: "background 0.2s ease",
+                    flexShrink: 0,
+                    padding: 0,
+                  }}
+                  type="button"
+                  aria-label="发送"
+                >
+                  <SendIcon size={16} color="#FFFFFF" />
+                </button>
+              )}
             </div>
           </div>
 
