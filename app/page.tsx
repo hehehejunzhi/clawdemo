@@ -583,6 +583,7 @@ const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
           title: "请确认优化方案",
           description: "要不要我直接把方案 2 的 SQL 提交到集群跑一下验证？",
           buttonText: "选择方案 2",
+          tag: "涉及修改您的数据和资源",
         },
       },
     ],
@@ -624,7 +625,7 @@ export default function Home() {
   const [phase2Replies, setPhase2Replies] = useState<ExpertReplyDataType[] | undefined>(undefined);
   const [phase2Complete, setPhase2Complete] = useState(false);
   // 活跃的确认卡（从对话流提取，固定在输入框上方）
-  const [activeConfirmCard, setActiveConfirmCard] = useState<{ title: string; description: string; buttonText: string } | null>(null);
+  const [activeConfirmCard, setActiveConfirmCard] = useState<{ title: string; description: string; buttonText: string; tag?: string } | null>(null);
   const [isSingleExpert, setIsSingleExpert] = useState(false);
   // AI 正在生成回复
   const [isGenerating, setIsGenerating] = useState(false);
@@ -685,6 +686,17 @@ export default function Home() {
       if (rafId) cancelAnimationFrame(rafId);
     };
   }, [chatPhase, revealStep]);
+
+  // 当确认卡出现时，自动滚动到底部以露出完整内容
+  useEffect(() => {
+    if (!activeConfirmCard || !scrollRef.current) return;
+    const el = scrollRef.current;
+    // 等待 padding 和确认卡渲染完成后滚动
+    const timer = setTimeout(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [activeConfirmCard, phase2Complete]);
 
   const handleSkillClick = useCallback((label: string, agent?: { name: string; title: string; avatar: string; summonText?: string }) => {
     setActiveSkills([{ id: label, label, icon: SKILL_ICON_MAP[label] }]);
@@ -1169,7 +1181,7 @@ export default function Home() {
             width: "100%",
             maxWidth: "min(928px, 100%)",
             boxSizing: "border-box",
-            padding: chatPhase === "welcome" ? "0 24px 24px" : `24px 24px ${activeConfirmCard && !confirmPhase ? 360 : 160}px`,
+            padding: chatPhase === "welcome" ? "0 24px 24px" : `24px 24px ${activeConfirmCard && (!confirmPhase || phase2Complete) ? 360 : 160}px`,
           }}>
             <AnimatePresence mode="wait">
               {chatPhase === "welcome" ? (
@@ -1490,7 +1502,7 @@ export default function Home() {
             <div style={{ position: "relative" }}>
               {/* 确认卡 — 在输入框下层，背景包裹住输入框 */}
               <AnimatePresence>
-                {activeConfirmCard && !confirmPhase && (
+                {activeConfirmCard && (!confirmPhase || phase2Complete) && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1505,15 +1517,34 @@ export default function Home() {
                     <div style={{
                       background: "#FCF4E8",
                       borderRadius: "24px 24px 0 0",
-                      padding: "16px 24px 48px",
+                      padding: "16px 24px 32px",
                     }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        <span style={{
-                          fontFamily: FONT, fontSize: 18, fontWeight: 600,
-                          lineHeight: "32px", color: "rgba(0,0,0,0.9)",
-                        }}>
-                          {activeConfirmCard.title}
-                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                          <span style={{
+                            fontFamily: FONT, fontSize: 18, fontWeight: 600,
+                            lineHeight: "32px", color: "rgba(0,0,0,0.9)",
+                          }}>
+                            {activeConfirmCard.title}
+                          </span>
+                          {activeConfirmCard.tag && (
+                            <span style={{
+                              display: "inline-flex", alignItems: "center", gap: 4,
+                              height: 24, padding: "0 10px", borderRadius: 12,
+                              border: "none",
+                              background: "#FFDCBF",
+                              fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                              color: "#C04100", whiteSpace: "nowrap", lineHeight: "24px",
+                            }}>
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13.7475 8.0385L12.362 5.6453C12.2133 5.3885 11.9371 4.9053 11.9371 4.9053C10.8649 3.0296 10.3605 2.4264 10.3605 2.4264C9.4396 1.3251 8.3233 1.3251 8.3233 1.3251C7.2071 1.3251 6.2862 2.4264 6.2862 2.4264C5.7818 3.0296 4.7095 4.9053 4.7095 4.9053C4.4333 5.3885 4.2847 5.6453 4.2847 5.6453L2.8991 8.0385C2.7495 8.2969 2.4661 8.7803 2.4661 8.7803C1.3704 10.649 1.0977 11.3887 1.0977 11.3887C0.5999 12.7394 1.1587 13.7086 1.1587 13.7086C1.7175 14.6778 3.1359 14.9238 3.1359 14.9238C3.9126 15.0584 6.0788 15.0464 6.0788 15.0464C6.6388 15.0433 6.9378 15.0433 6.9378 15.0433L9.7089 15.0433C10.0077 15.0433 10.5679 15.0464 10.5679 15.0464C12.7341 15.0584 13.5108 14.9238 13.5108 14.9238C14.9292 14.6778 15.488 13.7086 15.488 13.7086C16.0468 12.7394 15.549 11.3887 15.549 11.3887C15.2763 10.649 14.1806 8.7803 14.1806 8.7803C13.8972 8.2969 13.7475 8.0385 13.7475 8.0385ZM10.7796 5.567C11.0576 6.0535 11.2081 6.3133 11.2081 6.3133L12.5936 8.7065C12.7451 8.9682 13.0304 9.4548 13.0304 9.4548C14.0662 11.2213 14.2979 11.8498 14.2979 11.8498C14.5797 12.6145 14.3329 13.0426 14.3329 13.0426C14.086 13.4708 13.283 13.61 13.283 13.61C12.623 13.7244 10.5753 13.7131 10.5753 13.7131C10.0113 13.71 9.7089 13.71 9.7089 13.71L6.9378 13.71C6.6352 13.71 6.0714 13.7131 6.0714 13.7131C4.0237 13.7244 3.3636 13.61 3.3636 13.61C2.5607 13.4708 2.3138 13.0426 2.3138 13.0426C2.0669 12.6145 2.3488 11.8498 2.3488 11.8498C2.5804 11.2213 3.6162 9.4548 3.6162 9.4548C3.9016 8.9682 4.053 8.7065 4.053 8.7065L5.4386 6.3133C5.589 6.0536 5.8671 5.567 5.8671 5.567C6.8806 3.7941 7.3091 3.2817 7.3091 3.2817C7.8302 2.6584 8.3233 2.6584 8.3233 2.6584C8.8165 2.6584 9.3376 3.2817 9.3376 3.2817C9.7661 3.7941 10.7796 5.567 10.7796 5.567Z" fill="#C04100" fillRule="evenodd" transform="translate(-0.322266, -0.259766)"/>
+                                <path d="M0.4714 0.4714C0.6747 0.2795 0.6667 0 0.6667 0C0.6747 -0.2795 0.4714 -0.4714 0.4714 -0.4714C0.2795 -0.6747 0 -0.6667 0 -0.6667C-0.2795 -0.6747 -0.4714 -0.4714 -0.4714 -0.4714C-0.6747 -0.2795 -0.6667 0 -0.6667 0C-0.6747 0.2795 -0.4714 0.4714 -0.4714 0.4714C-0.2795 0.6747 0 0.6667 0 0.6667C0.2795 0.6747 0.4714 0.4714 0.4714 0.4714Z" fill="#C04100" fillRule="evenodd" transform="translate(8, 10.9733)"/>
+                                <path d="M2.8232 -0.6667L0 -0.6667C-0.2795 -0.6747 -0.4714 -0.4714 -0.4714 -0.4714C-0.6747 -0.2795 -0.6667 0 -0.6667 0C-0.6747 0.2795 -0.4714 0.4714 -0.4714 0.4714C-0.2795 0.6747 0 0.6667 0 0.6667L2.8232 0.6667C3.1027 0.6747 3.2946 0.4714 3.2946 0.4714C3.498 0.2795 3.4899 0 3.4899 0C3.498 -0.2795 3.2946 -0.4714 3.2946 -0.4714C3.1027 -0.6747 2.8232 -0.6667 2.8232 -0.6667Z" fill="#C04100" fillRule="evenodd" transform="matrix(0,1,-1,0,8.00195,6.14844)"/>
+                              </svg>
+                              {activeConfirmCard.tag}
+                            </span>
+                          )}
+                        </div>
                         <span style={{
                           fontFamily: FONT, fontSize: 16, fontWeight: 400,
                           lineHeight: "28px", color: "rgba(0,0,0,0.9)",
