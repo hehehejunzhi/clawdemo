@@ -14,8 +14,8 @@ const C = {
   bgOverlay: "rgba(0,0,0,0.3)",
   error: "#F64041",
   hoverBg: "#F2F4F8",
-  brandCyan: "#00C8D6",
-  checkBlue: "#1664FF",
+  brandCyan: "#0052D9",
+  checkBlue: "#0052D9",
 } as const;
 
 const LABEL_W = 72;
@@ -93,7 +93,7 @@ export default function CreateTeamDialog({ open, onClose, onCreate }: CreateTeam
 
   const labelStyle: React.CSSProperties = { fontSize: 12, color: C.textTertiary, flexShrink: 0, width: LABEL_W, paddingTop: 7 };
   const inputStyle: React.CSSProperties = {
-    flex: 1, height: 32, padding: "0 12px", borderRadius: 3,
+    flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgCard,
     fontFamily: FONT, fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box",
   };
@@ -159,7 +159,7 @@ export default function CreateTeamDialog({ open, onClose, onCreate }: CreateTeam
             </div>
 
             {/* Footer */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", borderTop: `1px solid ${C.border}`, flexShrink: 0, background: C.bgCard, borderRadius: "0 0 16px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgCard, borderRadius: "0 0 16px 16px" }}>
               <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgCard, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
               <button disabled={!isValid} onClick={handleCreate} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
             </div>

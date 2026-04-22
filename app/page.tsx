@@ -1189,7 +1189,7 @@ export default function Home() {
                             lineHeight: "40px",
                             color: "#000",
                             whiteSpace: "nowrap",
-                          }}>TCClawTeam</span>
+                          }}>DataTeam</span>
                           <img
                             src="/icons/welcome-mascot.svg"
                             alt=""

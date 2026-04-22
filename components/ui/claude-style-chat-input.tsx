@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
+import { createPortal } from "react-dom";
 import { X, FileText, Loader2 } from "lucide-react";
 import type { MotionTargetDef } from "@/components/ui/motion-panel";
 
@@ -626,88 +627,89 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                       </div>
                     </div>
                   </div>
-                  {showAgentMenu && (
+                  {showAgentMenu && typeof document !== "undefined" && createPortal(
                     <>
-                      {/* 透明遮罩：阻止所有鼠标事件穿透到下层 Hero 区域 */}
+                      {/* 透明遮罩：阻止所有鼠标事件穿透到 Hero 区域 */}
                       <div
-                        style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                        style={{ position: "fixed", inset: 0, zIndex: 9998 }}
                         onClick={(e) => { e.stopPropagation(); setShowAgentMenu(false); }}
                         onMouseMove={(e) => e.stopPropagation()}
                         onMouseEnter={(e) => e.stopPropagation()}
                         onMouseOver={(e) => e.stopPropagation()}
                       />
-                    <div ref={agentMenuRef} style={{
-                      position: "absolute",
-                      bottom: "calc(100% + 8px)",
-                      left: 0,
-                      backgroundColor: "#FFFFFF",
-                      borderRadius: 16,
-                      padding: 8,
-                      boxShadow: "0px 8px 24px -4px rgba(0,0,0,0.1), 0px 8px 12px -8px rgba(0,0,0,0.05)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 2,
-                      zIndex: 100,
-                      minWidth: 152,
-                      animation: "ci-menu-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
-                    }}>
-                      {/* 主要选项 */}
-                      {[
-                        { id: "bigdata-team", label: "大数据团队" },
-                        { id: "ops-expert", label: "数据运维专家" },
-                        { id: "analysis-expert", label: "数据分析专家" },
-                        { id: "dev-expert", label: "数据开发专家" },
-                        { id: "ops-team", label: "运营协作团队" },
-                      ].map((item) => (
-                        <div
-                          key={item.id}
-                          className="ci-menu-item"
-                          onClick={(e) => { e.stopPropagation(); setSelectedAgent(item.label); setShowAgentMenu(false); onSelectAgent?.(item.id, item.label); }}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            height: 32,
-                            padding: "0 8px",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            transition: "background 0.15s ease",
-                            backgroundColor: selectedAgent === item.label ? "#F2F4F8" : undefined,
-                          }}
-                        >
-                          <span style={{ fontSize: 14, fontWeight: 400, lineHeight: "22px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
-                        </div>
-                      ))}
-                      {/* 分割线 */}
-                      <div style={{ height: 1, backgroundColor: "#E6E9EF", margin: "2px 0" }} />
-                      {/* 创建选项 */}
-                      {[
-                        { id: "create-expert", label: "创建专家" },
-                        { id: "create-team", label: "创建团队" },
-                      ].map((item) => (
-                        <div
-                          key={item.id}
-                          className="ci-menu-item"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowAgentMenu(false);
-                            if (item.id === "create-expert") onCreateExpert?.();
-                            if (item.id === "create-team") onCreateTeam?.();
-                          }}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            height: 32,
-                            padding: "0 8px",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            transition: "background 0.15s ease",
-                          }}
-                        >
-                          <span style={{ fontSize: 14, fontWeight: 400, lineHeight: "22px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                    </>
+                      <div ref={agentMenuRef} style={{
+                        position: "fixed",
+                        bottom: agentBtnRef.current ? window.innerHeight - agentBtnRef.current.getBoundingClientRect().top + 8 : 60,
+                        left: agentBtnRef.current ? agentBtnRef.current.getBoundingClientRect().left : 0,
+                        backgroundColor: "#FFFFFF",
+                        borderRadius: 16,
+                        padding: 8,
+                        boxShadow: "0px 8px 24px -4px rgba(0,0,0,0.1), 0px 8px 12px -8px rgba(0,0,0,0.05)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                        zIndex: 9999,
+                        minWidth: 152,
+                        animation: "ci-menu-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
+                      }}>
+                        {/* 主要选项 */}
+                        {[
+                          { id: "bigdata-team", label: "大数据团队" },
+                          { id: "ops-expert", label: "数据运维专家" },
+                          { id: "analysis-expert", label: "数据分析专家" },
+                          { id: "dev-expert", label: "数据开发专家" },
+                          { id: "ops-team", label: "运营协作团队" },
+                        ].map((item) => (
+                          <div
+                            key={item.id}
+                            className="ci-menu-item"
+                            onClick={(e) => { e.stopPropagation(); setSelectedAgent(item.label); setShowAgentMenu(false); onSelectAgent?.(item.id, item.label); }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              height: 32,
+                              padding: "0 8px",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                              transition: "background 0.15s ease",
+                              backgroundColor: selectedAgent === item.label ? "#F2F4F8" : undefined,
+                            }}
+                          >
+                            <span style={{ fontSize: 14, fontWeight: 400, lineHeight: "22px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
+                          </div>
+                        ))}
+                        {/* 分割线 */}
+                        <div style={{ height: 1, backgroundColor: "#E6E9EF", margin: "2px 0" }} />
+                        {/* 创建选项 */}
+                        {[
+                          { id: "create-expert", label: "创建自定义 Agent" },
+                          { id: "create-team", label: "创建团队" },
+                        ].map((item) => (
+                          <div
+                            key={item.id}
+                            className="ci-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowAgentMenu(false);
+                              if (item.id === "create-expert") onCreateExpert?.();
+                              if (item.id === "create-team") onCreateTeam?.();
+                            }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              height: 32,
+                              padding: "0 8px",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                              transition: "background 0.15s ease",
+                            }}
+                          >
+                            <span style={{ fontSize: 14, fontWeight: 400, lineHeight: "22px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>,
+                    document.body
                   )}
                 </div>
 

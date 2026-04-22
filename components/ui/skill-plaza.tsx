@@ -464,12 +464,12 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
           width: 180, flexShrink: 0, borderRight: `1px solid ${C.border}`,
           padding: "0 12px", overflowY: "auto", scrollbarWidth: "none",
         }}>
-          <SectionLabel label="内置专家" />
+          <SectionLabel label="大数据 Agent" />
           <CatItem label="数据开发专家" active={activeCat === "数据开发专家"} onClick={() => handleCatChange("数据开发专家")} />
           <CatItem label="数据分析专家" active={activeCat === "数据分析专家"} onClick={() => handleCatChange("数据分析专家")} />
           <CatItem label="数据运维专家" active={activeCat === "数据运维专家"} onClick={() => handleCatChange("数据运维专家")} />
 
-          <SectionLabel label="数字分身" />
+          <SectionLabel label="自定义 Agent" />
           <CatItem label="专家1" active={activeCat === "专家1"} onClick={() => handleCatChange("专家1")} />
         </div>
 
@@ -622,8 +622,21 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
                   <div style={{ height: 1, background: C.border, margin: "16px 0" }} />
 
                   {/* ── 可安装区域 ── */}
-                  <div style={{ marginBottom: 8 }}>
+                  <div style={{ marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary }}>可安装</span>
+                    <a
+                      href="https://skillhub.cn"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FONT, fontSize: 12, fontWeight: 400, color: "rgba(0,0,0,0.9)", textDecoration: "none", cursor: "pointer" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "0.7"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "1"; }}
+                    >
+                      <span>查看更多Skill</span>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11.8902 13.4616L12.0199 14.1138H12.0199L11.8902 13.4616ZM13.4616 11.8902L14.1138 12.0199V12.0199L13.4616 11.8902ZM3.08579 12.9142L3.55601 12.444H3.55601L3.08579 12.9142ZM4.10982 2.53843L4.23955 3.19065V3.19065L4.10982 2.53843ZM2.53843 4.10982L3.19065 4.23955V4.23955L2.53843 4.10982ZM6 10L6.47023 10.4702L13.3844 3.55601L12.9142 3.08579L12.444 2.61556L5.52977 9.52977L6 10ZM12.9142 3.08579L13.3844 3.55601L13.4702 3.47023L13 3L12.5298 2.52977L12.444 2.61556L12.9142 3.08579ZM8 2.5V3.165H9.5V2.5V1.835H8V2.5ZM13.5 6.5H12.835V8H13.5H14.165V6.5H13.5ZM9.5 2.5V3.165C10.4616 3.165 11.1159 3.16641 11.6059 3.23229C12.0768 3.2956 12.2952 3.40727 12.444 3.55601L12.9142 3.08579L13.3844 2.61556C12.9474 2.17852 12.4015 1.99729 11.7832 1.91415C11.1839 1.83359 10.424 1.835 9.5 1.835V2.5ZM13.5 6.5H14.165C14.165 5.57599 14.1664 4.81609 14.0858 4.21685C14.0027 3.59848 13.8215 3.0526 13.3844 2.61556L12.9142 3.08579L12.444 3.55601C12.5927 3.70475 12.7044 3.92318 12.7677 4.39407C12.8336 4.88408 12.835 5.53839 12.835 6.5H13.5ZM2.5 5H1.835V9.5H2.5H3.165V5H2.5ZM6.5 13.5V14.165H11V13.5V12.835H6.5V13.5ZM11 13.5V14.165C11.4328 14.165 11.7463 14.1682 12.0199 14.1138L11.8902 13.4616L11.7604 12.8093C11.6477 12.8318 11.4965 12.835 11 12.835V13.5ZM13.5 11H12.835C12.835 11.4965 12.8318 11.6477 12.8093 11.7604L13.4616 11.8902L14.1138 12.0199C14.1682 11.7463 14.165 11.4328 14.165 11H13.5ZM11.8902 13.4616L12.0199 14.1138C13.0771 13.9035 13.9035 13.0771 14.1138 12.0199L13.4616 11.8902L12.8093 11.7604C12.704 12.29 12.29 12.704 11.7604 12.8093L11.8902 13.4616ZM2.5 9.5H1.835C1.835 10.424 1.83359 11.1839 1.91415 11.7832C1.99729 12.4015 2.17852 12.9474 2.61556 13.3844L3.08579 12.9142L3.55601 12.444C3.40727 12.2952 3.2956 12.0768 3.23229 11.6059C3.16641 11.1159 3.165 10.4616 3.165 9.5H2.5ZM6.5 13.5V12.835C5.53839 12.835 4.88408 12.8336 4.39407 12.7677C3.92318 12.7044 3.70475 12.5927 3.55601 12.444L3.08579 12.9142L2.61556 13.3844C3.0526 13.8215 3.59848 14.0027 4.21685 14.0858C4.81609 14.1664 5.57599 14.165 6.5 14.165V13.5ZM5 2.5V1.835C4.56722 1.835 4.25371 1.83178 3.98008 1.88621L4.10982 2.53843L4.23955 3.19065C4.35232 3.16822 4.50347 3.165 5 3.165V2.5ZM2.5 5H3.165C3.165 4.50347 3.16822 4.35232 3.19065 4.23955L2.53843 4.10982L1.88621 3.98008C1.83178 4.25371 1.835 4.56722 1.835 5H2.5ZM4.10982 2.53843L3.98008 1.88621C2.9229 2.09649 2.09649 2.9229 1.88621 3.98008L2.53843 4.10982L3.19065 4.23955C3.29599 3.70997 3.70997 3.29599 4.23955 3.19065L4.10982 2.53843Z" fill="rgba(0,0,0,0.9)" />
+                      </svg>
+                    </a>
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}>
                     {(() => {

@@ -83,25 +83,28 @@ export default function ArtifactDetailDrawer({ artifact, allArtifacts, onBack, o
       transition={{ duration: 0.22, ease: EASE }}
       style={{
         position: "absolute",
-        inset: 0,
+        top: 50,
+        left: 0,
+        right: 0,
+        bottom: 0,
         zIndex: 10,
         background: BG_PANEL,
-        borderLeft: `1px solid ${BORDER_SECONDARY}`,
         fontFamily: FONT,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
       }}
     >
-      {/* ── 标题栏 84px ── */}
+      {/* ── 标题栏 56px ── */}
       <div
         style={{
-          height: 84,
+          height: 56,
           flexShrink: 0,
           display: "flex",
           gap: 8,
           alignItems: "center",
           padding: "0 24px",
+          borderBottom: `1px solid ${BORDER_PRIMARY}`,
         }}
       >
         {/* 左侧: 返回 + 文件名 + chevron + dropdown */}
@@ -149,8 +152,8 @@ export default function ArtifactDetailDrawer({ artifact, allArtifacts, onBack, o
           </div>
         </div>
 
-        {/* 右侧: 关闭 */}
-        <CloseButton onClick={onBack} />
+        {/* 右侧: 下载按钮 */}
+        <DownloadButton />
       </div>
 
       {/* ── 可滚动内容区 ── */}
@@ -160,7 +163,7 @@ export default function ArtifactDetailDrawer({ artifact, allArtifacts, onBack, o
           minHeight: 0,
           overflowY: "auto",
           overflowX: "hidden",
-          padding: "0 24px 24px",
+          padding: "24px 24px 24px",
           scrollbarWidth: "none",
         }}
       >
@@ -393,6 +396,39 @@ function BackButton({ onClick }: { onClick: () => void }) {
     >
       <IconChevronLeft size={20} color={TEXT_PRIMARY} />
     </button>
+  );
+}
+
+// ── Download button (68×32, 3 states: default/hover/active) ──────
+function DownloadButton() {
+  const [state, setState] = React.useState<"default" | "hover" | "active">("default");
+  const bg = state === "active" ? "#F2F4F8" : state === "hover" ? "#F7F8FB" : "#FFFFFF";
+  return (
+    <div
+      onMouseEnter={() => setState("hover")}
+      onMouseLeave={() => setState("default")}
+      onMouseDown={() => setState("active")}
+      onMouseUp={() => setState("hover")}
+      style={{
+        width: 68,
+        height: 32,
+        borderRadius: 6,
+        background: bg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        cursor: "pointer",
+        flexShrink: 0,
+        transition: "background 0.15s",
+        userSelect: "none",
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8.66667 2L8.66667 8.39052L11.3333 5.72386L12.2761 6.66667L8 10.9428L3.72386 6.66667L4.66667 5.72386L7.33333 8.39052L7.33333 2L8.66667 2ZM2 12H14V13.3333H2V12Z" fill="rgba(0,0,0,0.9)" />
+      </svg>
+      <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(0,0,0,0.9)", lineHeight: "20px" }}>下载</span>
+    </div>
   );
 }
 

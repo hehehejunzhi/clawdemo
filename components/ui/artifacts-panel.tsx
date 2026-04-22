@@ -141,7 +141,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
               ] as const).map((tab) => (
                 <div
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => { setActiveTab(tab.id); setSelectedArtifact(null); }}
                   style={{ position: "relative", height: 32, display: "flex", alignItems: "center", cursor: "pointer" }}
                 >
                   <span style={{
@@ -224,11 +224,11 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                   {/* Row 1 */}
                   <div style={{ display: "flex" }}>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
-                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>执行 Claw</span>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 64, flexShrink: 0, whiteSpace: "nowrap" }}>执行 Agent</span>
                       <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>{singleExpert ? "数据运维专家" : "大数据团队"}</span>
                     </div>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
-                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>状态</span>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 64, flexShrink: 0, whiteSpace: "nowrap" }}>状态</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <img src="/icons/dag/3.svg" alt="" style={{ width: 6, height: 6 }} />
                         <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>执行中</span>
@@ -238,11 +238,11 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                   {/* Row 2 */}
                   <div style={{ display: "flex" }}>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
-                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>开始时间</span>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 64, flexShrink: 0, whiteSpace: "nowrap" }}>开始时间</span>
                       <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>2026-04-14 14:42:33</span>
                     </div>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
-                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 56, flexShrink: 0 }}>已用时长</span>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 64, flexShrink: 0, whiteSpace: "nowrap" }}>已用时长</span>
                       <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>3 分 24 秒</span>
                     </div>
                   </div>

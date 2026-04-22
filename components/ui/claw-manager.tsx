@@ -18,7 +18,7 @@ const C = {
   textDisabled: "rgba(0,0,0,0.3)",
   hoverShadow: "0 4px 12px rgba(0,0,0,0.06)",
   hoverBg: "#F2F4F8",
-  brandCyan: "#00C8D6",
+  brandCyan: "#0052D9",
   error: "#F64041",
 } as const;
 
@@ -267,7 +267,7 @@ function MoreMenu({ onManage, onDelete }: { onManage: () => void; onDelete: () =
           }}>
             {[
               { label: "编辑", action: onManage },
-              { label: "删除团队", action: onDelete },
+              { label: "删除", action: onDelete },
             ].map((item) => (
               <div
                 key={item.label}
@@ -356,7 +356,7 @@ function TeamDetailModal({ team, onClose, onSave }: {
             <input value={formName} onChange={(e) => setFormName(e.target.value)}
               placeholder="例如：大数据"
               style={inputBase}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#1664FF"; }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
             />
           </div>
@@ -365,10 +365,10 @@ function TeamDetailModal({ team, onClose, onSave }: {
           <div style={{ display: "flex", alignItems: "flex-start" }}>
             <span style={{ ...labelStyle, paddingTop: 8 }}>描述</span>
             <textarea value={formDesc} onChange={(e) => setFormDesc(e.target.value)}
-              placeholder="简要描述数字分身目标和用途"
+              placeholder="简要描述自定义 Agent 目标和用途"
               rows={3}
               style={{ ...inputBase, resize: "none" }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#1664FF"; }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
             />
           </div>
@@ -379,7 +379,7 @@ function TeamDetailModal({ team, onClose, onSave }: {
             <input value={formTags} onChange={(e) => setFormTags(e.target.value)}
               placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化"
               style={inputBase}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#1664FF"; }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
             />
           </div>
@@ -395,8 +395,8 @@ function TeamDetailModal({ team, onClose, onSave }: {
                     style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
                     <div style={{
                       width: 16, height: 16, borderRadius: 3, flexShrink: 0,
-                      border: `1.5px solid ${checked ? "#1664FF" : "#D6DBE3"}`,
-                      background: checked ? "#1664FF" : "transparent",
+                      border: `1.5px solid ${checked ? "#0052D9" : "#D6DBE3"}`,
+                      background: checked ? "#0052D9" : "transparent",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       transition: "all 100ms",
                     }}>
@@ -457,7 +457,7 @@ function ExpertEditModal({ expert, onClose, onNavigateToSkillPlaza }: {
       >
         {/* Header */}
         <div style={{ padding: "24px 28px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>编辑大数据专家</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>编辑大数据 Agent</span>
           <div onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "background 100ms" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
@@ -678,7 +678,7 @@ function ExternalClawCard({ avatar, name, desc, connected, buttonLabel, onButton
                       }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                    >删除外部 Claw</div>
+                    >删除</div>
                   </div>
                 </>
               )}
@@ -801,10 +801,10 @@ function CreateExternalClawDialog({ open, onClose, onCreate }: {
                     >
                       <div style={{
                         width: 16, height: 16, borderRadius: 8,
-                        border: `2px solid ${platform === p.id ? "#1664FF" : "#D6DBE3"}`,
+                        border: `2px solid ${platform === p.id ? "#0052D9" : "#D6DBE3"}`,
                         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                       }}>
-                        {platform === p.id && <div style={{ width: 8, height: 8, borderRadius: 4, background: "#1664FF" }} />}
+                        {platform === p.id && <div style={{ width: 8, height: 8, borderRadius: 4, background: "#0052D9" }} />}
                       </div>
                       <div style={{ width: 28, height: 28, borderRadius: 6, background: p.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <span style={{ fontSize: 11, fontWeight: 600, color: "#FFF" }}>{p.abbr}</span>
@@ -860,7 +860,7 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
 
   const labelStyle: React.CSSProperties = { fontSize: 12, color: C.textTertiary, flexShrink: 0, width: 91, paddingTop: 7 };
   const fieldInputStyle: React.CSSProperties = {
-    flex: 1, height: 32, padding: "0 12px", borderRadius: 3,
+    flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgWhite,
     fontFamily: FONT, fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box",
   };
@@ -880,7 +880,7 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
           >
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建数字分身</span>
+              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建自定义 Agent</span>
               <div onClick={onClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
@@ -891,7 +891,7 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* 名称 */}
               <div style={{ display: "flex", alignItems: "center" }}>
-                <div style={labelStyle}><span style={{ color: C.textTertiary }}>数字分身名称 </span><span style={{ color: C.error }}>*</span></div>
+                <div style={labelStyle}><span style={{ color: C.textTertiary }}>名称 </span><span style={{ color: C.error }}>*</span></div>
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：我的监控助手" style={fieldInputStyle}
                   onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
               </div>
@@ -971,7 +971,7 @@ function AvatarMoreMenu({ onDetail, onDelete }: { onDetail: () => void; onDelete
           <div style={{ position: "absolute", top: 28, right: 0, zIndex: 100, width: 152, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", padding: 8 }}>
             {[
               { label: "编辑", action: onDetail },
-              { label: "删除数字分身", action: onDelete },
+              { label: "删除", action: onDelete },
             ].map((item) => (
               <div key={item.label} onClick={() => { setOpen(false); item.action(); }}
                 style={{ padding: "5px 8px", borderRadius: 8, cursor: "pointer", fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, transition: "background 100ms" }}
@@ -1039,7 +1039,7 @@ function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
       >
         {/* Header */}
         <div style={{ padding: "24px 28px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: "rgba(0,0,0,0.9)" }}>编辑数字分身</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: "rgba(0,0,0,0.9)" }}>编辑自定义 Agent</span>
           <div onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "background 100ms" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
@@ -1050,7 +1050,7 @@ function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
         <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 0", display: "flex", flexDirection: "column", gap: 20, scrollbarWidth: "none" }}>
           {/* 名称 */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={labelStyle}>数字分身名称 <span style={{ color: "#F64041" }}>*</span></span>
+            <span style={labelStyle}>名称 <span style={{ color: "#F64041" }}>*</span></span>
             <input value={formName} onChange={(e) => setFormName(e.target.value)}
               style={inputBase}
               onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
@@ -1207,7 +1207,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
   // Lighthouse 连接状态: "disconnected" | "connecting" | "connected" | "disconnecting"
   const [lh1State, setLh1State] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [lh2State, setLh2State] = useState<"connected" | "disconnecting" | "disconnected">("connected");
-  // 删除外部 Claw 确认弹窗
+  // 删除外部 Agent 确认弹窗
   const [deletingClawId, setDeletingClawId] = useState<string | null>(null);
   const [deletingClawName, setDeletingClawName] = useState("");
   // 查看大数据专家详情
@@ -1223,17 +1223,17 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         height: 50, flexShrink: 0, display: "flex", alignItems: "center",
         padding: "0 24px", borderBottom: `1px solid ${C.border}`, background: C.bg,
       }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>Claw 广场</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>Agent 广场</span>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", scrollbarWidth: "none" }}>
         {/* 团队 */}
-        <SectionTitle title="团队" desc="拉取不同种 Claw 组建团队，协作完成复杂任务" />
+        <SectionTitle title="团队" desc="拉取不同来源 Agent 组建团队，协作完成复杂任务" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap", alignItems: "stretch" }}>
           <Card
             avatar={<GridAvatar />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>大数据团队 (3)</span>}
-            desc="包含数据开发专家、数据分析专家、数据运维专家的协作团队"
+            desc="包含大数据分析专家和大数据运维专家的协作团队"
           />
           {/* 动态创建的团队卡片 */}
           {customTeams.map((team) => (
@@ -1249,30 +1249,30 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         </div>
 
         {/* 大数据专家 */}
-        <SectionTitle title="大数据专家" desc="内置专家团队，开箱即用" />
+        <SectionTitle title="大数据 Agent" desc="内置大数据专家团队，开箱即用" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap" }}>
           <Card
             avatar={<AvatarCircle src="/icons/claw-mgr/7.svg" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Rigel·数据开发专家</span>}
-            desc="从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持"
-            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Rigel·数据开发专家", desc: "从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持", skills: ["需求转数据模型", "生成调度方案", "自动数仓开发", "检测管道异常", "接入数据源", "优化任务性能"] })} />}
+            desc="负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。"
+            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Rigel·数据开发专家", desc: "负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。", skills: ["需求转数据模型", "生成调度方案", "自动数仓开发", "检测管道异常", "接入数据源", "优化任务性能"] })} />}
           />
           <Card
             avatar={<AvatarCircle src="/icons/claw-mgr/10.svg" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Vega·数据分析专家</span>}
-            desc="从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持"
-            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Vega·数据分析专家", desc: "从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持", skills: ["自然语言取数", "智能趋势分析", "多维数据洞察", "生成数据报告", "异常归因", "指标拆解"] })} />}
+            desc="从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。"
+            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Vega·数据分析专家", desc: "从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。", skills: ["自然语言取数", "智能趋势分析", "多维数据洞察", "生成数据报告", "异常归因", "指标拆解"] })} />}
           />
           <Card
             avatar={<AvatarCircle src="/icons/claw-mgr/13.svg" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Orion·数据运维专家</span>}
-            desc="从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持"
-            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Orion·数据运维专家", desc: "从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供数据驱动支持", skills: ["监测数据质量", "智能血缘维护", "自动管理元数据", "识别口径冲突", "安全脱敏", "标签治理"] })} />}
+            desc="负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。"
+            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Orion·数据运维专家", desc: "负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。", skills: ["监测数据质量", "智能血缘维护", "自动管理元数据", "识别口径冲突", "安全脱敏", "标签治理"] })} />}
           />
         </div>
 
         {/* 数字分身 */}
-        <SectionTitle title="数字分身" desc="定制你的专属AI分身，沉淀个人知识" />
+        <SectionTitle title="自定义 Agent" desc="定制你的专属 AI 数字分身，沉淀个人知识" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap", alignItems: "stretch" }}>
           {!avatarDeleted && (
             <Card
@@ -1288,15 +1288,15 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
               key={a.id}
               avatar={<AvatarCircle letter={a.name.charAt(0)} bg="#E59858" />}
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{a.name}</span>}
-              desc={a.desc || "自定义数字分身"}
+              desc={a.desc || "自定义 Agent"}
               badge={<AvatarMoreMenu onDetail={() => setViewingAvatarId(a.id)} onDelete={() => setDeletingAvatarId(a.id)} />}
             />
           ))}
-          <CreateCard label="创建数字分身" onClick={() => setShowCreateAvatar(true)} />
+          <CreateCard label="创建自定义 Agent" onClick={(1 + customAvatars.length) >= 3 ? undefined : () => setShowCreateAvatar(true)} disabled={(1 + customAvatars.length) >= 3} />
         </div>
 
         {/* 外部 Claw */}
-        <SectionTitle title="外部 Claw" desc="连接外部 AI 平台的 Agent" />
+        <SectionTitle title="外部 Agent" desc="连接你在外部平台部署的 Agent" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 24px", flexWrap: "wrap", alignItems: "stretch" }}>
           <ExternalClawCard
             avatar={<AvatarCircle letter="L" bg="#0BD1E2" />}
@@ -1333,7 +1333,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
               buttonLabel="连接"
             />
           ))}
-          <CreateCard label="连接外部 Claw" onClick={() => setShowCreateExternalClaw(true)} />
+          <CreateCard label="连接外部 Agent" onClick={() => setShowCreateExternalClaw(true)} />
         </div>
       </div>
 
@@ -1380,7 +1380,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         onCreate={(name, desc, tags) => {
           setCustomAvatars((prev) => [...prev, { id: `avatar-${Date.now()}`, name, desc, tags: tags ? tags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean) : [], skills: [] }]);
           setShowCreateAvatar(false);
-          showToast("数字分身创建成功", "success");
+          showToast("自定义 Agent 创建成功", "success");
         }}
       />
 
@@ -1415,10 +1415,10 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
               ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingRight: 32 }}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill={C.error} /><path d="M10 6v5" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" /><circle cx="10" cy="14" r="0.75" fill="#FFF" /></svg>
-                <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除数字分身 &quot;{avatarData.name}&quot;</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除自定义 Agent &quot;{avatarData.name}&quot;</span>
               </div>
               <div style={{ fontSize: 14, color: C.textSecondary, lineHeight: "22px", marginBottom: 24 }}>
-                若删除该数字分身，相关的历史对话、个人知识沉淀等信息都将被删除，该操作不可逆。
+                若删除该自定义 Agent，相关的历史对话、个人知识沉淀等信息都将被删除，该操作不可逆。
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
                 <button onClick={() => setShowAvatarDelete(false)} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
@@ -1435,13 +1435,13 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
           <AvatarDetailModal
             data={{ name: viewingAvatar.name, desc: viewingAvatar.desc, tags: viewingAvatar.tags, skills: viewingAvatar.skills }}
             onClose={() => setViewingAvatarId(null)}
-            onSave={(d) => { setCustomAvatars((prev) => prev.map((a) => a.id === viewingAvatarId ? { ...a, ...d } : a)); setViewingAvatarId(null); showToast("分身信息已保存", "success"); }}
+            onSave={(d) => { setCustomAvatars((prev) => prev.map((a) => a.id === viewingAvatarId ? { ...a, ...d } : a)); setViewingAvatarId(null); showToast("自定义 Agent 信息已保存", "success"); }}
             onConfigSkill={onNavigateToSkillPlaza}
           />
         )}
       </AnimatePresence>
 
-      {/* 自定义数字分身删除确认 */}
+      {/* 自定义 Agent 删除确认 */}
       <AnimatePresence>
         {deletingAvatar && (
           <motion.div
@@ -1460,12 +1460,12 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
               ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingRight: 32 }}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill={C.error} /><path d="M10 6v5" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" /><circle cx="10" cy="14" r="0.75" fill="#FFF" /></svg>
-                <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除数字分身 &quot;{deletingAvatar.name}&quot;</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除自定义 Agent &quot;{deletingAvatar.name}&quot;</span>
               </div>
-              <div style={{ fontSize: 14, color: C.textSecondary, lineHeight: "22px", marginBottom: 24 }}>若删除该数字分身，相关的历史对话、个人知识沉淀等信息都将被删除，该操作不可逆。</div>
+              <div style={{ fontSize: 14, color: C.textSecondary, lineHeight: "22px", marginBottom: 24 }}>若删除该自定义 Agent，相关的历史对话、个人知识沉淀等信息都将被删除，该操作不可逆。</div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
                 <button onClick={() => setDeletingAvatarId(null)} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-                <button onClick={() => { setCustomAvatars((prev) => prev.filter((a) => a.id !== deletingAvatarId)); setDeletingAvatarId(null); showToast("数字分身已删除", "success"); }} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: "none", background: C.error, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>确认删除</button>
+                <button onClick={() => { setCustomAvatars((prev) => prev.filter((a) => a.id !== deletingAvatarId)); setDeletingAvatarId(null); showToast("自定义 Agent 已删除", "success"); }} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: "none", background: C.error, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>确认删除</button>
               </div>
             </motion.div>
           </motion.div>

@@ -353,7 +353,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
                 fontFamily: FONT, fontSize: 18, fontWeight: 600,
                 lineHeight: "26px", color: C.textPrimary, whiteSpace: "nowrap",
               }}>
-                TCClawTeam
+                DataTeam
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -430,7 +430,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           gap: 2,
         }}>
           <NavMenuItem icon="/icons/nav/5.svg" label="技能广场" active={activeMenu === "skill-plaza"} onClick={onSkillPlaza} />
-          <NavMenuItem icon="/icons/nav/6.svg" label="Claw 广场" active={activeMenu === "claw-manager"} onClick={onClawManager} />
+          <NavMenuItem icon="/icons/nav/6.svg" label="Agent 广场" active={activeMenu === "claw-manager"} onClick={onClawManager} />
         </div>
 
         {/* 下区：团队 & 专家列表（可折叠） */}

@@ -12,7 +12,7 @@ const C = {
   textTertiary: "rgba(0,0,0,0.5)",
   textPlaceholder: "rgba(0,0,0,0.3)",
   border: "#E6E9EF",
-  borderActive: "#7E9EFF",
+  borderActive: "#0052D9",
   bgCard: "#FFFFFF",
   bgInput: "#FAFBFC",
   bgOverlay: "rgba(0,0,0,0.3)",
@@ -131,12 +131,12 @@ function PlatformRadio({ options, selected, onSelect }: {
         >
           <div style={{
             width: 16, height: 16, borderRadius: 8,
-            border: `2px solid ${selected === opt.id ? "#1664FF" : "#D6DBE3"}`,
+            border: `2px solid ${selected === opt.id ? "#0052D9" : "#D6DBE3"}`,
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}>
             {selected === opt.id && (
-              <div style={{ width: 8, height: 8, borderRadius: 4, background: "#1664FF" }} />
+              <div style={{ width: 8, height: 8, borderRadius: 4, background: "#0052D9" }} />
             )}
           </div>
           <div style={{
@@ -331,7 +331,6 @@ export default function CreateExpertDialog({ open, onClose }: CreateExpertDialog
               justifyContent: "flex-end",
               gap: 12,
               padding: "16px 24px",
-              borderTop: `1px solid ${C.border}`,
               flexShrink: 0,
             }}>
               <button
