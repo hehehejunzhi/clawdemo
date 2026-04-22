@@ -2,6 +2,7 @@
 
 import React from "react";
 import { IconAiNewChat, IconData } from "./wedata-icons";
+import { ExpertStackAvatars } from "./expert-replies";
 
 // ── Design DNA tokens ────────────────────────────────────────────
 const TEXT_PRIMARY = "rgba(0,0,0,0.9)";
@@ -84,17 +85,13 @@ export default function ChatTitlebar({
           flexShrink: 0,
           cursor: "pointer",
         }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <img src="/icons/team-badge/2.svg" alt="" style={{ width: 16, height: 16 }} />
-            <img src="/icons/team-badge/1.svg" alt="" style={{ width: 16, height: 16, marginLeft: -3.6 }} />
-            <img src="/icons/team-badge/3.svg" alt="" style={{ width: 16, height: 16, marginLeft: -3.6 }} />
-          </div>
+          <ExpertStackAvatars size={16} overlap={2} />
           <span style={{
             fontFamily: "'PingFang SC', sans-serif",
             fontSize: 12,
             fontWeight: 400,
             color: "rgba(0,0,0,0.7)",
-            marginLeft: 2,
+            marginLeft: 4,
             whiteSpace: "nowrap",
           }}>
             专家团

@@ -18,7 +18,7 @@ import UserMessageBubble from "@/components/ui/user-message-bubble";
 import Plan from "@/components/ui/agent-plan";
 import ThinkingSummary from "@/components/ui/thinking-summary";
 import ArtifactsPanel from "@/components/ui/artifacts-panel";
-import ExpertReplies, { type ExpertReplyDataType } from "@/components/ui/expert-replies";
+import ExpertReplies, { DispatchText, ConfirmCard, type ConfirmCardData, type ExpertReplyDataType } from "@/components/ui/expert-replies";
 import CreateExpertDialog from "@/components/ui/create-expert-dialog";
 import CreateTeamDialog from "@/components/ui/create-team-dialog";
 import SkillPlaza from "@/components/ui/skill-plaza";
@@ -108,15 +108,16 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到慢 SQL 检索与调优任务，我来作为调度者拆解任务并分派给团队成员",
     replies: [
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        overview: "已收到慢 SQL 检索任务，我将准备相关对应脚本和权限，分步执行",
         lines: [
           {
             text: "让我先加载 EMR 技能来查看 SQL",
-            inlineTags: ["EMR-skill"],
+            skillCalls: ["EMR-Skill"],
           },
           {
             text: "我需要通过 DescribeSparkQueries 接口获取广州地域集群 emr-ccrnhw11 的慢 SQL。让我先验证鉴权，再查询。",
-            inlineTags: ["tcapi"],
+            skillCalls: ["TCAPI"],
             toolCalls: [{ title: "验证 tccli 鉴权是否有效", command: "tccli configure list", result: "secretId: AKIDz8k***\nsecretKey: Gu5t***\nregion: ap-guangzhou\noutput: json" }],
           },
           {
@@ -140,11 +141,11 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         delay: 6000,
         dividerBefore: true,
+        overview: "数据齐全了，让我生成一个清晰的报告",
         lines: [
-          { text: "数据齐全了，让我生成一个清晰的报告。" },
           { text: "以下是广州地域集群 emr-ccrnhw11 最近 24 小时的全部 Spark 查询记录（共 11 条，按耗时从高到低排列）：", boldText: "Spark 查询一览（按耗时降序）" },
           {
             text: "",
@@ -163,7 +164,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         delay: 10000,
         hideLabel: true,
         lines: [
@@ -227,7 +228,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来拆解多渠道支付数据的聚合分析任务",
     replies: [
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "定位到支付主题表 dws_payment_channel_di，覆盖微信/支付宝/银联/Apple Pay 四个渠道。" },
           { text: "已生成按天×渠道聚合 SQL，时间范围 CURDATE() - INTERVAL 7 DAY 到 CURDATE()。", tags: ["dws_payment_channel_di", "dim_channel", "fact_payment"] },
@@ -235,14 +236,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        icon: "/agents/ops-expert.png", name: "数据分析专家",
         lines: [
           { text: "发现趋势异常：第 5 天支付宝渠道下降 18%，关联到支付宝侧临时限流策略。" },
           { text: "已生成可视化看板：分渠道折线图 + 占比堆叠柱状图，导出为 PNG 和 PDF 格式。" },
         ],
       },
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         lines: [
           { text: "SQL 模板已沉淀到知识库，标签：多渠道支付、按天汇总、7日趋势。" },
           { text: "自动创建定时报表任务，每周一 09:00 自动推送到运营群。" },
@@ -256,7 +257,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调完成订单表数据源接入任务",
     replies: [
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         lines: [
           { text: "已通过 JDBC 探测到 MySQL 5.7 实例 db-order-prod，延迟 2.3ms。" },
           { text: "orders 表结构：38 个字段，主键 order_id (BIGINT)，日均新增约 42 万条。", tags: ["orders", "order_id", "MySQL 5.7"] },
@@ -264,7 +265,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "权限审查通过：已获取 SELECT 权限，数据脱敏规则已配置（手机号/身份证中间位掩码）。" },
           { text: "数据采样完成：随机抽取 1 万条进行字段完整率统计，所有必填字段完整率 > 99.8%。" },
@@ -278,7 +279,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调完成用户表数据源接入任务",
     replies: [
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         lines: [
           { text: "已探测到 MySQL 实例 db-user-prod，用户表 users 共 1,560 万条记录。" },
           { text: "表结构：25 个字段，包含 user_id、nickname、phone、register_time 等核心字段。", tags: ["users", "user_profile", "user_extend"] },
@@ -286,14 +287,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "PII 字段检测完成：phone、id_card、email 已标记为敏感字段，脱敏策略已绑定。" },
           { text: "数据质量基线已建立，空值率、唯一性、格式合规性每日自动校验。" },
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         lines: [
           { text: "数据源健康探针已部署，每 5 分钟检测连接可用性，异常自动切换备库。" },
         ],
@@ -306,7 +307,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来拆解客户留存分析任务并协调专家团",
     replies: [
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "定位留存分析数据源：dws_user_retention_di，覆盖次日/3日/7日/30日留存维度。" },
           { text: "近 30 天整体留存率：次留 45.2%、3留 28.7%、7留 18.3%、月留 9.6%。", tags: ["dws_user_retention_di", "dim_user_cohort", "fact_active_user"] },
@@ -314,7 +315,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        icon: "/agents/ops-expert.png", name: "数据分析专家",
         lines: [
           { text: "留存漏斗分析：注册→首次观影转化率 67%，首次→二次观影转化率仅 41%，为核心流失节点。" },
           { text: "建议：优化首次观影后的推荐策略，增加 \"猜你想看\" 推送触达。" },
@@ -329,7 +330,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来规划 T+1 数据调度的工作流编排方案",
     replies: [
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         lines: [
           { text: "工作流拓扑已生成：ODS 层采集 → DWD 清洗 → DWS 汇总 → ADS 应用，共 23 个节点。" },
           { text: "关键路径分析：最长执行链 ODS→DWD→DWS_user→ADS_retention，预估耗时 47 分钟。", tags: ["ods_sync", "dwd_clean", "dws_aggregate", "ads_report"] },
@@ -337,14 +338,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         lines: [
           { text: "资源编排：凌晨 2:00 启动，预分配 Spark 集群 16 CU，DWS 阶段动态扩容到 24 CU。" },
           { text: "SLA 兜底：若 06:00 前未完成，自动触发紧急扩容 + 告警通知值班人员。" },
         ],
       },
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "数据质量卡点已配置：DWD→DWS 之间设置行数波动检查（±20% 阈值）。" },
           { text: "全链路血缘已注册，任意节点失败可快速定位上下游影响范围。" },
@@ -359,7 +360,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     singleExpert: true,
     replies: [
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         lines: [
           { text: "数仓分层方案已设计：ODS（原始层）→ DWD（明细层）→ DWS（汇总层）→ ADS（应用层）。" },
           { text: "ODS 层：12 张业务源表镜像，保留原始字段，增加 ds 分区和 etl_time 审计字段。", tags: ["ODS", "DWD", "DWS", "ADS"] },
@@ -368,7 +369,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         delay: 3000,
         lines: [
           { text: "ADS 层指标体系已梳理：覆盖 DAU、GMV、客单价、留存率等 28 个核心指标。" },
@@ -386,14 +387,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     singleExpert: true,
     replies: [
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         lines: [
           { text: "ODS 层 12 张表逐一对账：源端总行数 vs ODS 行数，误差率均 < 0.01%。" },
           { text: "字段级校验：抽样 10 万条做字段值 MD5 对比，一致率 100%。", tags: ["ods_orders", "ods_users", "ods_payments", "ods_products"] },
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         delay: 2500,
         lines: [
           { text: "增量同步验证：模拟业务写入 1000 条测试数据，T+1 后全部正确落入 ODS 对应分区。" },
@@ -409,7 +410,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来拆解用户留存趋势分析任务",
     replies: [
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "拉取近 60 天用户活跃数据，构建 cohort 留存矩阵。" },
           { text: "次日留存从月初 43% 上升到月末 48%，主要由新用户引导优化贡献。", tags: ["dws_user_retention", "dim_user_cohort", "fact_daily_active"] },
@@ -417,7 +418,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        icon: "/agents/ops-expert.png", name: "数据分析专家",
         lines: [
           { text: "分群分析：高价值用户（月消费 > ¥500）30 日留存 34%，远高于平均水平。" },
           { text: "流失预警：识别出 12,350 名高风险用户（7日内未活跃+历史高频），建议推送召回策略。" },
@@ -432,7 +433,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调 GMV 周报数据的提取和报告生成",
     replies: [
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "本周（04/07 - 04/12）GMV 汇总：¥4,872 万，环比上周 +6.3%，同比去年 +21.7%。" },
           { text: "品类拆分：食品饮料 ¥1,843 万（37.8%）、3C数码 ¥1,265 万（26.0%）、服饰 ¥892 万（18.3%）。", tags: ["ads_gmv_weekly", "dws_order_category", "dim_product_category"] },
@@ -440,14 +441,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        icon: "/agents/ops-expert.png", name: "数据分析专家",
         lines: [
           { text: "异常发现：周三 GMV 骤降 15%，关联到 CDN 故障导致下单页加载超时。" },
           { text: "周报 PDF 已生成，含 GMV 趋势图、品类占比饼图、TOP10 爆款商品排行。" },
         ],
       },
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         lines: [
           { text: "周报自动化任务已创建，每周日 20:00 自动生成并推送至管理层邮箱。" },
         ],
@@ -460,7 +461,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调元数据血缘扫描和治理任务",
     replies: [
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         lines: [
           { text: "全量血缘扫描启动：覆盖 Hive 347 张表、Spark SQL 作业 128 个、调度任务 89 个。" },
           { text: "表级血缘图谱已生成：平均链路深度 4.2 层，最长链路 ODS→DWD→DWS→ADS→BI 共 7 层。", tags: ["hive_metastore", "spark_sql_lineage", "workflow_dag"] },
@@ -468,14 +469,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "字段级血缘已追踪：核心指标 GMV 的计算路径涉及 5 张源表、12 次 JOIN、3 次聚合。" },
           { text: "口径一致性检查：发现 2 处 GMV 定义冲突（是否含退款），已标记待治理。" },
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         lines: [
           { text: "血缘图谱已同步至数据目录平台，支持影响分析和变更评估。" },
           { text: "增量血缘捕获已开启，后续 SQL 变更将自动更新血缘关系。" },
@@ -489,7 +490,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调运营周报看板的设计和搭建",
     replies: [
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "看板框架设计完成：顶部 KPI 卡片 → 趋势折线图 → 分维度明细表 → 异常预警区。" },
           { text: "核心指标已配置：DAU、GMV、新增用户、留存率、客单价、转化率共 8 个 KPI 卡片。", tags: ["ads_daily_kpi", "ads_weekly_summary", "dim_date"] },
@@ -497,14 +498,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        icon: "/agents/ops-expert.png", name: "数据分析专家",
         lines: [
           { text: "交互功能：支持时间范围筛选、渠道/地区下钻、指标同环比切换。" },
           { text: "移动端适配完成，支持飞书/企微内嵌查看。" },
         ],
       },
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         lines: [
           { text: "权限配置：运营组全员可查看，数据导出权限仅限运营负责人。" },
           { text: "看板链接已生成，已推送至运营协作群。" },
@@ -518,7 +519,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来拆解营销活动效果归因分析任务",
     replies: [
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         lines: [
           { text: "定位活动数据：「春季焕新季」活动，周期 04/01 - 04/10，投放渠道覆盖 5 个平台。" },
           { text: "活动期间 GMV ¥8,240 万，较活动前均值提升 38.5%，新增用户 4.2 万。", tags: ["fact_campaign_order", "dim_campaign", "fact_channel_attribution"] },
@@ -526,7 +527,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/icons/expert/25.svg", name: "数据分析专家",
+        icon: "/agents/ops-expert.png", name: "数据分析专家",
         lines: [
           { text: "ROI 分析：整体 ROI 3.2x，其中信息流广告 ROI 最高 4.5x，短信渠道 ROI 仅 1.8x 建议优化。" },
           { text: "用户分群效果：老用户召回 GMV 占比 42%，说明活动对沉睡用户激活效果显著。" },
@@ -540,34 +541,31 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
 // ── 确认执行后的二阶段对话内容 ────────────────────────────────
 const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
   {
-    icon: "/icons/expert/17.svg", name: "数据开发专家",
+    icon: "/agents/dev-expert.png", name: "数据开发专家",
     delay: 800,
+    overview: "好的，你选了 #1 — 最慢的那条 56.5 秒的 SQL。让我对它做深入调优分析。",
     lines: [
       {
-        text: "好的，你选了 #1 — 最慢的那条 56.5 秒的 SQL。让我对它做深入调优分析。",
+        text: "提取慢 SQL #1 的完整信息，准备进行调优分析。",
         toolCalls: [{ title: "提取慢 SQL #1 的完整信息用于调优分析", command: "jq '.[0]' /tmp/spark_queries.json", result: "{\n  \"Id\": \"sq-001\",\n  \"Duration\": 56.5,\n  \"Statement\": \"INSERT OVERWRITE TABLE dwd_trade...\",\n  \"ScanRows\": 2950000000\n}" }],
       },
       {
-        text: "好的，数据齐了。现在让我生成一份完整的调优分析报告：",
+        text: "数据齐了，现在生成完整的调优分析报告：",
         toolCalls: [{ title: "查看 DescribeSparkQueries 接口文档" }],
       },
-      { text: "", divider: true },
     ],
   },
   {
-    icon: "/icons/expert/17.svg", name: "数据开发专家",
+    icon: "/agents/dev-expert.png", name: "数据开发专家",
     delay: 4000,
+    dividerBefore: true,
+    overview: "以下是报告核心结论",
     lines: [
-      { text: "展示慢 SQL #1 的深度调优分析报告，以下是报告核心结论：" },
-      { text: "以下是报告核心结论" },
       { text: "", boldText: "这条 56.5 秒的慢 SQL 最大的问题是隐式 JOIN + 缺少预过滤，导致 store_sales 的 4.77 亿行被全量扫描后才做 JOIN 过滤。" },
       { text: "已经有实测数据证明 方案 1（CTE + 显式 JOIN）可以从 56.5s 降到 14.5s（↓74%）。如果还想继续压缩，可以试：" },
       { text: "", numberedHeading: { num: 1, text: "方案 2：加 /*+ BROADCAST(dt), BROADCAST(fi) */ Hint，强制小表广播，预计 8~10s" } },
-      {
-        text: "",
-        numberedHeading: { num: 2, text: "方案 3：加上 ss_sold_date_sk 范围预过滤做分区裁剪，预计 5~7s" },
-      },
-      { text: " date_dim 和 item 的过滤条件未提前执行，导致 store_sales 大量扫描后才做 JOIN 过滤。" },
+      { text: "", numberedHeading: { num: 2, text: "方案 3：加上 ss_sold_date_sk 范围预过滤做分区裁剪，预计 5~7s" } },
+      { text: "date_dim 和 item 的过滤条件未提前执行，导致 store_sales 大量扫描后才做 JOIN 过滤。" },
       {
         text: "",
         artifacts: {
@@ -584,7 +582,7 @@ const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
         confirmCard: {
           title: "请确认优化方案",
           description: "要不要我直接把方案 2 的 SQL 提交到集群跑一下验证？",
-          buttonText: "选择方案2",
+          buttonText: "选择方案 2",
         },
       },
     ],
@@ -625,7 +623,13 @@ export default function Home() {
   const [confirmPhase, setConfirmPhase] = useState(false);
   const [phase2Replies, setPhase2Replies] = useState<ExpertReplyDataType[] | undefined>(undefined);
   const [phase2Complete, setPhase2Complete] = useState(false);
+  // 活跃的确认卡（从对话流提取，固定在输入框上方）
+  const [activeConfirmCard, setActiveConfirmCard] = useState<{ title: string; description: string; buttonText: string } | null>(null);
   const [isSingleExpert, setIsSingleExpert] = useState(false);
+  // AI 正在生成回复
+  const [isGenerating, setIsGenerating] = useState(false);
+  // 用户取消了对话
+  const [isCancelled, setIsCancelled] = useState(false);
   // 卡片参数配置
   const [fanConfig, setFanConfig] = useState<FanCardsConfig>(DEFAULT_FAN_CONFIG);
   const [chatInputConfig, setChatInputConfig] = useState<Record<string, number>>(CHAT_INPUT_MOTION.defaultConfig);
@@ -713,9 +717,9 @@ export default function Home() {
 
   // ── 从输入框 Agent 下拉菜单选择专家/团队 ─────────────────────
   const AGENT_MAP: Record<string, { name: string; nameColor: string; title: string; avatar: string; summonText: string }> = {
-    "ops-expert": { name: "Orion", nameColor: "#CC6B3A", title: "数据运维专家", avatar: "/agents/3a.png", summonText: "告诉我你想梳理哪条数据链路？" },
-    "analysis-expert": { name: "Vega", nameColor: "#00BBA2", title: "数据分析专家", avatar: "/agents/2a.png", summonText: "告诉我你想分析什么数据？" },
-    "dev-expert": { name: "Rigel", nameColor: "#2873FF", title: "数据开发专家", avatar: "/agents/1a.png", summonText: "今天想开发什么数仓？" },
+    "ops-expert": { name: "Orion", nameColor: "#CC6B3A", title: "数据运维专家", avatar: "/agents/ops-expert.png", summonText: "告诉我你想梳理哪条数据链路？" },
+    "analysis-expert": { name: "Vega", nameColor: "#00BBA2", title: "数据分析专家", avatar: "/agents/analysis-expert.png", summonText: "告诉我你想分析什么数据？" },
+    "dev-expert": { name: "Rigel", nameColor: "#2873FF", title: "数据开发专家", avatar: "/agents/dev-expert.png", summonText: "今天想开发什么数仓？" },
   };
 
   const handleSelectAgent = useCallback((agentId: string) => {
@@ -743,7 +747,7 @@ export default function Home() {
   const SINGLE_EXPERT_REPLIES: Record<string, ExpertReplyDataType[]> = {
     "数据运维专家": [
       {
-        icon: "/icons/expert/25.svg", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
         delay: 1200,
         lines: [
           { text: "正在检查华东区数据链路状态，扫描 ODS → DWD → DWS → ADS 全链路节点。" },
@@ -756,7 +760,7 @@ export default function Home() {
     ],
     "数据分析专家": [
       {
-        icon: "/icons/expert/14.svg", name: "数据分析专家",
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
         delay: 1200,
         lines: [
           { text: "正在拉取华东区过去 7 天用户活跃数据，数据源为 dws_user_active_di。" },
@@ -768,7 +772,7 @@ export default function Home() {
     ],
     "数据开发专家": [
       {
-        icon: "/icons/expert/17.svg", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据开发专家",
         delay: 1200,
         lines: [
           { text: "正在分析数仓分层模型需求，梳理业务数据源和目标架构。" },
@@ -788,7 +792,7 @@ export default function Home() {
       setSummonedAgent({
         name: "Rigel",
         title: "数据开发专家",
-        avatar: "/agents/1a.png",
+        avatar: "/agents/dev-expert.png",
       });
     }
     setChatPhase("conversation");
@@ -805,6 +809,8 @@ export default function Home() {
     setTaskThinkingText(singleReplies ? undefined : undefined);
     setActiveTaskId(null);
     setRevealStep(0);
+    setIsGenerating(true);
+    setIsCancelled(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summonedAgent]);
 
@@ -849,12 +855,21 @@ export default function Home() {
     setConfirmPhase(false);
     setPhase2Replies(undefined);
     setPhase2Complete(false);
+    setIsGenerating(false);
+    setIsCancelled(false);
+    setActiveConfirmCard(null);
     chatInputRef.current?.resetAgent();
   }, []);
 
   const handleConfirm = useCallback(() => {
     setConfirmPhase(true);
     setPhase2Replies(CONFIRM_PHASE2_REPLIES);
+    setActiveConfirmCard(null);
+  }, []);
+
+  const handleStop = useCallback(() => {
+    setIsGenerating(false);
+    setIsCancelled(true);
   }, []);
 
   const handleTaskClick = useCallback((task: { id: string; title: string }) => {
@@ -869,7 +884,7 @@ export default function Home() {
     setSummonedAgent({
       name: "Rigel",
       title: "数据运维专家",
-      avatar: "/agents/1a.png",
+      avatar: "/agents/dev-expert.png",
     });
     setChatPhase("conversation");
     setConversationTitle(conv?.title ?? task.title);
@@ -882,6 +897,9 @@ export default function Home() {
     setConfirmPhase(false);
     setPhase2Replies(undefined);
     setPhase2Complete(false);
+    setIsGenerating(false);
+    setIsCancelled(false);
+    setActiveConfirmCard(null);
     // 即时模式：自动打开产物面板
     setArtifactsPanelOpen(true);
     // 滚动到顶部
@@ -1065,7 +1083,7 @@ export default function Home() {
           }}
         >
         {/* ── 聊天主区域（flex-1 column） ── */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", backgroundColor: C.rightBg }}>
         {chatPhase === "conversation" && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -1151,7 +1169,7 @@ export default function Home() {
             width: "100%",
             maxWidth: "min(928px, 100%)",
             boxSizing: "border-box",
-            padding: chatPhase === "welcome" ? "0 24px 24px" : "24px 24px 160px",
+            padding: chatPhase === "welcome" ? "0 24px 24px" : `24px 24px ${activeConfirmCard && !confirmPhase ? 360 : 160}px`,
           }}>
             <AnimatePresence mode="wait">
               {chatPhase === "welcome" ? (
@@ -1228,27 +1246,51 @@ export default function Home() {
                   initial={isInstantMode ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: isInstantMode ? 0 : 0.3, ease: EASE }}
-                  style={{ display: "flex", flexDirection: "column", gap: 24 }}
+                  style={{ display: "flex", flexDirection: "column", gap: 32 }}
                 >
                   {/* Step 0: 用户气泡 */}
                   <motion.div
                     initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE }}
-                    onAnimationComplete={() => { if (!isInstantMode) setRevealStep((s) => Math.max(s, 1)); }}
+                    onAnimationComplete={() => { if (!isInstantMode && !isCancelled) setRevealStep((s) => Math.max(s, 1)); }}
                   >
                     <UserMessageBubble content={userMessage} />
                   </motion.div>
 
-                  {/* Step 1: 思考摘要 (单专家模式跳过) */}
+                  {/* Step 1+2: Leader 调度区（思考摘要 + Plan + 标签 + 任务分派），内部 12px 间距 */}
                   {revealStep >= 1 && !isSingleExpert && (
                     <motion.div
                       initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.3 }}
-                      onAnimationComplete={() => { if (!isInstantMode) setRevealStep((s) => Math.max(s, 2)); }}
+                      onAnimationComplete={() => { if (!isInstantMode && !isCancelled) setRevealStep((s) => Math.max(s, 2)); }}
+                      style={{ display: "flex", flexDirection: "column", gap: 12 }}
                     >
                       <ThinkingSummary text={taskThinkingText} />
+                      {revealStep >= 2 && (
+                        <>
+                          <Plan />
+                          <div style={{
+                            display: "flex", flexWrap: "wrap", gap: 8,
+                          }}>
+                            {["TaskDecompose(slow_sql_analysis)", "ClusterValidate(emr-ccrnhw11)", "TodoWrite(4_phases)"].map((tag) => (
+                              <div key={tag} style={{
+                                display: "inline-flex", alignItems: "center",
+                                height: 24, padding: "0 8px",
+                                background: "#EDF0F5", borderRadius: 40,
+                                flexShrink: 0,
+                              }}>
+                                <span style={{
+                                  fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                                  color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap",
+                                }}>{tag}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <DispatchText delay={500} instant={isInstantMode} />
+                        </>
+                      )}
                     </motion.div>
                   )}
                   {/* 单专家模式：step1 直接跳到 step2 */}
@@ -1257,38 +1299,8 @@ export default function Home() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 0 }}
                       transition={{ duration: 0.1 }}
-                      onAnimationComplete={() => setRevealStep((s) => Math.max(s, 2))}
+                      onAnimationComplete={() => { if (!isCancelled) setRevealStep((s) => Math.max(s, 2)); }}
                     />
-                  )}
-
-                  {/* Step 2: Agent 执行计划 (单专家模式跳过) */}
-                  {revealStep >= 2 && !isSingleExpert && (
-                    <motion.div
-                      initial={isInstantMode ? false : { opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.15 }}
-                      style={{ display: "flex", flexDirection: "column", gap: 12 }}
-                    >
-                      <Plan />
-                      {/* Transition tags between Plan and dispatch */}
-                      <div style={{
-                        display: "flex", flexWrap: "wrap", gap: 8,
-                      }}>
-                        {["TaskDecompose(slow_sql_analysis)", "ClusterValidate(emr-ccrnhw11)", "TodoWrite(4_phases)"].map((tag) => (
-                          <div key={tag} style={{
-                            display: "inline-flex", alignItems: "center",
-                            height: 24, padding: "0 8px",
-                            background: "#EDF0F5", borderRadius: 40,
-                            flexShrink: 0,
-                          }}>
-                            <span style={{
-                              fontFamily: FONT, fontSize: 12, fontWeight: 400,
-                              color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap",
-                            }}>{tag}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
                   )}
 
                   {/* Step 3: 专家回复 */}
@@ -1298,7 +1310,20 @@ export default function Home() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.8 }}
                     >
-                      <ExpertReplies instant={isInstantMode} replies={taskReplies} onComplete={() => setArtifactsPanelOpen(true)} onArtifactClick={() => setArtifactsPanelOpen(true)} onConfirm={handleConfirm} hideDispatch={isSingleExpert} />
+                      <ExpertReplies instant={isInstantMode} replies={taskReplies} onComplete={() => {
+                        setArtifactsPanelOpen(true);
+                        setIsGenerating(false);
+                        // 提取 confirmCard 数据
+                        const allReplies = taskReplies ?? [];
+                        for (const reply of allReplies) {
+                          for (const line of reply.lines) {
+                            if (line.confirmCard) {
+                              setActiveConfirmCard(line.confirmCard);
+                              return;
+                            }
+                          }
+                        }
+                      }} onArtifactClick={() => setArtifactsPanelOpen(true)} onConfirm={handleConfirm} hideDispatch cancelled={isCancelled} />
                     </motion.div>
                   )}
 
@@ -1317,9 +1342,39 @@ export default function Home() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35, ease: EASE, delay: 0.3 }}
                       >
-                        <ExpertReplies replies={phase2Replies} onArtifactClick={() => setArtifactsPanelOpen(true)} onComplete={() => setPhase2Complete(true)} hideDispatch />
+                        <ExpertReplies replies={phase2Replies} onArtifactClick={() => setArtifactsPanelOpen(true)} onComplete={() => {
+                          setPhase2Complete(true);
+                          // 提取 phase2 中的 confirmCard
+                          for (const reply of (phase2Replies ?? [])) {
+                            for (const line of reply.lines) {
+                              if (line.confirmCard) {
+                                setActiveConfirmCard(line.confirmCard);
+                                return;
+                              }
+                            }
+                          }
+                        }} hideDispatch cancelled={isCancelled} />
                       </motion.div>
                     </>
+                  )}
+
+                  {/* 用户取消对话 */}
+                  {isCancelled && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: EASE }}
+                      style={{
+                        fontFamily: FONT,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        lineHeight: "22px",
+                        color: "rgba(0,0,0,0.4)",
+                        marginTop: -20,
+                      }}
+                    >
+                      用户已取消
+                    </motion.div>
                   )}
                 </motion.div>
               )}
@@ -1431,8 +1486,69 @@ export default function Home() {
             </AnimatePresence>
 
             {/* ── 快捷提问标签：仅 welcome 阶段 + 无 agent 召唤时显示 ── */}
-            {/* 输入框：不设 zIndex，避免创建 stacking context，让内部 glow 的负 z-index 能逃逸到父级 */}
+            {/* 确认卡 + 输入框 组合区域 */}
             <div style={{ position: "relative" }}>
+              {/* 确认卡 — 在输入框下层，背景包裹住输入框 */}
+              <AnimatePresence>
+                {activeConfirmCard && !confirmPhase && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.35, ease: EASE }}
+                    style={{
+                      position: "relative",
+                      zIndex: 0,
+                      marginBottom: -24,
+                    }}
+                  >
+                    <div style={{
+                      background: "#FCF4E8",
+                      borderRadius: "24px 24px 0 0",
+                      padding: "16px 24px 48px",
+                    }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <span style={{
+                          fontFamily: FONT, fontSize: 18, fontWeight: 600,
+                          lineHeight: "32px", color: "rgba(0,0,0,0.9)",
+                        }}>
+                          {activeConfirmCard.title}
+                        </span>
+                        <span style={{
+                          fontFamily: FONT, fontSize: 16, fontWeight: 400,
+                          lineHeight: "28px", color: "rgba(0,0,0,0.9)",
+                          textAlign: "justify",
+                        }}>
+                          {activeConfirmCard.description}
+                        </span>
+                      </div>
+                      <div style={{ marginTop: 16 }}>
+                        <button
+                          onClick={() => { handleConfirm(); }}
+                          style={{
+                            height: 44,
+                            padding: "0 20px",
+                            background: "rgba(0,0,0,0.75)",
+                            borderRadius: 100,
+                            border: "none",
+                            boxShadow: "0px 2px 4px -2px rgba(0,0,0,0.20)",
+                            cursor: "pointer",
+                            fontFamily: FONT,
+                            fontSize: 14,
+                            fontWeight: 500,
+                            color: "#FFFFFF",
+                          }}
+                        >
+                          {activeConfirmCard.buttonText}
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 输入框 — 在确认卡上层 */}
+              <div style={{ position: "relative", zIndex: 1 }}>
               <MotionTargetOverlay
                 targetId="chat-input"
                 targetLabel={CHAT_INPUT_MOTION.label}
@@ -1453,9 +1569,12 @@ export default function Home() {
                   onCreateTeam={() => setCreateTeamOpen(true)}
                   onSelectAgent={(agentId) => handleSelectAgent(agentId)}
                   disableAgentSelector={chatPhase === "conversation"}
+                  isGenerating={isGenerating}
+                  onStop={handleStop}
                 />
               </MotionTargetOverlay>
-            </div>
+              </div>{/* zIndex:1 输入框层 end */}
+            </div>{/* 确认卡+输入框组合区域 end */}
           </div>
           </div>
         </div>

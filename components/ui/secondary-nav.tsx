@@ -441,7 +441,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
             defaultOpen={true}
             header={(expanded) => (
               <SectionHeader
-                avatar={<GridAvatar imgs={["/icons/nav2/1.svg", "/icons/nav2/3.svg", "/icons/nav2/2.svg", "/icons/nav2/3.svg"]} />}
+                avatar={<SingleAvatar src="/agents/team-badge.png" />}
                 label="大数据团队"
                 expanded={expanded}
               />
@@ -459,8 +459,8 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           <CollapsibleSection
             header={(expanded) => (
               <SectionHeader
-                avatar={<SingleAvatar src="/icons/nav2/11.svg" />}
-                label="Rigel·数据运维专家"
+                avatar={<SingleAvatar src="/agents/dev-expert.png" />}
+                label="Rigel·数据开发专家"
                 expanded={expanded}
               />
             )}
@@ -473,7 +473,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           <CollapsibleSection
             header={(expanded) => (
               <SectionHeader
-                avatar={<SingleAvatar src="/icons/nav2/13.svg" />}
+                avatar={<SingleAvatar src="/agents/analysis-expert.png" />}
                 label="Vega·数据分析专家"
                 expanded={expanded}
               />
@@ -487,8 +487,8 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           <CollapsibleSection
             header={(expanded) => (
               <SectionHeader
-                avatar={<SingleAvatar src="/icons/nav2/15.svg" />}
-                label="Orion·数据开发专家"
+                avatar={<SingleAvatar src="/agents/ops-expert.png" />}
+                label="Orion·数据运维专家"
                 expanded={expanded}
               />
             )}
@@ -500,7 +500,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           <CollapsibleSection
             header={(expanded) => (
               <SectionHeader
-                avatar={<GridAvatar imgs={["/icons/nav2/17.svg", "/icons/nav2/20.svg", "/icons/nav2/19.svg", "/icons/nav2/20.svg"]} />}
+                avatar={<SingleAvatar src="/agents/team-badge.png" />}
                 label="运营协作团队"
                 expanded={expanded}
               />

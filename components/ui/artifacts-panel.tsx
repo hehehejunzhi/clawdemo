@@ -65,7 +65,7 @@ interface ArtifactGroup {
 const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
   {
     expert: "数据运维专家过程产物",
-    icon: "/icons/expert/25.svg",
+    icon: "/agents/ops-expert.png",
     items: [
       { id: "1", title: "2025 年 6 至 7 月各地区的复购率设计方案.html", description: "数据读取脚本 · 从源表读取原始数据" },
       { id: "2", title: "clean_null_value.sql", description: "数据清洗脚本 · 空值过滤与格式标准化" },
@@ -75,7 +75,7 @@ const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
   },
   {
     expert: "数据开发专家过程产物",
-    icon: "/icons/expert/17.svg",
+    icon: "/agents/dev-expert.png",
     items: [
       { id: "5", title: "read_source_data.md", description: "数据读取脚本 · 从源表读取原始数据" },
       { id: "6", title: "clean_null_value.sql", description: "数据清洗脚本 · 空值过滤与格式标准化" },

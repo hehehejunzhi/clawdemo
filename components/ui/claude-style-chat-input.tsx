@@ -216,6 +216,10 @@ interface ChatInputProps {
   onSelectAgent?: (agentId: string, agentLabel: string) => void;
   /** 置灰 Agent 选择器（流式输出/对话阶段） */
   disableAgentSelector?: boolean;
+  /** AI 正在生成回复中 */
+  isGenerating?: boolean;
+  /** 点击停止按钮的回调 */
+  onStop?: () => void;
 }
 
 export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ClaudeChatInput({
@@ -231,6 +235,8 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   onCreateTeam,
   onSelectAgent,
   disableAgentSelector = false,
+  isGenerating = false,
+  onStop,
 }, ref) {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<AttachedFile[]>([]);
@@ -717,31 +723,55 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
               </div>
             </div>
 
-            {/* 右侧：发送按钮 */}
+            {/* 右侧：发送/停止按钮 */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", borderRadius: 12 }}>
-              <button
-                onClick={handleSend}
-                disabled={!hasContent}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  border: "none",
-                  background: hasContent ? "#1D2129" : "#E8EAED",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: hasContent ? "pointer" : "default",
-                  color: "#FFFFFF",
-                  transition: "background 0.2s ease",
-                  flexShrink: 0,
-                  padding: 0,
-                }}
-                type="button"
-                aria-label="发送"
-              >
-                <SendIcon size={16} color="#FFFFFF" />
-              </button>
+              {isGenerating ? (
+                <button
+                  onClick={onStop}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    border: "none",
+                    background: "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                    padding: 0,
+                  }}
+                  type="button"
+                  aria-label="停止"
+                >
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 0C24.8366 0 32 7.16344 32 16C32 24.8366 24.8366 32 16 32C7.16344 32 0 24.8366 0 16C0 7.16344 7.16344 0 16 0ZM16 10C13.1716 10 11.7576 10.0002 10.8789 10.8789C10.0002 11.7576 10 13.1716 10 16C10 18.8284 10.0002 20.2424 10.8789 21.1211C11.7576 21.9998 13.1716 22 16 22C18.8284 22 20.2424 21.9998 21.1211 21.1211C21.9998 20.2424 22 18.8284 22 16C22 13.1716 21.9998 11.7576 21.1211 10.8789C20.2424 10.0002 18.8284 10 16 10Z" fill="black" fillOpacity="0.75" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  disabled={!hasContent}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    border: "none",
+                    background: hasContent ? "#1D2129" : "#E8EAED",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: hasContent ? "pointer" : "default",
+                    color: "#FFFFFF",
+                    transition: "background 0.2s ease",
+                    flexShrink: 0,
+                    padding: 0,
+                  }}
+                  type="button"
+                  aria-label="发送"
+                >
+                  <SendIcon size={16} color="#FFFFFF" />
+                </button>
+              )}
             </div>
           </div>
 
