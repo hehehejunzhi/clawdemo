@@ -9,6 +9,7 @@ import {
   CircleX,
   ChevronUp,
   ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -280,8 +281,8 @@ export default function Plan() {
                 {completedCount}/{TOTAL_TASKS}
               </span>
               {headerOpen
-                ? <ChevronUp  style={{ width: 16, height: 16, color: T.tertiary }} />
-                : <ChevronDown style={{ width: 16, height: 16, color: T.tertiary }} />
+                ? <ChevronUp    style={{ width: 16, height: 16, color: T.tertiary }} />
+                : <ChevronRight style={{ width: 16, height: 16, color: T.tertiary }} />
               }
             </div>
           </div>

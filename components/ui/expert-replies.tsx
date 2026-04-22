@@ -153,7 +153,7 @@ function ToolCallCard({ title, content }: ToolCallCardProps) {
             width="16" height="16" viewBox="0 0 16 16" fill="none"
             style={{
               transition: "transform 0.2s ease",
-              transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+              transform: expanded ? "rotate(0deg)" : "rotate(90deg)",
             }}
           >
             <path d="M11.6668 10.6099L8.0001 6.94323L4.33343 10.6099L3.39062 9.66709L8.0001 5.05762L12.6096 9.66709L11.6668 10.6099Z" fill="rgba(0,0,0,0.5)" />
@@ -337,7 +337,7 @@ function SqlCodeBlock({ title, code }: { title: string; code: string }) {
               width="16" height="16" viewBox="0 0 16 16" fill="none"
               style={{
                 transition: "transform 0.2s ease",
-                transform: expanded ? "rotate(0deg)" : "rotate(180deg)",
+                transform: expanded ? "rotate(0deg)" : "rotate(90deg)",
               }}
             >
               <path d="M11.6668 10.6094L8.0001 6.94271L4.33343 10.6094L3.39063 9.66657L8.0001 5.05709L12.6096 9.66657L11.6668 10.6094Z" fill="rgba(0,0,0,0.5)" />
@@ -511,42 +511,19 @@ export function ConfirmCard({ data, onConfirm }: { data: ConfirmCardData; onConf
 // ── File type icon for inline artifact cards ──
 function InlineFileTypeIcon({ ext }: { ext: string }) {
   const isMd = ext === "md" || ext === "html";
+  const src = isMd ? "/agents/file-icon-markdown.png" : "/agents/file-icon-data.png";
 
   return (
-    <div style={{
-      width: 40, height: 48, flexShrink: 0,
-      position: "relative",
-    }}>
-      {/* Tilted card background */}
-      <div style={{
-        position: "absolute",
-        width: 36, height: 46,
-        left: 2, top: 1,
-        borderRadius: 6,
-        background: "#FFFFFF",
-        boxShadow: "0px 2px 6px -1px rgba(0,0,0,0.10)",
-        transform: "rotate(-8deg)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        {isMd ? (
-          /* Code / Markdown icon */
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M6.5 13.5L3 10L6.5 6.5" stroke="#C8CDD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M13.5 6.5L17 10L13.5 13.5" stroke="#C8CDD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M11.5 4L8.5 16" stroke="#C8CDD8" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-        ) : (
-          /* Database icon */
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <ellipse cx="10" cy="5.5" rx="6" ry="2.5" stroke="#C8CDD8" strokeWidth="1.8" />
-            <path d="M4 5.5V10C4 11.38 6.69 12.5 10 12.5C13.31 12.5 16 11.38 16 10V5.5" stroke="#C8CDD8" strokeWidth="1.8" />
-            <path d="M4 10V14.5C4 15.88 6.69 17 10 17C13.31 17 16 15.88 16 14.5V10" stroke="#C8CDD8" strokeWidth="1.8" />
-          </svg>
-        )}
-      </div>
-    </div>
+    <img
+      src={src}
+      alt=""
+      style={{
+        width: 58,
+        height: 58,
+        display: "block",
+        flexShrink: 0,
+      }}
+    />
   );
 }
 
@@ -558,9 +535,12 @@ interface ArtifactCardData {
 }
 
 function InlineArtifactCard({ artifact, onClick }: { artifact: ArtifactCardData; onClick?: () => void }) {
+  const [hover, setHover] = useState(false);
   return (
     <div
       onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
         flex: 1,
         minWidth: 0,
@@ -571,10 +551,16 @@ function InlineArtifactCard({ artifact, onClick }: { artifact: ArtifactCardData;
         position: "relative",
         cursor: onClick ? "pointer" : "default",
         border: "0.5px solid #E6E9EF",
+        transition: "background 0.2s ease",
       }}
     >
-      {/* File icon — 56x56 区域 */}
-      <div style={{ position: "absolute", left: 16, top: 8, width: 56, height: 56, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {/* File icon — 58x58 原始尺寸 */}
+      <div style={{
+        position: "absolute", left: 16, top: 3, width: 58, height: 58,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        transform: hover ? "scale(1.06)" : "scale(1)",
+        transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}>
         <InlineFileTypeIcon ext={artifact.iconType} />
       </div>
       {/* Text area — 从 left:88 开始 */}
@@ -599,7 +585,11 @@ function InlineArtifactCard({ artifact, onClick }: { artifact: ArtifactCardData;
         </span>
       </div>
       {/* Arrow-right-up icon */}
-      <div style={{ position: "absolute", right: 16, top: 24 }}>
+      <div style={{
+        position: "absolute", right: 16, top: 24,
+        transform: hover ? "translate(2px, -2px)" : "translate(0, 0)",
+        transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M3.99219 11.0645L9.45378 5.60286L5.21114 5.60286L5.21114 4.26953L11.7299 4.26953V10.7883L10.3966 10.7883V6.54567L4.935 12.0073L3.99219 11.0645Z" fill="rgba(0,0,0,0.7)" />
         </svg>
@@ -987,6 +977,37 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
   );
 }
 
+// ── Expert stack avatars (3 overlapping circular avatars) ─────
+export function ExpertStackAvatars({ size = 16, overlap = 6 }: { size?: number; overlap?: number }) {
+  const avatars = [
+    "/agents/dev-expert.png",
+    "/agents/analysis-expert.png",
+    "/agents/ops-expert.png",
+  ];
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center" }}>
+      {avatars.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          style={{
+            width: size,
+            height: size,
+            borderRadius: "50%",
+            objectFit: "cover",
+            boxShadow: "0 0 0 1.5px #E9ECF1",
+            marginLeft: i === 0 ? 0 : -overlap,
+            position: "relative",
+            zIndex: avatars.length - i,
+            background: "#FFFFFF",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ── Dispatch transition text ──────────────────────────────────
 export function DispatchText({ delay = 0, instant = false }: { delay?: number; instant?: boolean }) {
   const [visible, setVisible] = useState(instant);
@@ -1014,12 +1035,8 @@ export function DispatchText({ delay = 0, instant = false }: { delay?: number; i
         padding: "0 8px 0 4px", margin: "0 4px",
         verticalAlign: "middle",
       }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <img src="/icons/team-badge/2.svg" alt="" style={{ width: 16, height: 16 }} />
-          <img src="/icons/team-badge/1.svg" alt="" style={{ width: 16, height: 16, marginLeft: -3.6 }} />
-          <img src="/icons/team-badge/3.svg" alt="" style={{ width: 16, height: 16, marginLeft: -3.6 }} />
-        </div>
-        <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 400, color: T.secondary, marginLeft: 2 }}>
+        <ExpertStackAvatars size={16} overlap={2} />
+        <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 400, color: T.secondary, marginLeft: 4 }}>
           专家团
         </span>
       </div>
@@ -1033,7 +1050,7 @@ export function DispatchText({ delay = 0, instant = false }: { delay?: number; i
 // ── Default replies data ──────────────────────────────────────
 const DEFAULT_REPLIES: ExpertReplyData[] = [
   {
-    icon: "/icons/expert/14.svg",
+    icon: "/agents/analysis-expert.png",
     name: "数据分析专家",
     delay: 1200,
     lines: [
@@ -1042,7 +1059,7 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
     ],
   },
   {
-    icon: "/icons/expert/17.svg",
+    icon: "/agents/dev-expert.png",
     name: "数据开发专家",
     delay: 3500,
     lines: [
@@ -1054,7 +1071,7 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
     ],
   },
   {
-    icon: "/icons/expert/25.svg",
+    icon: "/agents/ops-expert.png",
     name: "数据分析专家",
     delay: 6500,
     lines: [
@@ -1066,7 +1083,7 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
     ],
   },
   {
-    icon: "/icons/expert/14.svg",
+    icon: "/agents/analysis-expert.png",
     name: "数据运维专家",
     delay: 9000,
     lines: [
@@ -1076,7 +1093,7 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
     ],
   },
   {
-    icon: "/icons/expert/25.svg",
+    icon: "/agents/ops-expert.png",
     name: "数据分析专家",
     delay: 12000,
     lines: [
@@ -1086,7 +1103,7 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
     ],
   },
   {
-    icon: "/icons/expert/17.svg",
+    icon: "/agents/dev-expert.png",
     name: "数据开发专家",
     delay: 15000,
     lines: [
@@ -1095,6 +1112,35 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
     ],
   },
 ];
+
+// ── Cancelable Reply Wrapper ───────────────────────────────────
+// 包裹每个 ExpertReply，取消时若还没到达 delay（未开始显示），则不渲染外层 div 避免累积空白
+function CancelableReplyWrapper({
+  children,
+  topSpacing,
+  delay,
+  cancelled,
+  instant,
+}: {
+  children: React.ReactNode;
+  topSpacing: number;
+  delay: number;
+  cancelled: boolean;
+  instant: boolean;
+}) {
+  const [reached, setReached] = useState(instant || delay === 0);
+
+  useEffect(() => {
+    if (instant || reached) return;
+    const t = setTimeout(() => setReached(true), delay);
+    return () => clearTimeout(t);
+  }, [instant, reached, delay]);
+
+  // 取消时，如果还没到达 delay，直接不渲染（含外层 div）避免空白
+  if (cancelled && !reached) return null;
+
+  return <div style={{ marginTop: topSpacing }}>{children}</div>;
+}
 
 // ── Main export ───────────────────────────────────────────────
 interface ExpertRepliesProps {
@@ -1139,7 +1185,8 @@ export default function ExpertReplies({ instant = false, replies, onComplete, on
 
       {/* 专家回复 */}
       {data.map((reply, i) => {
-        const isHiddenLabel = reply.hideLabel || (allSameExpert && i > 0);
+        // 有 overview 的回复强制显示头像+概述，不自动 hideLabel
+        const isHiddenLabel = reply.hideLabel || (allSameExpert && i > 0 && !reply.overview);
         // 第一个元素的 marginTop 取决于是否有 DispatchText
         const isFirst = i === 0;
         const topSpacing = isFirst && !hideDispatch ? 32
@@ -1147,7 +1194,13 @@ export default function ExpertReplies({ instant = false, replies, onComplete, on
           : isHiddenLabel && !reply.dividerBefore ? 12
           : 32;
         return (
-        <div key={i} style={{ marginTop: topSpacing }}>
+        <CancelableReplyWrapper
+          key={i}
+          topSpacing={topSpacing}
+          delay={reply.delay ?? 0}
+          cancelled={cancelled}
+          instant={instant}
+        >
           <ExpertReply
             icon={reply.icon}
             name={reply.name}
@@ -1163,7 +1216,7 @@ export default function ExpertReplies({ instant = false, replies, onComplete, on
             dividerBefore={reply.dividerBefore}
             overview={reply.overview}
           />
-        </div>
+        </CancelableReplyWrapper>
         );
       })}
     </div>
