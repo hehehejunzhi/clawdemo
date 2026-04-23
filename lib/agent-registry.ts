@@ -215,7 +215,7 @@ export const DEFAULT_TASKS: AgentTask[] = [
   // 大数据团队
   { id: "t1", title: "慢 SQL 查询与调优", status: "pending", agentId: "bigdata-team" },
   { id: "t2", title: "统计近 7 天各渠道用户支付金额，按天汇总", status: "pending", agentId: "bigdata-team" },
-  { id: "t3", title: "展示\u201C思考中\u201D状态", status: "pending", agentId: "bigdata-team" },
+  { id: "t3", title: "展示\u201C思考中\u201D状态", status: "loading", agentId: "bigdata-team" },
   { id: "t4", title: "展示\u201C用户已取消\u201D状态", status: "check", agentId: "bigdata-team" },
   { id: "t5", title: "展示\u201C报错\u201D状态", status: "check", agentId: "bigdata-team" },
   // Rigel·数据开发专家

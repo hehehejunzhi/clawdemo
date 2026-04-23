@@ -7,19 +7,14 @@ const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans
 const EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
 const C = {
+  bgWhite: "#FFFFFF",
+  border: "#E6E9EF",
   textPrimary: "rgba(0,0,0,0.9)",
   textSecondary: "rgba(0,0,0,0.7)",
   textTertiary: "rgba(0,0,0,0.5)",
-  textPlaceholder: "rgba(0,0,0,0.3)",
-  border: "#E6E9EF",
-  borderActive: "#0052D9",
-  bgCard: "#FFFFFF",
-  bgInput: "#FAFBFC",
-  bgOverlay: "rgba(0,0,0,0.3)",
-  brandPurple: "#7E7EFF",
-  brandOrange: "#FF7800",
-  brandGreen: "#00B96B",
-  btnPrimary: "#7E9EFF",
+  hoverBg: "#F2F4F8",
+  brandCyan: "#0052D9",
+  error: "#F64041",
 } as const;
 
 type ExpertMode = "digital" | "external";
@@ -27,353 +22,257 @@ type ExpertMode = "digital" | "external";
 interface CreateExpertDialogProps {
   open: boolean;
   onClose: () => void;
+  /** 创建自定义 Agent 的回调 */
+  onCreate?: (name: string, desc: string, tags: string) => void;
+  /** 创建外部 Agent 的回调（可选） */
+  onCreateExternal?: (data: {
+    name: string;
+    platform: string;
+    apiUrl: string;
+    ip: string;
+    port: string;
+    apiKey: string;
+    tags: string;
+    desc: string;
+  }) => void;
 }
 
-// ── Input field ───────────────────────────────────────────────
-function FormField({ label, required, placeholder, hint, value, onChange }: {
-  label: string;
-  required?: boolean;
-  placeholder: string;
-  hint?: string;
-  value?: string;
-  onChange?: (v: string) => void;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div>
-        <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>{label}</span>
-        {required && <span style={{ color: "#F64041", marginLeft: 4 }}>*</span>}
-      </div>
-      <input
-        type="text"
-        placeholder={placeholder}
-        value={value ?? ""}
-        onChange={(e) => onChange?.(e.target.value)}
-        style={{
-          height: 44,
-          padding: "0 12px",
-          borderRadius: 8,
-          border: `1px solid ${C.border}`,
-          background: C.bgInput,
-          fontFamily: FONT,
-          fontSize: 14,
-          color: C.textPrimary,
-          outline: "none",
-          width: "100%",
-          boxSizing: "border-box",
-        }}
-        onFocus={(e) => { e.currentTarget.style.borderColor = C.borderActive; }}
-        onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }}
-      />
-      {hint && (
-        <span style={{ fontSize: 12, color: C.textTertiary }}>{hint}</span>
-      )}
-    </div>
-  );
-}
+const PLATFORMS = [
+  { id: "lighthouse", label: "Lighthouse", abbr: "LH", bg: "#E59858" },
+  { id: "clawpro", label: "ClawPro", abbr: "CP", bg: "#1664FF" },
+  { id: "chatgpt", label: "ChatGPT Plugin", abbr: "GP", bg: "#00B96B" },
+];
 
-// ── Textarea field ────────────────────────────────────────────
-function FormTextarea({ label, placeholder }: {
-  label: string;
-  placeholder: string;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>{label}</span>
-      <textarea
-        placeholder={placeholder}
-        rows={4}
-        style={{
-          padding: 12,
-          borderRadius: 8,
-          border: `1px solid ${C.border}`,
-          background: C.bgInput,
-          fontFamily: FONT,
-          fontSize: 14,
-          color: C.textPrimary,
-          outline: "none",
-          resize: "vertical",
-          width: "100%",
-          boxSizing: "border-box",
-        }}
-        onFocus={(e) => { e.currentTarget.style.borderColor = C.borderActive; }}
-        onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }}
-      />
-    </div>
-  );
-}
-
-// ── Platform radio ────────────────────────────────────────────
-function PlatformRadio({ options, selected, onSelect }: {
-  options: { id: string; label: string; abbr: string; color: string }[];
-  selected: string;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div style={{ display: "flex", gap: 12 }}>
-      {options.map((opt) => (
-        <div
-          key={opt.id}
-          onClick={() => onSelect(opt.id)}
-          style={{
-            flex: 1,
-            height: 48,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "0 12px",
-            borderRadius: 8,
-            border: `1px solid ${selected === opt.id ? C.borderActive : C.border}`,
-            background: selected === opt.id ? "rgba(126,158,255,0.06)" : C.bgCard,
-            cursor: "pointer",
-            transition: "all 150ms",
-          }}
-        >
-          <div style={{
-            width: 16, height: 16, borderRadius: 8,
-            border: `2px solid ${selected === opt.id ? "#0052D9" : "#D6DBE3"}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            {selected === opt.id && (
-              <div style={{ width: 8, height: 8, borderRadius: 4, background: "#0052D9" }} />
-            )}
-          </div>
-          <div style={{
-            width: 28, height: 28, borderRadius: 6,
-            background: opt.color,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#FFF" }}>{opt.abbr}</span>
-          </div>
-          <span style={{ fontSize: 14, fontWeight: 400, color: C.textPrimary }}>{opt.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Mode card ─────────────────────────────────────────────────
-function ModeCard({ title, desc, active, onClick }: {
-  title: string;
-  desc: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        border: `1.5px solid ${active ? C.borderActive : C.border}`,
-        background: active ? "rgba(126,158,255,0.04)" : C.bgCard,
-        cursor: "pointer",
-        transition: "all 150ms",
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-      }}
-    >
-      <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>{title}</span>
-      <span style={{ fontSize: 13, color: C.textSecondary, lineHeight: "20px" }}>{desc}</span>
-    </div>
-  );
-}
-
-// ── Main dialog ───────────────────────────────────────────────
-export default function CreateExpertDialog({ open, onClose }: CreateExpertDialogProps) {
+/**
+ * 首页输入框中的「创建 Agent」弹窗
+ * - 对齐 Agent 广场的弹窗视觉规范（640 宽 / 16px 标题 / 12px label/input / 32 高输入 / 圆 32 按钮）
+ * - 第一栏双模式选择：创建自定义 Agent / 连接外部 Agent
+ */
+export default function CreateExpertDialog({ open, onClose, onCreate, onCreateExternal }: CreateExpertDialogProps) {
   const [mode, setMode] = useState<ExpertMode>("digital");
-  const [platform, setPlatform] = useState("lighthouse");
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  // digital 字段
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [tags, setTags] = useState("");
+  // external 字段
+  const [extName, setExtName] = useState("");
+  const [platform, setPlatform] = useState("");
+  const [apiUrl, setApiUrl] = useState("");
+  const [ip, setIp] = useState("");
+  const [port, setPort] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [extTags, setExtTags] = useState("");
+  const [extDesc, setExtDesc] = useState("");
 
-  const updateField = (key: string, value: string) => {
-    setFormValues((prev) => ({ ...prev, [key]: value }));
+  const resetAll = () => {
+    setMode("digital");
+    setName(""); setDesc(""); setTags("");
+    setExtName(""); setPlatform(""); setApiUrl(""); setIp(""); setPort(""); setApiKey(""); setExtTags(""); setExtDesc("");
   };
 
-  // 判断必填项是否填完
-  const isFormValid = mode === "digital"
-    ? (formValues["digital-name"] || "").trim().length > 0
-    : (formValues["external-name"] || "").trim().length > 0
-      && (formValues["external-api"] || "").trim().length > 0
-      && (formValues["external-key"] || "").trim().length > 0;
+  const isValid = mode === "digital"
+    ? name.trim().length > 0
+    : extName.trim().length > 0 && platform.length > 0 && apiUrl.trim().length > 0 && apiKey.trim().length > 0;
+
+  const handleCreate = () => {
+    if (!isValid) return;
+    if (mode === "digital") {
+      onCreate?.(name.trim(), desc.trim(), tags.trim());
+    } else {
+      onCreateExternal?.({
+        name: extName.trim(),
+        platform,
+        apiUrl: apiUrl.trim(),
+        ip: ip.trim(),
+        port: port.trim(),
+        apiKey: apiKey.trim(),
+        tags: extTags.trim(),
+        desc: extDesc.trim(),
+      });
+    }
+    resetAll();
+    onClose();
+  };
+  const handleClose = () => { resetAll(); onClose(); };
+
+  // 通用样式（与 Agent 广场 CreateAvatarDialog 对齐）
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 72, paddingTop: 7 };
+  const fieldInputStyle: React.CSSProperties = {
+    flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
+    border: `1px solid ${C.border}`, background: C.bgWhite,
+    fontFamily: FONT, fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box",
+  };
+  const focusOn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.currentTarget.style.borderColor = C.brandCyan; };
+  const focusOff = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.currentTarget.style.borderColor = C.border; };
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: C.bgOverlay,
-          }}
-          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.25, ease: EASE }}
-            style={{
-              width: 640,
-              maxHeight: "80vh",
-              background: C.bgCard,
-              borderRadius: 16,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
-              fontFamily: FONT,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
+            initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
+            transition={{ duration: 0.2, ease: EASE }}
+            style={{ width: 640, maxHeight: "85vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
           >
             {/* Header */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "24px 24px 16px",
-              flexShrink: 0,
-            }}>
-              <span style={{ fontSize: 20, fontWeight: 600, color: C.textPrimary }}>创建专家</span>
-              <div
-                onClick={onClose}
-                style={{
-                  width: 32, height: 32, borderRadius: 16,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer",
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M12 4L4 12M4 4L12 12" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </div>
+            <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建 Agent</span>
+              <div onClick={handleClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+              ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
             </div>
 
-            {/* Scrollable body */}
-            <div style={{
-              flex: 1,
-              overflowY: "auto",
-              padding: "0 24px 24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 24,
-              scrollbarWidth: "none",
-            }}>
-              {/* Mode selector */}
-              <div style={{ display: "flex", gap: 12 }}>
-                <ModeCard
-                  title="创建数字分身"
-                  desc="创建专属的 AI 助手，通过标签定义能力，快速定制你的数据分析专家"
-                  active={mode === "digital"}
-                  onClick={() => setMode("digital")}
-                />
-                <ModeCard
-                  title="连接外部 Claw"
-                  desc="接入第三方 AI 服务（如 Lighthouse、ClawPro），扩展更多能力"
-                  active={mode === "external"}
-                  onClick={() => setMode("external")}
-                />
+            {/* Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16, scrollbarWidth: "none" }}>
+              {/* Mode 选择 */}
+              <div style={{ display: "flex", alignItems: "flex-start" }}>
+                <div style={labelStyle}>类型</div>
+                <div style={{ flex: 1, display: "flex", gap: 12 }}>
+                  <ModeCard
+                    active={mode === "digital"}
+                    title="创建自定义 Agent"
+                    desc="定义专属的 AI 数字分身，沉淀个人知识"
+                    onClick={() => setMode("digital")}
+                  />
+                  <ModeCard
+                    active={mode === "external"}
+                    title="连接外部 Agent"
+                    desc="接入外部平台部署的 Agent（Lighthouse / ClawPro 等）"
+                    onClick={() => setMode("external")}
+                  />
+                </div>
               </div>
 
-              {/* Form fields based on mode */}
               {mode === "digital" ? (
                 <>
-                  <FormField label="分身名称" required placeholder="例如：我的数据助手" value={formValues["digital-name"]} onChange={(v) => updateField("digital-name", v)} />
-                  <FormField label="对应标签" placeholder="输入标签，多个用逗号分隔" hint="如：数据分析、报表生成、SQL 优化" />
+                  {/* 名称 */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}><span>名称 </span><span style={{ color: C.error }}>*</span></div>
+                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：我的监控助手" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
+                  </div>
+                  {/* 描述 */}
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
+                    <div style={labelStyle}>描述</div>
+                    <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="简要描述分身目标和用途" rows={2}
+                      style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
+                      onFocus={focusOn} onBlur={focusOff} />
+                  </div>
+                  {/* 标签 */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}>标签</div>
+                    <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
+                  </div>
                 </>
               ) : (
                 <>
-                  <FormField label="名称" required placeholder="例如：我的自定义 Claw" value={formValues["external-name"]} onChange={(v) => updateField("external-name", v)} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>来源平台</span>
-                      <span style={{ color: "#F64041", marginLeft: 4 }}>*</span>
-                    </div>
-                    <PlatformRadio
-                      options={[
-                        { id: "lighthouse", label: "Lighthouse", abbr: "LH", color: "#FF7800" },
-                        { id: "clawpro", label: "ClawPro", abbr: "CP", color: "#1664FF" },
-                        { id: "chatgpt", label: "ChatGPT Plugin", abbr: "GP", color: "#00B96B" },
-                      ]}
-                      selected={platform}
-                      onSelect={setPlatform}
-                    />
+                  {/* 名称 */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}><span>名称 </span><span style={{ color: C.error }}>*</span></div>
+                    <input value={extName} onChange={(e) => setExtName(e.target.value)} placeholder="例如：我的自定义 Agent" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
                   </div>
-                  <FormField label="API 接入地址" required placeholder="https://api.example.com/v1/claw" value={formValues["external-api"]} onChange={(v) => updateField("external-api", v)} />
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <div style={{ flex: 5 }}>
-                      <FormField label="IP 地址" placeholder="192.168.1.1" />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <FormField label="端口" placeholder="8080" />
+                  {/* 来源平台 */}
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
+                    <div style={labelStyle}><span>来源平台 </span><span style={{ color: C.error }}>*</span></div>
+                    <div style={{ flex: 1, display: "flex", gap: 12 }}>
+                      {PLATFORMS.map((p) => {
+                        const selected = platform === p.id;
+                        return (
+                          <div key={p.id} onClick={() => setPlatform(p.id)}
+                            style={{
+                              flex: 1, display: "flex", alignItems: "center", gap: 8,
+                              padding: "6px 12px", borderRadius: 8, cursor: "pointer", height: 32, boxSizing: "border-box",
+                              border: `1px solid ${selected ? "#7E9EFF" : C.border}`,
+                              background: selected ? "rgba(126,158,255,0.04)" : C.bgWhite,
+                              transition: "all 100ms",
+                            }}
+                          >
+                            <div style={{
+                              width: 14, height: 14, borderRadius: 7,
+                              border: `1.5px solid ${selected ? C.brandCyan : "#D6DBE3"}`,
+                              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                            }}>
+                              {selected && <div style={{ width: 7, height: 7, borderRadius: 4, background: C.brandCyan }} />}
+                            </div>
+                            <span style={{ fontSize: 12, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.label}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                  <FormField label="API Key / Token" required placeholder="输入 API Key 或 Token" value={formValues["external-key"]} onChange={(v) => updateField("external-key", v)} />
-                  <FormField label="能力标签" placeholder="输入标签，多个用逗号分隔" hint="如：数据分析、代码生成、自然语言处理" />
-                  <FormTextarea label="描述" placeholder="简要描述该 Claw 的用途和能力" />
+                  {/* API 地址 */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}><span>API 地址 </span><span style={{ color: C.error }}>*</span></div>
+                    <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api.example.com/v1/claw" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
+                  </div>
+                  {/* IP 地址 */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}>IP 地址</div>
+                    <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="192.168.1.1" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
+                  </div>
+                  {/* 端口 */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}>端口</div>
+                    <input value={port} onChange={(e) => setPort(e.target.value)} placeholder="8080" style={{ ...fieldInputStyle, flex: "none", width: 120 }} onFocus={focusOn} onBlur={focusOff} />
+                  </div>
+                  {/* API Key */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}><span>API Key </span><span style={{ color: C.error }}>*</span></div>
+                    <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="输入 API Key 或 Token" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
+                  </div>
+                  {/* 标签 */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}>标签</div>
+                    <input value={extTags} onChange={(e) => setExtTags(e.target.value)} placeholder="输入标签，多个用逗号分隔" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
+                  </div>
+                  {/* 描述 */}
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
+                    <div style={labelStyle}>描述</div>
+                    <textarea value={extDesc} onChange={(e) => setExtDesc(e.target.value)} placeholder="简要描述该 Agent 的用途和能力" rows={2}
+                      style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
+                      onFocus={focusOn} onBlur={focusOff} />
+                  </div>
                 </>
               )}
             </div>
 
             {/* Footer */}
-            <div style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 12,
-              padding: "16px 24px",
-              flexShrink: 0,
-            }}>
-              <button
-                onClick={onClose}
-                style={{
-                  height: 40,
-                  padding: "0 24px",
-                  borderRadius: 100,
-                  border: `1px solid ${C.border}`,
-                  background: C.bgCard,
-                  fontFamily: FONT,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: C.textPrimary,
-                  cursor: "pointer",
-                  outline: "none",
-                }}
-              >
-                取消
-              </button>
-              <button
-                disabled={!isFormValid}
-                style={{
-                  height: 40,
-                  padding: "0 24px",
-                  borderRadius: 100,
-                  border: "none",
-                  background: isFormValid ? "#000000" : "rgba(0,0,0,0.2)",
-                  fontFamily: FONT,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "#FFFFFF",
-                  cursor: isFormValid ? "pointer" : "not-allowed",
-                  outline: "none",
-                  transition: "background 150ms",
-                }}
-              >
-                创建
-              </button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgWhite, borderRadius: "0 0 16px 16px" }}>
+              <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+              <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
             </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+// 双模式卡
+function ModeCard({ active, title, desc, onClick }: { active: boolean; title: string; desc: string; onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        border: `1px solid ${active ? "#7E9EFF" : C.border}`,
+        background: active ? "rgba(126,158,255,0.04)" : C.bgWhite,
+        cursor: "pointer",
+        transition: "all 150ms",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+      }}
+    >
+      <span style={{ fontSize: 13, fontWeight: 600, color: C.textPrimary }}>{title}</span>
+      <span style={{ fontSize: 12, color: C.textSecondary, lineHeight: "18px" }}>{desc}</span>
+    </div>
   );
 }

@@ -705,7 +705,7 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                         <div style={{ height: 1, backgroundColor: "#E6E9EF", margin: "2px 0" }} />
                         {/* 创建选项 */}
                         {[
-                          { id: "create-expert", label: "创建自定义 Agent" },
+                          { id: "create-expert", label: "创建 Agent" },
                           { id: "create-team", label: "创建团队" },
                         ].map((item) => (
                           <div

@@ -88,10 +88,11 @@ function SectionTitle({ title, desc }: { title: string; desc: string }) {
 }
 
 // ── Dialog button (pill, gradient border) ─────────────────────
-function DialogBtn({ label, icon }: { label: string; icon?: boolean }) {
+function DialogBtn({ label, icon, onClick }: { label: string; icon?: boolean; onClick?: () => void }) {
   const [h, setH] = useState(false);
   return (
     <button
+      onClick={onClick}
       onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
       style={{
         width: 240, height: 40, padding: "0 32px", borderRadius: 100,
@@ -112,13 +113,15 @@ function DialogBtn({ label, icon }: { label: string; icon?: boolean }) {
 }
 
 // ── Card shell (340 x 168, horizontal layout) ─────────────────
-function Card({ avatar, name, desc, badge, button, children }: {
+function Card({ avatar, name, desc, badge, button, children, onDialog }: {
   avatar: React.ReactNode;
   name: React.ReactNode;
   desc: string;
   badge?: React.ReactNode;
   button?: React.ReactNode;
   children?: React.ReactNode;
+  /** 点击默认「对话」按钮时触发（仅当未传 button 覆写时有效） */
+  onDialog?: () => void;
 }) {
   const [h, setH] = useState(false);
   return (
@@ -149,7 +152,7 @@ function Card({ avatar, name, desc, badge, button, children }: {
       {children}
       {/* Bottom: action button */}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        {button ?? <DialogBtn label="对话" />}
+        {button ?? <DialogBtn label="对话" onClick={onDialog} />}
       </div>
     </div>
   );
@@ -1204,10 +1207,13 @@ export default function ClawManager({
   onNavigateToSkillPlaza,
   registry,
   onRegistryChange,
+  onAgentDialog,
 }: {
   onNavigateToSkillPlaza?: () => void;
   registry?: AgentRegistry;
   onRegistryChange?: (next: AgentRegistry) => void;
+  /** 点击卡片「对话」按钮时触发：由 page.tsx 关闭 ClawManager 并召唤对应 agent banner */
+  onAgentDialog?: (agentId: string, label: string) => void;
 } = {}) {
   // Mount 时若有外部 registry，从它恢复内部 state（避免卸载重挂丢失）
   const initFromRegistry = () => {
@@ -1446,12 +1452,14 @@ export default function ClawManager({
             ]} />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>大数据团队 (3)</span>}
             desc="包含数据开发、分析、运维专家的协作团队"
+            onDialog={() => onAgentDialog?.("bigdata-team", "大数据团队")}
           />
           {/* 动态创建的团队卡片（含预置的"运营协作团队"） */}
           {customTeams.map((team) => {
             // 一律基于最新 members 动态派生头像；不使用 team.clusterImgs 快照，
             // 避免编辑成员后仍显示旧图。
             const cluster = deriveClusterImgs(team.members);
+            const registryTeamId = team.id === "preset-ops-team" ? "ops-team" : team.id;
             return (
               <Card
                 key={team.id}
@@ -1462,6 +1470,7 @@ export default function ClawManager({
                 name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{team.name} ({team.members.length})</span>}
                 desc={team.desc}
                 badge={<MoreMenu onManage={() => setManagingTeamId(team.id)} onDelete={() => setDeletingTeamId(team.id)} />}
+                onDialog={() => onAgentDialog?.(registryTeamId, team.name)}
               />
             );
           })}
@@ -1476,18 +1485,21 @@ export default function ClawManager({
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Rigel·数据开发专家</span>}
             desc="负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。"
             badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Rigel·数据开发专家", desc: "负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。", skills: ["需求转数据模型", "生成调度方案", "自动数仓开发", "检测管道异常", "接入数据源", "优化任务性能"] })} />}
+            onDialog={() => onAgentDialog?.("dev-expert", "数据开发专家")}
           />
           <Card
             avatar={<AvatarCircle src="/agents/analysis-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Vega·数据分析专家</span>}
             desc="从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。"
             badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Vega·数据分析专家", desc: "从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。", skills: ["自然语言取数", "智能趋势分析", "多维数据洞察", "生成数据报告", "异常归因", "指标拆解"] })} />}
+            onDialog={() => onAgentDialog?.("analysis-expert", "数据分析专家")}
           />
           <Card
             avatar={<AvatarCircle src="/agents/ops-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Orion·数据运维专家</span>}
             desc="负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。"
             badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Orion·数据运维专家", desc: "负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。", skills: ["监测数据质量", "智能血缘维护", "自动管理元数据", "识别口径冲突", "安全脱敏", "标签治理"] })} />}
+            onDialog={() => onAgentDialog?.("ops-expert", "数据运维专家")}
           />
         </div>
 
@@ -1500,6 +1512,7 @@ export default function ClawManager({
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{avatarData.name}</span>}
               desc={avatarData.desc}
               badge={<AvatarMoreMenu onDetail={() => setShowAvatarDetail(true)} onDelete={() => setShowAvatarDelete(true)} />}
+              onDialog={() => onAgentDialog?.("my-ops", avatarData.name)}
             />
           )}
           {/* 自定义数字分身 */}
@@ -1510,6 +1523,7 @@ export default function ClawManager({
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{a.name}</span>}
               desc={a.desc || "自定义 Agent"}
               badge={<AvatarMoreMenu onDetail={() => setViewingAvatarId(a.id)} onDelete={() => setDeletingAvatarId(a.id)} />}
+              onDialog={() => onAgentDialog?.(a.id, a.name)}
             />
           ))}
           {(1 + customAvatars.length) < 3 && (
@@ -1528,6 +1542,7 @@ export default function ClawManager({
               connected={lh1State === "connected"}
               buttonLabel={lh1State === "connecting" ? "连接中..." : "连接"}
               onButtonClick={() => {
+                if (lh1State === "connected") { onAgentDialog?.("lh1", "Lighthouse"); return; }
                 if (lh1State === "disconnected") { setLh1State("connecting"); setTimeout(() => { setLh1State("connected"); showToast("连接成功", "success"); }, 1500); }
               }}
               onDisconnect={() => { setLh1State("disconnected"); showToast("已断开连接", "success"); }}
@@ -1542,6 +1557,7 @@ export default function ClawManager({
               connected={lh2State === "connected"}
               buttonLabel={lh2State === "disconnecting" ? "断开中..." : "连接"}
               onButtonClick={() => {
+                if (lh2State === "connected") { onAgentDialog?.("lh2", "Lighthouse"); return; }
                 if (lh2State === "disconnected") { setLh2State("disconnecting"); setTimeout(() => { setLh2State("connected"); showToast("连接成功", "success"); }, 1500); }
               }}
               onDisconnect={() => { setLh2State("disconnecting"); setTimeout(() => { setLh2State("disconnected"); showToast("已断开连接", "success"); }, 1500); }}
@@ -1557,6 +1573,7 @@ export default function ClawManager({
               desc={`${c.platformLabel} · ${c.apiUrl}`}
               connected={false}
               buttonLabel="连接"
+              onButtonClick={() => onAgentDialog?.(c.id, c.name)}
             />
           ))}
           <CreateCard label="连接外部 Agent" onClick={() => setShowCreateExternalClaw(true)} />

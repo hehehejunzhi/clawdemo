@@ -31,8 +31,8 @@ function isTooltip(t: ZoneTarget): t is TooltipId {
 
 // ── Tooltip texts ─────────────────────────────────────────────
 const TOOLTIP_TEXT: Record<TooltipId, string> = {
-  "coming-soon": "更多大数据专家正在训练中…",
-  "skill-plaza": "前往「技能广场」，为你的分身配置专属能力。",
+  "coming-soon": "更多大数据 Agent 正在训练中",
+  "skill-plaza": "前往「技能广场」，为你的专属 Agent 配置技能",
 };
 
 // ── Detail images ─────────────────────────────────────────────

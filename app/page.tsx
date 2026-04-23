@@ -1153,7 +1153,19 @@ export default function Home() {
           transition={{ duration: 0.22, ease: EASE }}
           style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
         >
-          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} registry={registry} onRegistryChange={setRegistry} />
+          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} registry={registry} onRegistryChange={setRegistry} onAgentDialog={(agentId, label) => {
+            // 点卡片「对话」按钮：关闭 Agent 广场回到聊天主界面，并召唤对应 Agent banner
+            setShowSkillPlaza(false);
+            setShowClawManager(false);
+            if (chatPhase === "conversation") {
+              const targetInfo = AGENT_MAP[agentId];
+              const isSameAgent = targetInfo && summonedAgent && targetInfo.title === summonedAgent.title;
+              if (isSameAgent) return;
+              handleNewChat();
+            }
+            chatInputRef.current?.setAgent(label);
+            handleSelectAgent(agentId);
+          }} />
         </motion.div>
       ) : (
       <motion.div
@@ -1437,7 +1449,7 @@ export default function Home() {
                     <UserMessageBubble content={userMessage} />
                   </motion.div>
 
-                  {/* 思考中：与"用户已取消"同款样式 + 橙色虚线圆环 loading（与侧边栏 pending 状态一致） */}
+                  {/* 思考中：与"用户已取消"同款样式 + 循环三点 loading */}
                   {isThinking && (
                     <motion.div
                       initial={{ opacity: 0, y: 8 }}
@@ -1452,16 +1464,31 @@ export default function Home() {
                         marginTop: -20,
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: 6,
+                        gap: 2,
                       }}
                     >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }} aria-hidden="true">
-                        <style>{`@keyframes thinking-pending-spin { to { transform: rotate(360deg); } }`}</style>
-                        <g style={{ transformOrigin: "center", animation: "thinking-pending-spin 3s linear infinite" }}>
-                          <circle cx="8" cy="8" r="5" stroke="#FF7800" strokeWidth="1.2" strokeDasharray="3 2.5" fill="none" />
-                        </g>
-                      </svg>
-                      <span>正在思考…</span>
+                      <span>正在思考</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 2, marginLeft: 2 }}>
+                        {[0, 1, 2].map((i) => (
+                          <motion.span
+                            key={i}
+                            animate={{ opacity: [0.2, 1, 0.2] }}
+                            transition={{
+                              duration: 1.2,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                              delay: i * 0.2,
+                            }}
+                            style={{
+                              display: "inline-block",
+                              width: 3,
+                              height: 3,
+                              borderRadius: "50%",
+                              background: "rgba(0,0,0,0.4)",
+                            }}
+                          />
+                        ))}
+                      </span>
                     </motion.div>
                   )}
 
@@ -1832,11 +1859,13 @@ export default function Home() {
                               fontFamily: FONT, fontSize: 12, fontWeight: 400,
                               color: "#C04100", whiteSpace: "nowrap", lineHeight: "24px",
                             }}>
-                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M13.7475 8.0385L12.362 5.6453C12.2133 5.3885 11.9371 4.9053 11.9371 4.9053C10.8649 3.0296 10.3605 2.4264 10.3605 2.4264C9.4396 1.3251 8.3233 1.3251 8.3233 1.3251C7.2071 1.3251 6.2862 2.4264 6.2862 2.4264C5.7818 3.0296 4.7095 4.9053 4.7095 4.9053C4.4333 5.3885 4.2847 5.6453 4.2847 5.6453L2.8991 8.0385C2.7495 8.2969 2.4661 8.7803 2.4661 8.7803C1.3704 10.649 1.0977 11.3887 1.0977 11.3887C0.5999 12.7394 1.1587 13.7086 1.1587 13.7086C1.7175 14.6778 3.1359 14.9238 3.1359 14.9238C3.9126 15.0584 6.0788 15.0464 6.0788 15.0464C6.6388 15.0433 6.9378 15.0433 6.9378 15.0433L9.7089 15.0433C10.0077 15.0433 10.5679 15.0464 10.5679 15.0464C12.7341 15.0584 13.5108 14.9238 13.5108 14.9238C14.9292 14.6778 15.488 13.7086 15.488 13.7086C16.0468 12.7394 15.549 11.3887 15.549 11.3887C15.2763 10.649 14.1806 8.7803 14.1806 8.7803C13.8972 8.2969 13.7475 8.0385 13.7475 8.0385ZM10.7796 5.567C11.0576 6.0535 11.2081 6.3133 11.2081 6.3133L12.5936 8.7065C12.7451 8.9682 13.0304 9.4548 13.0304 9.4548C14.0662 11.2213 14.2979 11.8498 14.2979 11.8498C14.5797 12.6145 14.3329 13.0426 14.3329 13.0426C14.086 13.4708 13.283 13.61 13.283 13.61C12.623 13.7244 10.5753 13.7131 10.5753 13.7131C10.0113 13.71 9.7089 13.71 9.7089 13.71L6.9378 13.71C6.6352 13.71 6.0714 13.7131 6.0714 13.7131C4.0237 13.7244 3.3636 13.61 3.3636 13.61C2.5607 13.4708 2.3138 13.0426 2.3138 13.0426C2.0669 12.6145 2.3488 11.8498 2.3488 11.8498C2.5804 11.2213 3.6162 9.4548 3.6162 9.4548C3.9016 8.9682 4.053 8.7065 4.053 8.7065L5.4386 6.3133C5.589 6.0536 5.8671 5.567 5.8671 5.567C6.8806 3.7941 7.3091 3.2817 7.3091 3.2817C7.8302 2.6584 8.3233 2.6584 8.3233 2.6584C8.8165 2.6584 9.3376 3.2817 9.3376 3.2817C9.7661 3.7941 10.7796 5.567 10.7796 5.567Z" fill="#C04100" fillRule="evenodd" transform="translate(-0.322266, -0.259766)"/>
-                                <path d="M0.4714 0.4714C0.6747 0.2795 0.6667 0 0.6667 0C0.6747 -0.2795 0.4714 -0.4714 0.4714 -0.4714C0.2795 -0.6747 0 -0.6667 0 -0.6667C-0.2795 -0.6747 -0.4714 -0.4714 -0.4714 -0.4714C-0.6747 -0.2795 -0.6667 0 -0.6667 0C-0.6747 0.2795 -0.4714 0.4714 -0.4714 0.4714C-0.2795 0.6747 0 0.6667 0 0.6667C0.2795 0.6747 0.4714 0.4714 0.4714 0.4714Z" fill="#C04100" fillRule="evenodd" transform="translate(8, 10.9733)"/>
-                                <path d="M2.8232 -0.6667L0 -0.6667C-0.2795 -0.6747 -0.4714 -0.4714 -0.4714 -0.4714C-0.6747 -0.2795 -0.6667 0 -0.6667 0C-0.6747 0.2795 -0.4714 0.4714 -0.4714 0.4714C-0.2795 0.6747 0 0.6667 0 0.6667L2.8232 0.6667C3.1027 0.6747 3.2946 0.4714 3.2946 0.4714C3.498 0.2795 3.4899 0 3.4899 0C3.498 -0.2795 3.2946 -0.4714 3.2946 -0.4714C3.1027 -0.6747 2.8232 -0.6667 2.8232 -0.6667Z" fill="#C04100" fillRule="evenodd" transform="matrix(0,1,-1,0,8.00195,6.14844)"/>
-                              </svg>
+                              <img
+                                src="/icons/warning.svg"
+                                alt=""
+                                width={14}
+                                height={14}
+                                style={{ flexShrink: 0, display: "block" }}
+                              />
                               {activeConfirmCard.tag}
                             </span>
                           )}
@@ -1947,7 +1976,57 @@ export default function Home() {
       </div>{/* 横向 flex end */}
 
       {/* 创建专家弹窗 */}
-      <CreateExpertDialog open={createExpertOpen} onClose={() => setCreateExpertOpen(false)} />
+      <CreateExpertDialog
+        open={createExpertOpen}
+        onClose={() => setCreateExpertOpen(false)}
+        onCreate={(name, desc, tags) => {
+          // 新建自定义 Agent：注入 registry.avatars
+          const PALETTE = ["#4E73DF", "#1ABC9C", "#F39C12", "#E74C3C", "#9B59B6", "#34495E", "#F1C40F", "#27AE60", "#FF6B6B", "#3498DB"];
+          const existing = registry.avatars.filter((a) => !a.preset).length;
+          const bg = PALETTE[existing % PALETTE.length];
+          setRegistry((prev) => ({
+            ...prev,
+            avatars: [
+              ...prev.avatars,
+              {
+                id: `avatar-${Date.now()}`,
+                name,
+                desc,
+                tags: tags ? tags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean) : [],
+                skills: [],
+                bg,
+                letter: name.charAt(0),
+              },
+            ],
+          }));
+          setCreateExpertOpen(false);
+        }}
+        onCreateExternal={(data) => {
+          // 连接外部 Agent：注入 registry.externals
+          const platformMeta: Record<string, { label: string; abbr: string; bg: string }> = {
+            lighthouse: { label: "Lighthouse", abbr: "LH", bg: "#E59858" },
+            clawpro: { label: "ClawPro", abbr: "CP", bg: "#1664FF" },
+            chatgpt: { label: "ChatGPT Plugin", abbr: "GP", bg: "#00B96B" },
+          };
+          const meta = platformMeta[data.platform] ?? { label: data.platform, abbr: "EX", bg: "#4E73DF" };
+          setRegistry((prev) => ({
+            ...prev,
+            externals: [
+              ...prev.externals,
+              {
+                id: `ext-${Date.now()}`,
+                name: data.name,
+                abbr: meta.abbr,
+                bg: meta.bg,
+                platformLabel: meta.label,
+                apiUrl: data.apiUrl,
+                state: "disconnected" as const,
+              },
+            ],
+          }));
+          setCreateExpertOpen(false);
+        }}
+      />
       <CreateTeamDialog open={createTeamOpen} onClose={() => setCreateTeamOpen(false)} />
     </div>
   );
