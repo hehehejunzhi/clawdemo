@@ -117,7 +117,8 @@ function Card({ avatar, name, desc, badge, button, children, onDialog }: {
   avatar: React.ReactNode;
   name: React.ReactNode;
   desc: string;
-  badge?: React.ReactNode;
+  /** 支持函数形式以感知卡片 hover 态（用于「三点菜单默认隐藏、hover 显示」） */
+  badge?: React.ReactNode | ((hovered: boolean) => React.ReactNode);
   button?: React.ReactNode;
   children?: React.ReactNode;
   /** 点击默认「对话」按钮时触发（仅当未传 button 覆写时有效） */
@@ -141,7 +142,7 @@ function Card({ avatar, name, desc, badge, button, children, onDialog }: {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, justifyContent: "space-between" }}>
             {name}
-            {badge}
+            {typeof badge === "function" ? badge(h) : badge}
           </div>
           <div style={{
             minHeight: 40, fontSize: 14, fontWeight: 400, color: C.textPrimary, lineHeight: "20px",
@@ -303,10 +304,11 @@ const CUSTOM_AVATAR_BG_PALETTE = [
 const pickAvatarBg = (idx: number) => CUSTOM_AVATAR_BG_PALETTE[idx % CUSTOM_AVATAR_BG_PALETTE.length];
 
 // ── 三点菜单 ──────────────────────────────────────────────────
-function MoreMenu({ onManage, onDelete }: { onManage: () => void; onDelete: () => void }) {
+function MoreMenu({ onManage, onDelete, visible = true }: { onManage: () => void; onDelete: () => void; visible?: boolean }) {
   const [open, setOpen] = useState(false);
+  const show = visible || open;
   return (
-    <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
+    <div style={{ position: "relative", opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none", transition: "opacity 120ms" }} onClick={(e) => e.stopPropagation()}>
       <div
         onClick={() => setOpen((v) => !v)}
         style={{
@@ -698,7 +700,7 @@ function ExternalClawCard({ avatar, name, desc, connected, buttonLabel, onButton
           <div style={{ display: "flex", alignItems: "center", gap: 6, height: 24, marginBottom: 4 }}>
             <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
             {connected && <ConnectedBadge />}
-            <div style={{ marginLeft: "auto", position: "relative" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ marginLeft: "auto", position: "relative", opacity: (h || menuOpen) ? 1 : 0, pointerEvents: (h || menuOpen) ? "auto" : "none", transition: "opacity 120ms" }} onClick={(e) => e.stopPropagation()}>
               <div
                 onClick={() => setMenuOpen((v) => !v)}
                 style={{
@@ -999,10 +1001,11 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
 }
 
 // ── 数字分身三点菜单（Figma: 152x82 圆角16） ─────────────────
-function ExpertDetailMenu({ onDetail }: { onDetail: () => void }) {
+function ExpertDetailMenu({ onDetail, visible = true }: { onDetail: () => void; visible?: boolean }) {
   const [open, setOpen] = useState(false);
+  const show = visible || open;
   return (
-    <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
+    <div style={{ position: "relative", opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none", transition: "opacity 120ms" }} onClick={(e) => e.stopPropagation()}>
       <div onClick={() => setOpen((v) => !v)}
         style={{ width: 24, height: 24, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: open ? C.hoverBg : "transparent", transition: "background 100ms" }}
         onMouseEnter={(e) => { if (!open) (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
@@ -1028,10 +1031,11 @@ function ExpertDetailMenu({ onDetail }: { onDetail: () => void }) {
   );
 }
 
-function AvatarMoreMenu({ onDetail, onDelete }: { onDetail: () => void; onDelete: () => void }) {
+function AvatarMoreMenu({ onDetail, onDelete, visible = true }: { onDetail: () => void; onDelete: () => void; visible?: boolean }) {
   const [open, setOpen] = useState(false);
+  const show = visible || open;
   return (
-    <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
+    <div style={{ position: "relative", opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none", transition: "opacity 120ms" }} onClick={(e) => e.stopPropagation()}>
       <div onClick={() => setOpen((v) => !v)}
         style={{ width: 24, height: 24, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: open ? C.hoverBg : "transparent", transition: "background 100ms" }}
         onMouseEnter={(e) => { if (!open) (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
@@ -1340,8 +1344,6 @@ export default function ClawManager({
   // 预置 Lighthouse 两张卡片的软删除状态（点"删除"后从列表隐藏）
   const [lh1Hidden, setLh1Hidden] = useState(false);
   const [lh2Hidden, setLh2Hidden] = useState(false);
-  // 查看大数据专家详情
-  const [viewingExpert, setViewingExpert] = useState<{ name: string; desc: string; skills: string[] } | null>(null);
 
   // ── Registry 桥接 ────────────────────────────────────────────
   // 把内部 state 打包成 AgentRegistry 推送给外部（page.tsx）
@@ -1469,7 +1471,7 @@ export default function ClawManager({
                 }
                 name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{team.name} ({team.members.length})</span>}
                 desc={team.desc}
-                badge={<MoreMenu onManage={() => setManagingTeamId(team.id)} onDelete={() => setDeletingTeamId(team.id)} />}
+                badge={(hovered) => <MoreMenu visible={hovered} onManage={() => setManagingTeamId(team.id)} onDelete={() => setDeletingTeamId(team.id)} />}
                 onDialog={() => onAgentDialog?.(registryTeamId, team.name)}
               />
             );
@@ -1484,21 +1486,18 @@ export default function ClawManager({
             avatar={<AvatarCircle src="/agents/dev-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Rigel·数据开发专家</span>}
             desc="负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。"
-            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Rigel·数据开发专家", desc: "负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。", skills: ["需求转数据模型", "生成调度方案", "自动数仓开发", "检测管道异常", "接入数据源", "优化任务性能"] })} />}
             onDialog={() => onAgentDialog?.("dev-expert", "数据开发专家")}
           />
           <Card
             avatar={<AvatarCircle src="/agents/analysis-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Vega·数据分析专家</span>}
             desc="从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。"
-            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Vega·数据分析专家", desc: "从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。", skills: ["自然语言取数", "智能趋势分析", "多维数据洞察", "生成数据报告", "异常归因", "指标拆解"] })} />}
             onDialog={() => onAgentDialog?.("analysis-expert", "数据分析专家")}
           />
           <Card
             avatar={<AvatarCircle src="/agents/ops-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Orion·数据运维专家</span>}
             desc="负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。"
-            badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Orion·数据运维专家", desc: "负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。", skills: ["监测数据质量", "智能血缘维护", "自动管理元数据", "识别口径冲突", "安全脱敏", "标签治理"] })} />}
             onDialog={() => onAgentDialog?.("ops-expert", "数据运维专家")}
           />
         </div>
@@ -1511,7 +1510,7 @@ export default function ClawManager({
               avatar={<AvatarCircle letter="运" bg="#4E73DF" />}
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{avatarData.name}</span>}
               desc={avatarData.desc}
-              badge={<AvatarMoreMenu onDetail={() => setShowAvatarDetail(true)} onDelete={() => setShowAvatarDelete(true)} />}
+              badge={(hovered) => <AvatarMoreMenu visible={hovered} onDetail={() => setShowAvatarDetail(true)} onDelete={() => setShowAvatarDelete(true)} />}
               onDialog={() => onAgentDialog?.("my-ops", avatarData.name)}
             />
           )}
@@ -1522,7 +1521,7 @@ export default function ClawManager({
               avatar={<AvatarCircle letter={a.name.charAt(0)} bg={a.bg} />}
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{a.name}</span>}
               desc={a.desc || "自定义 Agent"}
-              badge={<AvatarMoreMenu onDetail={() => setViewingAvatarId(a.id)} onDelete={() => setDeletingAvatarId(a.id)} />}
+              badge={(hovered) => <AvatarMoreMenu visible={hovered} onDetail={() => setViewingAvatarId(a.id)} onDelete={() => setDeletingAvatarId(a.id)} />}
               onDialog={() => onAgentDialog?.(a.id, a.name)}
             />
           ))}
@@ -1751,13 +1750,6 @@ export default function ClawManager({
               </div>
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 大数据专家编辑弹窗 */}
-      <AnimatePresence>
-        {viewingExpert && (
-          <ExpertEditModal expert={viewingExpert} onClose={() => setViewingExpert(null)} onNavigateToSkillPlaza={() => { setViewingExpert(null); onNavigateToSkillPlaza?.(); }} />
         )}
       </AnimatePresence>
 

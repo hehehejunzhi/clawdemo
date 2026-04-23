@@ -277,11 +277,13 @@ function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, 
 }
 
 // ── Hub skill card (install: hover→button→loading→success toggle / fail toast→idle) ─
-function HubCard({ title, desc, willSucceed, onCardClick, onInstallResult }: {
+function HubCard({ title, desc, willSucceed, onCardClick, onInstallResult, sourceTag }: {
   icon?: string; iconBg?: string; title: string; desc: string;
   willSucceed?: boolean;
   onCardClick?: () => void;
   onInstallResult?: (success: boolean) => void;
+  /** 来源标签（如"内置 Skill" / "SkillHub"），跟随标题显示 */
+  sourceTag?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   const [installState, setInstallState] = useState<"idle" | "loading" | "installed">("idle");
@@ -321,7 +323,23 @@ function HubCard({ title, desc, willSucceed, onCardClick, onInstallResult }: {
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontFamily: FONT, fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{title}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+            <span style={{
+              fontFamily: FONT, fontSize: 16, fontWeight: 500, color: C.textPrimary,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0,
+            }}>{title}</span>
+            {sourceTag && (
+              <span style={{
+                flexShrink: 0,
+                display: "inline-flex", alignItems: "center",
+                height: 20, padding: "0 8px", borderRadius: 4,
+                background: sourceTag === "内置 Skill" ? "#E3ECFF" : "#F2F4F8",
+                fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                color: sourceTag === "内置 Skill" ? "#0052D9" : "rgba(0,0,0,0.55)",
+                lineHeight: "20px",
+              }}>{sourceTag}</span>
+            )}
+          </div>
           <div style={{ marginTop: 4, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textTertiary, lineHeight: "20px",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
@@ -623,11 +641,11 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
 
         {/* 右侧内容 */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          {/* 详情页标题：内置 → 内置 Skill；自定义 → 已安装 Skill（N） */}
+          {/* 详情页标题：内置 → 内置 Skill；自定义 → 已安装 Skill（N） + 搜索框 */}
           <div style={{
             height: 56, flexShrink: 0,
-            display: "flex", alignItems: "center",
-            padding: "0 24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 24px", gap: 16,
           }}>
             <span style={{
               fontFamily: FONT, fontSize: 14, fontWeight: 600,
@@ -637,6 +655,53 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                 ? `内置 Skill（${filteredSkills.length}）`
                 : `已安装 Skill（${currentAvatarInstalledList.length + installedList.length}）`}
             </span>
+            {!isBuiltin && (
+              <div style={{
+                position: "relative",
+                width: 260, height: 32,
+                display: "flex", alignItems: "center",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+                  style={{ position: "absolute", left: 10, pointerEvents: "none" }}>
+                  <circle cx="6" cy="6" r="4.5" stroke="rgba(0,0,0,0.45)" strokeWidth="1.3" fill="none" />
+                  <path d="M9.5 9.5L12.5 12.5" stroke="rgba(0,0,0,0.45)" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+                <input
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  placeholder="搜索 Skill 名称或描述"
+                  style={{
+                    width: "100%", height: 32,
+                    padding: "0 32px 0 30px",
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    background: C.bgWhite,
+                    fontFamily: FONT, fontSize: 13, fontWeight: 400,
+                    color: C.textPrimary, outline: "none",
+                    boxSizing: "border-box",
+                    transition: "border-color 120ms",
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }}
+                />
+                {searchKeyword && (
+                  <div
+                    onClick={() => setSearchKeyword("")}
+                    style={{
+                      position: "absolute", right: 8, width: 18, height: 18,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", borderRadius: 4,
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M1 1l8 8M9 1L1 9" stroke="rgba(0,0,0,0.5)" strokeWidth="1.3" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 技能卡片 */}
@@ -648,31 +713,43 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
           }}>
             <AnimatePresence mode="wait">
               {isBuiltin ? (
-                <motion.div
-                  key={`preset-${activeCat}-${kw}`}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2, ease: EASE }}
-                  className="skill-grid"
-                >
-                  {filteredSkills.length > 0 ? filteredSkills.map((s) => (
-                    <SkillCard
-                      key={`${activeCat}-${s.title}`}
-                      icon={s.icon} iconBg={s.iconBg}
-                      title={s.title} desc={s.desc}
-                      defaultTag={s.defaultTag}
-                      showToggle={false}
-                      on={isOn(`${activeCat}-${s.title}`)}
-                      onToggle={() => toggle(`${activeCat}-${s.title}`)}
-                      onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
-                    />
-                  )) : (
-                    <div style={{ width: "100%", padding: "40px 0", textAlign: "center", fontFamily: FONT, fontSize: 14, color: C.textTertiary }}>
-                      未找到匹配的 Skill
-                    </div>
-                  )}
-                </motion.div>
+                filteredSkills.length > 0 ? (
+                  <motion.div
+                    key={`preset-${activeCat}-${kw}`}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.2, ease: EASE }}
+                    className="skill-grid"
+                  >
+                    {filteredSkills.map((s) => (
+                      <SkillCard
+                        key={`${activeCat}-${s.title}`}
+                        icon={s.icon} iconBg={s.iconBg}
+                        title={s.title} desc={s.desc}
+                        defaultTag={s.defaultTag}
+                        showToggle={false}
+                        on={isOn(`${activeCat}-${s.title}`)}
+                        onToggle={() => toggle(`${activeCat}-${s.title}`)}
+                        onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                      />
+                    ))}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={`preset-empty-${activeCat}-${kw}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2, ease: EASE }}
+                    style={{
+                      marginTop: 300, textAlign: "center",
+                      fontFamily: FONT, fontSize: 14, color: C.textTertiary,
+                    }}
+                  >
+                    未找到匹配的 Skill
+                  </motion.div>
+                )
               ) : (
                 <motion.div
                   key={`hub-${kw}`}
@@ -685,20 +762,22 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                   {/* ── 已安装区域 ── */}
                   <div className="skill-grid">
                     {/* 当前自定义 Agent 已安装的内置 skill（带 Toggle） */}
-                    {currentAvatar && currentAvatarInstalledList.map((s) => {
-                      const key = `custom-installed-${currentAvatar.id}-${s.title}`;
-                      const on = key in toggleState ? toggleState[key] : s.enabled;
-                      return (
-                        <SkillCard
-                          key={key}
-                          title={s.title} desc={s.desc}
-                          sourceTag="内置 Skill"
-                          on={on}
-                          onToggle={() => setToggleState((p) => ({ ...p, [key]: !on }))}
-                          onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: "自定义", version: "1.0.0", author: activeCat })}
-                        />
-                      );
-                    })}
+                    {currentAvatar && currentAvatarInstalledList
+                      .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
+                      .map((s) => {
+                        const key = `custom-installed-${currentAvatar.id}-${s.title}`;
+                        const on = key in toggleState ? toggleState[key] : s.enabled;
+                        return (
+                          <SkillCard
+                            key={key}
+                            title={s.title} desc={s.desc}
+                            sourceTag="内置 Skill"
+                            on={on}
+                            onToggle={() => setToggleState((p) => ({ ...p, [key]: !on }))}
+                            onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: "自定义", version: "1.0.0", author: activeCat })}
+                          />
+                        );
+                      })}
                     {(() => {
                       const installedSkills = INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title))
                         .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
@@ -732,8 +811,8 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                       );
                     })()}
                   </div>
-                  {/* 展开更多 */}
-                  {INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title)).length > INSTALLED_COLLAPSE_COUNT && (
+                  {/* 展开更多（搜索时隐藏） */}
+                  {!kw && INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title)).length > INSTALLED_COLLAPSE_COUNT && (
                     <div
                       onClick={() => setInstalledExpanded((v) => !v)}
                       style={{ textAlign: "center", padding: "12px 0 4px", cursor: "pointer" }}
@@ -747,6 +826,80 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                   {/* ── 分割线 ── */}
                   <div style={{ height: 1, background: C.border, margin: "16px 0" }} />
 
+                  {/* ── 可安装区域：搜索时展示"为你找到 N 个结果"+合并列表；否则展示 Tab + 对应列表 ── */}
+                  {kw ? (() => {
+                    const hitCustomUninstalled = customUninstalledSkills
+                      .filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
+                    const hitHubUninstalled = HUB_SKILLS
+                      .filter((s) => availableList.includes(s.title) && !installedList.includes(s.title))
+                      .filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
+                    const totalHits = hitCustomUninstalled.length + hitHubUninstalled.length;
+                    return (
+                      <>
+                        <div style={{
+                          marginBottom: 12,
+                          fontFamily: FONT, fontSize: 14, fontWeight: 400,
+                          color: C.textSecondary,
+                        }}>
+                          为你找到 <span style={{ fontWeight: 600, color: C.textPrimary }}>{totalHits}</span> 个结果
+                        </div>
+                        {totalHits > 0 ? (
+                          <div className="skill-grid">
+                            {hitCustomUninstalled.map((s) => (
+                              <HubCard
+                                key={`search-custom-uninstalled-${s.title}`}
+                                title={s.title} desc={s.desc}
+                                sourceTag="内置 Skill"
+                                willSucceed={true}
+                                onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: "自定义", version: "1.0.0", author: activeCat })}
+                                onInstallResult={(ok) => {
+                                  if (ok && currentAvatar) {
+                                    setCustomInstalledSkills((prev) => {
+                                      const next = { ...prev };
+                                      const set = new Set(next[currentAvatar.id] ?? []);
+                                      set.add(s.title);
+                                      next[currentAvatar.id] = set;
+                                      return next;
+                                    });
+                                    setToggleState((p) => ({ ...p, [`custom-installed-${currentAvatar.id}-${s.title}`]: true }));
+                                    showToast("Skill 安装成功", "success");
+                                  } else {
+                                    showToast("Skill 安装失败", "error");
+                                  }
+                                }}
+                              />
+                            ))}
+                            {hitHubUninstalled.map((s) => (
+                              <HubCard
+                                key={`search-hub-uninstalled-${s.title}`}
+                                icon={s.icon} iconBg={s.iconBg}
+                                title={s.title} desc={s.desc}
+                                sourceTag="SkillHub"
+                                willSucceed={s.willSucceed}
+                                onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                                onInstallResult={(ok) => {
+                                  if (ok) {
+                                    setInstalledList((prev) => [...prev, s.title]);
+                                    setAvailableList((prev) => prev.filter((t) => t !== s.title));
+                                    showToast("Skill 安装成功", "success");
+                                  } else {
+                                    showToast("Skill 安装失败", "error");
+                                  }
+                                }}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{
+                            marginTop: 300, textAlign: "center",
+                            fontFamily: FONT, fontSize: 14, color: C.textTertiary,
+                          }}>
+                            未找到匹配的 Skill
+                          </div>
+                        )}
+                      </>
+                    );
+                  })() : (<>
                   {/* ── 可安装区域：Tab（内置 Skill / SkillHub）+ 查看更多链接 ── */}
                   <div style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     {/* 胶囊 Tab（Figma 767_17327），切换时白色指示器滑动 + 字重交叉淡入 */}
@@ -837,67 +990,77 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                   </div>
                   {activeTab === "preset" ? (
                     /* 内置 Skill：展示尚未安装的 skill（HubCard 样式，含安装按钮） */
-                    <div className="skill-grid">
-                      {customUninstalledSkills.length > 0 ? customUninstalledSkills.map((s) => (
-                        <HubCard
-                          key={`${activeCat}-preset-${s.title}`}
-                          title={s.title} desc={s.desc}
-                          willSucceed={true}
-                          onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: "自定义", version: "1.0.0", author: activeCat })}
-                          onInstallResult={(ok) => {
-                            if (ok && currentAvatar) {
-                              setCustomInstalledSkills((prev) => {
-                                const next = { ...prev };
-                                const set = new Set(next[currentAvatar.id] ?? []);
-                                set.add(s.title);
-                                next[currentAvatar.id] = set;
-                                return next;
-                              });
-                              // 新安装的 skill 默认打开
-                              setToggleState((p) => ({ ...p, [`custom-installed-${currentAvatar.id}-${s.title}`]: true }));
-                              showToast("Skill 安装成功", "success");
-                            } else {
-                              showToast("Skill 安装失败", "error");
-                            }
-                          }}
-                        />
-                      )) : (
-                        <div style={{ width: "100%", padding: "40px 0", textAlign: "center", fontFamily: FONT, fontSize: 14, color: C.textTertiary }}>
-                          暂无可安装的内置 Skill
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* SkillHub：原可安装 HubCard 列表 */
-                    <div className="skill-grid">
-                      {(() => {
-                        const avail = HUB_SKILLS.filter((s) => availableList.includes(s.title) && !installedList.includes(s.title))
-                          .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
-                        return avail.length > 0 ? avail.map((s) => (
+                    customUninstalledSkills.length > 0 ? (
+                      <div className="skill-grid">
+                        {customUninstalledSkills.map((s) => (
                           <HubCard
-                            key={s.title}
-                            icon={s.icon} iconBg={s.iconBg}
+                            key={`${activeCat}-preset-${s.title}`}
                             title={s.title} desc={s.desc}
-                            willSucceed={s.willSucceed}
-                            onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                            willSucceed={true}
+                            onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: "自定义", version: "1.0.0", author: activeCat })}
                             onInstallResult={(ok) => {
-                              if (ok) {
-                                setInstalledList((prev) => [...prev, s.title]);
-                                setAvailableList((prev) => prev.filter((t) => t !== s.title));
+                              if (ok && currentAvatar) {
+                                setCustomInstalledSkills((prev) => {
+                                  const next = { ...prev };
+                                  const set = new Set(next[currentAvatar.id] ?? []);
+                                  set.add(s.title);
+                                  next[currentAvatar.id] = set;
+                                  return next;
+                                });
+                                // 新安装的 skill 默认打开
+                                setToggleState((p) => ({ ...p, [`custom-installed-${currentAvatar.id}-${s.title}`]: true }));
                                 showToast("Skill 安装成功", "success");
                               } else {
                                 showToast("Skill 安装失败", "error");
                               }
                             }}
                           />
-                        )) : (
-                          <div style={{ width: "100%", padding: "40px 0", textAlign: "center", fontFamily: FONT, fontSize: 14, color: C.textTertiary }}>
-                            暂无可安装的 Skill
-                          </div>
-                        );
-                      })()}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{
+                        marginTop: 300, textAlign: "center",
+                        fontFamily: FONT, fontSize: 14, color: C.textTertiary,
+                      }}>
+                        暂无可安装的内置 Skill
+                      </div>
+                    )
+                  ) : (
+                    /* SkillHub：原可安装 HubCard 列表 */
+                    (() => {
+                      const avail = HUB_SKILLS.filter((s) => availableList.includes(s.title) && !installedList.includes(s.title));
+                      return avail.length > 0 ? (
+                        <div className="skill-grid">
+                          {avail.map((s) => (
+                            <HubCard
+                              key={s.title}
+                              icon={s.icon} iconBg={s.iconBg}
+                              title={s.title} desc={s.desc}
+                              willSucceed={s.willSucceed}
+                              onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                              onInstallResult={(ok) => {
+                                if (ok) {
+                                  setInstalledList((prev) => [...prev, s.title]);
+                                  setAvailableList((prev) => prev.filter((t) => t !== s.title));
+                                  showToast("Skill 安装成功", "success");
+                                } else {
+                                  showToast("Skill 安装失败", "error");
+                                }
+                              }}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{
+                          marginTop: 300, textAlign: "center",
+                          fontFamily: FONT, fontSize: 14, color: C.textTertiary,
+                        }}>
+                          暂无可安装的 Skill
+                        </div>
+                      );
+                    })()
                   )}
+                  </>)}
                 </motion.div>
               )}
             </AnimatePresence>
