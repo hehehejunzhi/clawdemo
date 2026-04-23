@@ -215,10 +215,9 @@ export const DEFAULT_TASKS: AgentTask[] = [
   // 大数据团队
   { id: "t1", title: "慢 SQL 查询与调优", status: "pending", agentId: "bigdata-team" },
   { id: "t2", title: "统计近 7 天各渠道用户支付金额，按天汇总", status: "pending", agentId: "bigdata-team" },
-  { id: "t3", title: "接入业务库【订单表】数据源", status: "check", agentId: "bigdata-team" },
-  { id: "t4", title: "接入业务库【用户表】数据源", status: "check", agentId: "bigdata-team" },
-  { id: "t5", title: "猫眼_客户留存指标分析", status: "check", agentId: "bigdata-team" },
-  { id: "t6", title: "T+1 调度工作流编排", status: "check", agentId: "bigdata-team" },
+  { id: "t3", title: "展示\u201C思考中\u201D状态", status: "pending", agentId: "bigdata-team" },
+  { id: "t4", title: "展示\u201C用户已取消\u201D状态", status: "check", agentId: "bigdata-team" },
+  { id: "t5", title: "展示\u201C报错\u201D状态", status: "check", agentId: "bigdata-team" },
   // Rigel·数据开发专家
   { id: "t7", title: "数仓分层模型搭建", status: "loading", agentId: "dev-expert" },
   { id: "t8", title: "ODS 层数据接入验证", status: "check", agentId: "dev-expert" },

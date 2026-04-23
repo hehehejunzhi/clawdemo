@@ -639,6 +639,12 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   // 用户取消了对话
   const [isCancelled, setIsCancelled] = useState(false);
+  // AI 正在思考（发送后 4s 的缓冲状态）
+  const [isThinking, setIsThinking] = useState(false);
+  // 生成失败
+  const [isFailed, setIsFailed] = useState(false);
+  // 思考定时器引用
+  const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 卡片参数配置
   const [fanConfig, setFanConfig] = useState<FanCardsConfig>(DEFAULT_FAN_CONFIG);
   const [chatInputConfig, setChatInputConfig] = useState<Record<string, number>>(CHAT_INPUT_MOTION.defaultConfig);
@@ -705,6 +711,15 @@ export default function Home() {
     }, 100);
     return () => clearTimeout(timer);
   }, [activeConfirmCard, phase2Complete]);
+
+  // 思考结束后（且非取消 / 失败 / 即时模式），自动推进到 Step 1
+  useEffect(() => {
+    if (chatPhase !== "conversation") return;
+    if (isThinking || isCancelled || isFailed || isInstantMode) return;
+    if (revealStep === 0) {
+      setRevealStep((s) => Math.max(s, 1));
+    }
+  }, [chatPhase, isThinking, isCancelled, isFailed, isInstantMode, revealStep]);
 
   const handleSkillClick = useCallback((label: string, agent?: { name: string; title: string; avatar: string; summonText?: string }) => {
     setActiveSkills([{ id: label, label, icon: SKILL_ICON_MAP[label] }]);
@@ -867,6 +882,23 @@ export default function Home() {
     setRevealStep(0);
     setIsGenerating(true);
     setIsCancelled(false);
+    setIsFailed(false);
+
+    // 彩蛋触发：输入包含"模拟失败"时进入失败态
+    const trimmed = message.trim();
+    const shouldFail = /模拟失败|模拟生成失败|trigger\s*fail/i.test(trimmed);
+
+    // 进入"思考中"状态 4s（或失败场景：4s 后切到失败）
+    setIsThinking(true);
+    if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current);
+    thinkingTimerRef.current = setTimeout(() => {
+      setIsThinking(false);
+      thinkingTimerRef.current = null;
+      if (shouldFail) {
+        setIsFailed(true);
+        setIsGenerating(false);
+      }
+    }, 4000);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summonedAgent]);
 
@@ -915,6 +947,12 @@ export default function Home() {
     setSelectedTeamId(null);
     setSelectedAgentId(null);
     setIsCancelled(false);
+    setIsThinking(false);
+    setIsFailed(false);
+    if (thinkingTimerRef.current) {
+      clearTimeout(thinkingTimerRef.current);
+      thinkingTimerRef.current = null;
+    }
     setActiveConfirmCard(null);
     chatInputRef.current?.resetAgent();
   }, []);
@@ -928,11 +966,61 @@ export default function Home() {
   const handleStop = useCallback(() => {
     setIsGenerating(false);
     setIsCancelled(true);
+    // 取消时若仍在思考中，也停掉思考定时器
+    setIsThinking(false);
+    if (thinkingTimerRef.current) {
+      clearTimeout(thinkingTimerRef.current);
+      thinkingTimerRef.current = null;
+    }
   }, []);
 
   const handleTaskClick = useCallback((task: { id: string; title: string }) => {
-    // 这些已完成任务不可点击交互
-    if (["t4", "t5", "t6"].includes(task.id)) return;
+    // 状态展示任务：t3 思考中 / t4 用户已取消 / t5 报错
+    const stateDemo = task.id === "t3" ? "thinking"
+      : task.id === "t4" ? "cancelled"
+      : task.id === "t5" ? "failed"
+      : null;
+
+    if (stateDemo) {
+      // 清理可能遗留的思考定时器（避免覆盖常驻状态）
+      if (thinkingTimerRef.current) {
+        clearTimeout(thinkingTimerRef.current);
+        thinkingTimerRef.current = null;
+      }
+      setActiveTaskId(task.id);
+      setShowSkillPlaza(false);
+      setShowClawManager(false);
+      setIsInstantMode(true);
+      setUserMessage(task.title);
+      setSummonedAgent({
+        name: "Rigel",
+        title: "数据运维专家",
+        avatar: "/agents/dev-expert.png",
+      });
+      setChatPhase("conversation");
+      setConversationTitle(task.title);
+      setActiveSkills([]);
+      // 只显示用户气泡 + 状态文案，不播 reply
+      setRevealStep(0);
+      setTaskReplies(undefined);
+      setTaskThinkingText(undefined);
+      setIsSingleExpert(false);
+      setConfirmPhase(false);
+      setPhase2Replies(undefined);
+      setPhase2Complete(false);
+      setActiveConfirmCard(null);
+      setArtifactsPanelOpen(false);
+      // 三选一：常驻展示
+      setIsThinking(stateDemo === "thinking");
+      setIsCancelled(stateDemo === "cancelled");
+      setIsFailed(stateDemo === "failed");
+      setIsGenerating(stateDemo === "thinking");
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ top: 0 });
+      });
+      return;
+    }
+
     const conv = TASK_CONVERSATIONS[task.id];
     setActiveTaskId(task.id);
     setShowSkillPlaza(false);
@@ -957,6 +1045,12 @@ export default function Home() {
     setPhase2Complete(false);
     setIsGenerating(false);
     setIsCancelled(false);
+    setIsThinking(false);
+    setIsFailed(false);
+    if (thinkingTimerRef.current) {
+      clearTimeout(thinkingTimerRef.current);
+      thinkingTimerRef.current = null;
+    }
     setActiveConfirmCard(null);
     // 即时模式：自动打开产物面板
     setArtifactsPanelOpen(true);
@@ -1333,10 +1427,72 @@ export default function Home() {
                     initial={isInstantMode ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE }}
-                    onAnimationComplete={() => { if (!isInstantMode && !isCancelled) setRevealStep((s) => Math.max(s, 1)); }}
+                    onAnimationComplete={() => {
+                      // 思考中 / 已取消 / 失败：不推进 revealStep
+                      if (!isInstantMode && !isCancelled && !isThinking && !isFailed) {
+                        setRevealStep((s) => Math.max(s, 1));
+                      }
+                    }}
                   >
                     <UserMessageBubble content={userMessage} />
                   </motion.div>
+
+                  {/* 思考中：与"用户已取消"同款样式 + 橙色虚线圆环 loading（与侧边栏 pending 状态一致） */}
+                  {isThinking && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: EASE }}
+                      style={{
+                        fontFamily: FONT,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        lineHeight: "22px",
+                        color: "rgba(0,0,0,0.4)",
+                        marginTop: -20,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }} aria-hidden="true">
+                        <style>{`@keyframes thinking-pending-spin { to { transform: rotate(360deg); } }`}</style>
+                        <g style={{ transformOrigin: "center", animation: "thinking-pending-spin 3s linear infinite" }}>
+                          <circle cx="8" cy="8" r="5" stroke="#FF7800" strokeWidth="1.2" strokeDasharray="3 2.5" fill="none" />
+                        </g>
+                      </svg>
+                      <span>正在思考…</span>
+                    </motion.div>
+                  )}
+
+                  {/* 生成失败：icon + 文字，颜色 #F64041 */}
+                  {isFailed && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: EASE }}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginTop: -20,
+                        fontFamily: FONT,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        lineHeight: "22px",
+                        color: "#F64041",
+                      }}
+                    >
+                      <img
+                        src="/icons/warning.svg"
+                        alt=""
+                        width={16}
+                        height={16}
+                        style={{ flexShrink: 0, display: "block" }}
+                      />
+                      <span>生成失败</span>
+                    </motion.div>
+                  )}
 
                   {/* Step 1+2: Leader 调度区（思考摘要 + Plan + 标签 + 任务分派），内部 12px 间距 */}
                   {revealStep >= 1 && !isSingleExpert && (

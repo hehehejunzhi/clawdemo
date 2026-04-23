@@ -21,15 +21,17 @@ interface TeamSummonBannerProps {
   team: Team;
 }
 
-// 单个圆形头像（48×48，1.5px 描边，背景灰）
-function BannerAvatar({ item, zIndex }: { item: ClusterAvatarItem; zIndex: number }) {
+// 单个圆形头像（48×48，1.5px 描边，背景灰）；可通过 size 覆盖尺寸
+function BannerAvatar({ item, zIndex, size = AVATAR_SIZE }: { item: ClusterAvatarItem; zIndex: number; size?: number }) {
   const isLetter = typeof item !== "string";
+  // 字母字号按 48→25.67 的比例派生，保持视觉重量一致
+  const letterFontSize = (25.67 * size) / AVATAR_SIZE;
   return (
     <div
       style={{
         position: "relative",
-        width: AVATAR_SIZE,
-        height: AVATAR_SIZE,
+        width: size,
+        height: size,
         borderRadius: "50%",
         background: isLetter ? item.bg : AVATAR_BG,
         outline: `${AVATAR_STROKE_W}px solid ${AVATAR_STROKE}`,
@@ -46,7 +48,7 @@ function BannerAvatar({ item, zIndex }: { item: ClusterAvatarItem; zIndex: numbe
         <span
           style={{
             fontFamily: FONT_INTER,
-            fontSize: 25.67,
+            fontSize: letterFontSize,
             fontWeight: 500,
             color: isLetter ? getLetterTextColor(item.bg) : "#FFFFFF",
             lineHeight: 1,
@@ -176,7 +178,7 @@ export function AgentSummonBanner({
         gap: 8,
       }}
     >
-      <BannerAvatar item={avatar} zIndex={1} />
+      <BannerAvatar item={avatar} zIndex={1} size={40} />
       <span
         style={{
           fontFamily: FONT,
