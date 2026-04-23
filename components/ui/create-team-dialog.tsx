@@ -91,7 +91,7 @@ export default function CreateTeamDialog({ open, onClose, onCreate }: CreateTeam
     onClose();
   };
 
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: C.textTertiary, flexShrink: 0, width: LABEL_W, paddingTop: 7 };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: LABEL_W, paddingTop: 7 };
   const inputStyle: React.CSSProperties = {
     flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgCard,

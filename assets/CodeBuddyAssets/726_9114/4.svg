@@ -1,0 +1,6 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="48" height="48" fill="var(--nav-hamburger-color-bg, white)" style="fill: var(--nav-hamburger-color-bg, white);fill-opacity:1;"/>
+<path d="M15 18H33" stroke="var(--color-text-primary, black)" stroke-opacity="0.9" style="stroke: var(--color-text-primary, black);stroke-opacity:0.9;" stroke-width="1.33"/>
+<path d="M15 24H33" stroke="var(--color-text-primary, black)" stroke-opacity="0.9" style="stroke: var(--color-text-primary, black);stroke-opacity:0.9;" stroke-width="1.33"/>
+<path d="M15 30H33" stroke="var(--color-text-primary, black)" stroke-opacity="0.9" style="stroke: var(--color-text-primary, black);stroke-opacity:0.9;" stroke-width="1.33"/>
+</svg>

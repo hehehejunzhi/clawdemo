@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { AgentRegistry } from "@/lib/agent-registry";
 
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
@@ -15,7 +16,7 @@ const C = {
   textTertiary: "rgba(0,0,0,0.5)",
   activeBg: "#E9ECF1",
   hoverBg: "#F2F4F8",
-  brandCyan: "#00C8D6",
+  brandCyan: "#0052D9",
   error: "#F64041",
 } as const;
 
@@ -170,7 +171,7 @@ function CatItem({ label, active, onClick }: { label: string; active?: boolean; 
 function SectionLabel({ label }: { label: string }) {
   return (
     <div style={{ height: 52, display: "flex", alignItems: "flex-end", padding: "0 12px 8px" }}>
-      <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 600, color: C.textSecondary }}>{label}</span>
+      <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 600, color: "rgba(0,0,0,0.3)" }}>{label}</span>
     </div>
   );
 }
@@ -182,7 +183,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle?: () => void }) {
       onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
       style={{
         width: 39, height: 24, borderRadius: 12,
-        background: on ? "#00C8D6" : "#D6DBE3",
+        background: on ? "#0052D9" : "#D6DBE3",
         position: "relative", cursor: "pointer", flexShrink: 0,
         transition: "background 200ms",
       }}
@@ -217,8 +218,8 @@ function SkillCard({ title, desc, defaultTag, on, onToggle, onCardClick }: {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        flex: "0 0 calc(33.333% - 11px)",
-        minWidth: 280,
+        width: "100%",
+        minWidth: 0,
         background: C.bgWhite,
         borderRadius: 16,
         border: `1px solid ${C.border}`,
@@ -233,7 +234,15 @@ function SkillCard({ title, desc, defaultTag, on, onToggle, onCardClick }: {
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontFamily: FONT, fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{title}</span>
           </div>
-          <div style={{ marginTop: 4, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textTertiary, lineHeight: "20px" }}>
+          <div style={{
+            marginTop: 4, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textTertiary, lineHeight: "20px",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            wordBreak: "break-word",
+          }}>
             {desc}
           </div>
         </div>
@@ -277,8 +286,8 @@ function HubCard({ title, desc, willSucceed, onCardClick, onInstallResult }: {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        flex: "0 0 calc(33.333% - 11px)",
-        minWidth: 280,
+        width: "100%",
+        minWidth: 0,
         background: C.bgWhite,
         borderRadius: 16,
         border: `1px solid ${C.border}`,
@@ -362,10 +371,25 @@ const HUB_SKILLS = [
 // ── Main component ────────────────────────────────────────────
 interface SkillPlazaProps {
   onBack?: () => void;
+  /** Agent 广场/左栏共享 registry；传入时按其动态渲染左侧分类 */
+  registry?: AgentRegistry;
 }
 
-export default function SkillPlaza({ onBack }: SkillPlazaProps) {
-  const [activeCat, setActiveCat] = useState("数据开发专家");
+export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
+  // ── 内置专家：固定来自 registry.experts（shortTitle） ──
+  const builtinExperts = useMemo(
+    () => registry?.experts.map((e) => e.shortTitle) ?? ["数据开发专家", "数据分析专家", "数据运维专家"],
+    [registry?.experts]
+  );
+  // 自定义分身：来自 registry.avatars（id + name，允许同名）
+  const customAgents = useMemo(
+    () => registry?.avatars.map((a) => ({ id: a.id, name: a.name })) ?? [],
+    [registry?.avatars]
+  );
+  // 是否为内置专家（内置专家才有预置 Skill tab）
+  const isBuiltinCat = useCallback((cat: string) => builtinExperts.includes(cat), [builtinExperts]);
+
+  const [activeCat, setActiveCat] = useState(builtinExperts[0] ?? "");
   const [activeTab, setActiveTab] = useState<"preset" | "hub">("preset");
   const [toggleState, setToggleState] = useState<Record<string, boolean>>({});
   const [installedExpanded, setInstalledExpanded] = useState(false);
@@ -394,16 +418,32 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
   const hideToast = useCallback(() => setToastVisible(false), []);
 
   // 是否为内置专家（内置专家才有预置 Skill tab）
-  const isBuiltin = BUILTIN_EXPERTS.has(activeCat);
+  const isBuiltin = isBuiltinCat(activeCat);
 
-  // 切换分类时：外部 Claw 自动切到 hub，清空搜索
+  // 切换分类时：
+  //  - 外部/自定义 Agent → 只有 SkillHub tab，切到 hub
+  //  - 内置专家 → 默认选中「预置 Skill」tab
   const handleCatChange = (cat: string) => {
     setActiveCat(cat);
     setSearchKeyword("");
-    if (!BUILTIN_EXPERTS.has(cat)) {
+    if (isBuiltinCat(cat)) {
+      setActiveTab("preset");
+    } else {
       setActiveTab("hub");
     }
   };
+
+  // 当 registry 变动导致当前 activeCat 失效（例如被删除），自动回退到第一个可用分类
+  useEffect(() => {
+    const allCats = [...builtinExperts, ...customAgents.map((a) => a.name)];
+    if (allCats.length > 0 && !allCats.includes(activeCat)) {
+      const next = builtinExperts[0] ?? customAgents[0]?.name;
+      if (next) {
+        setActiveCat(next);
+        setActiveTab(isBuiltinCat(next) ? "preset" : "hub");
+      }
+    }
+  }, [builtinExperts, customAgents, activeCat, isBuiltinCat]);
 
   // 按分类定义不同的技能（含详情弹窗需要的 category/version/author）
   const SKILLS_BY_CAT: Record<string, { icon: string; iconBg: string; title: string; desc: string; defaultTag?: boolean; category: string; version: string; author: string }[]> = {
@@ -422,9 +462,6 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
       { icon: "监", iconBg: "#FF7800", title: "集群健康监控", desc: "实时监控 HDFS/YARN/Spark 集群健康状态。", defaultTag: true, category: "运维", version: "2.1.0", author: "WeData Team" },
       { icon: "扩", iconBg: "#E8524A", title: "弹性扩缩容", desc: "根据负载自动触发节点扩缩容策略。", category: "运维", version: "1.2.0", author: "WeData Team" },
       { icon: "日", iconBg: "#4C8DEF", title: "日志智能分析", desc: "对 Executor 日志做聚类分析，快速定位故障模式。", category: "运维", version: "1.5.0", author: "WeData Team" },
-    ],
-    "专家1": [
-      { icon: "C", iconBg: "#1664FF", title: "自定义 Skill", desc: "用户自定义的外部技能。", category: "自定义", version: "1.0.0", author: "用户" },
     ],
   };
 
@@ -446,6 +483,21 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
       display: "flex", flexDirection: "column",
       fontFamily: FONT, background: C.bg,
     }}>
+      {/* 响应式卡片栅格：<1440 → 2 列；1440-1920 → 3 列；≥1920 → 4 列 */}
+      <style>{`
+        .skill-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+          align-content: flex-start;
+        }
+        @media (min-width: 1440px) {
+          .skill-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1920px) {
+          .skill-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
+      `}</style>
       {/* 顶部标题栏 */}
       <div style={{
         height: 50, flexShrink: 0,
@@ -465,12 +517,18 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
           padding: "0 12px", overflowY: "auto", scrollbarWidth: "none",
         }}>
           <SectionLabel label="大数据 Agent" />
-          <CatItem label="数据开发专家" active={activeCat === "数据开发专家"} onClick={() => handleCatChange("数据开发专家")} />
-          <CatItem label="数据分析专家" active={activeCat === "数据分析专家"} onClick={() => handleCatChange("数据分析专家")} />
-          <CatItem label="数据运维专家" active={activeCat === "数据运维专家"} onClick={() => handleCatChange("数据运维专家")} />
+          {builtinExperts.map((name) => (
+            <CatItem key={name} label={name} active={activeCat === name} onClick={() => handleCatChange(name)} />
+          ))}
 
-          <SectionLabel label="自定义 Agent" />
-          <CatItem label="专家1" active={activeCat === "专家1"} onClick={() => handleCatChange("专家1")} />
+          {customAgents.length > 0 && (
+            <>
+              <SectionLabel label="自定义 Agent" />
+              {customAgents.map((a) => (
+                <CatItem key={a.id} label={a.name} active={activeCat === a.name} onClick={() => handleCatChange(a.name)} />
+              ))}
+            </>
+          )}
         </div>
 
         {/* 右侧内容 */}
@@ -541,7 +599,7 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.2, ease: EASE }}
-                  style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}
+                  className="skill-grid"
                 >
                   {filteredSkills.length > 0 ? filteredSkills.map((s) => (
                     <SkillCard
@@ -574,7 +632,7 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
                       已安装（{installedList.length}）
                     </span>
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}>
+                  <div className="skill-grid">
                     {(() => {
                       const installedSkills = INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title))
                         .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
@@ -638,7 +696,7 @@ export default function SkillPlaza({ onBack }: SkillPlazaProps) {
                       </svg>
                     </a>
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignContent: "flex-start" }}>
+                  <div className="skill-grid">
                     {(() => {
                       const avail = HUB_SKILLS.filter((s) => availableList.includes(s.title) && !installedList.includes(s.title))
                         .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));

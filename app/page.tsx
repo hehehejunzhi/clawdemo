@@ -23,6 +23,8 @@ import CreateExpertDialog from "@/components/ui/create-expert-dialog";
 import CreateTeamDialog from "@/components/ui/create-team-dialog";
 import SkillPlaza from "@/components/ui/skill-plaza";
 import ClawManager from "@/components/ui/claw-manager";
+import { DEFAULT_REGISTRY, type AgentRegistry } from "@/lib/agent-registry";
+import TeamSummonBanner, { AgentSummonBanner } from "@/components/ui/team-summon-banner";
 
 // ── Design tokens ──────────────────────────────────────────────
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -610,6 +612,12 @@ export default function Home() {
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const [showSkillPlaza, setShowSkillPlaza] = useState(false);
   const [showClawManager, setShowClawManager] = useState(false);
+  // Agent Registry — Agent 广场/左侧工具栏/对话下拉共享的唯一数据源
+  const [registry, setRegistry] = useState<AgentRegistry>(DEFAULT_REGISTRY);
+  // 选中的团队 id（非默认"大数据团队"时在 welcome 区显示 TeamSummonBanner）
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  // 选中的「自定义分身 / 外部 Agent」id（显示 AgentSummonBanner）
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   // 对话流分步揭示：0=用户气泡, 1=思考摘要, 2=Plan卡片
   const [revealStep, setRevealStep] = useState(0);
   // 左侧任务列表当前选中
@@ -728,16 +736,34 @@ export default function Home() {
   }, []);
 
   // ── 从输入框 Agent 下拉菜单选择专家/团队 ─────────────────────
-  const AGENT_MAP: Record<string, { name: string; nameColor: string; title: string; avatar: string; summonText: string }> = {
-    "ops-expert": { name: "Orion", nameColor: "#CC6B3A", title: "数据运维专家", avatar: "/agents/ops-expert.png", summonText: "告诉我你想梳理哪条数据链路？" },
-    "analysis-expert": { name: "Vega", nameColor: "#00BBA2", title: "数据分析专家", avatar: "/agents/analysis-expert.png", summonText: "告诉我你想分析什么数据？" },
-    "dev-expert": { name: "Rigel", nameColor: "#2873FF", title: "数据开发专家", avatar: "/agents/dev-expert.png", summonText: "今天想开发什么数仓？" },
-  };
+  // 基于 registry.experts 派生 AGENT_MAP（只有专家支持"召唤"气泡；团队/分身/外部走默认分支）
+  const AGENT_MAP: Record<string, { name: string; nameColor: string; title: string; avatar: string; summonText: string }> = React.useMemo(() => {
+    const map: Record<string, { name: string; nameColor: string; title: string; avatar: string; summonText: string }> = {};
+    for (const e of registry.experts) {
+      map[e.id] = {
+        name: e.codeName,
+        nameColor: e.nameColor,
+        title: e.shortTitle,
+        // 召唤 banner 优先用 heroAvatar（全身大图），回退到普通 avatar
+        avatar: e.heroAvatar ?? e.avatar,
+        summonText: e.summonText,
+      };
+    }
+    return map;
+  }, [registry.experts]);
+
+  // 构造对话框下拉选项：团队 + 专家 + 自定义分身 + 外部 Agent（全部联动）
+  const agentOptions = React.useMemo(() => [
+    ...registry.teams.map((t) => ({ id: t.id, label: t.name, kind: "team" as const })),
+    ...registry.experts.map((e) => ({ id: e.id, label: e.shortTitle, kind: "expert" as const })),
+    ...registry.avatars.map((a) => ({ id: a.id, label: a.name, kind: "avatar" as const })),
+    ...registry.externals.map((e) => ({ id: e.id, label: e.name, kind: "external" as const })),
+  ], [registry.teams, registry.experts, registry.avatars, registry.externals]);
 
   const handleSelectAgent = useCallback((agentId: string) => {
     const agentInfo = AGENT_MAP[agentId];
     if (agentInfo) {
-      // 单个专家：召唤并显示引导
+      // 单个专家：召唤并显示引导，清空团队 banner
       setSummonedAgent({
         name: agentInfo.name,
         title: agentInfo.title,
@@ -746,14 +772,32 @@ export default function Home() {
         nameColor: agentInfo.nameColor,
       });
       setActiveSkills([]);
+      setSelectedTeamId(null);
+      setSelectedAgentId(null);
       requestAnimationFrame(() => chatInputRef.current?.focus());
     } else {
-      // 团队：清除召唤状态
+      // 团队/分身/外部 Agent：清除召唤状态
       setSummonedAgent(null);
       setActiveSkills([]);
+      // 若是团队，记录 id 以展示 TeamSummonBanner；"大数据团队"作为默认不展示 banner
+      const isTeam = registry.teams.some((t) => t.id === agentId);
+      if (isTeam && agentId !== "bigdata-team") {
+        setSelectedTeamId(agentId);
+        setSelectedAgentId(null);
+      } else if (isTeam) {
+        // 默认"大数据团队"：不展示任何 banner
+        setSelectedTeamId(null);
+        setSelectedAgentId(null);
+      } else {
+        // 自定义分身 / 外部 Agent：展示 AgentSummonBanner
+        setSelectedTeamId(null);
+        setSelectedAgentId(agentId);
+      }
+      // 无论是团队、大数据团队、分身还是外部 Agent，都激活输入框
+      requestAnimationFrame(() => chatInputRef.current?.focus());
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [registry.teams]);
 
   // ── 单专家回复数据：仅该专家一人回复 ──────────────────────────
   const SINGLE_EXPERT_REPLIES: Record<string, ExpertReplyDataType[]> = {
@@ -868,6 +912,8 @@ export default function Home() {
     setPhase2Replies(undefined);
     setPhase2Complete(false);
     setIsGenerating(false);
+    setSelectedTeamId(null);
+    setSelectedAgentId(null);
     setIsCancelled(false);
     setActiveConfirmCard(null);
     chatInputRef.current?.resetAgent();
@@ -967,7 +1013,29 @@ export default function Home() {
       <PrimaryNav />
 
       {/* ── 二级导航面板 ── */}
-      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} onTaskClick={handleTaskClick} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} />}
+      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} onTaskClick={handleTaskClick} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
+        // 左栏点击 Section Header：
+        // 1) 退出 Agent 广场/技能广场视图，回到聊天主界面
+        // 2) 同步输入框下拉选中
+        // 3) 如果是专家，召唤气泡；否则只选中（团队/分身/外部）
+        // 4) 若当前处于 conversation 阶段且点击的是"其他人物"，先重置回 welcome，
+        //    再召唤新人物的 banner；点"当前人物"则保持不动（不新开对话）。
+        setShowSkillPlaza(false);
+        setShowClawManager(false);
+        if (chatPhase === "conversation") {
+          // 判断点击的是否是当前 summoned 的同一人物
+          const targetInfo = AGENT_MAP[agentId];
+          const isSameAgent = targetInfo && summonedAgent && targetInfo.title === summonedAgent.title;
+          if (isSameAgent) {
+            // 同一人物：不触发任何切换，保持对话详情
+            return;
+          }
+          // 其他人物：回到 welcome，再召唤新 banner
+          handleNewChat();
+        }
+        chatInputRef.current?.setAgent(label);
+        handleSelectAgent(agentId);
+      }} />}
 
       {/* ── 右侧内容区 ── */}
       <AnimatePresence mode="wait">
@@ -980,7 +1048,7 @@ export default function Home() {
           transition={{ duration: 0.22, ease: EASE }}
           style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
         >
-          <SkillPlaza onBack={() => setShowSkillPlaza(false)} />
+          <SkillPlaza onBack={() => setShowSkillPlaza(false)} registry={registry} />
         </motion.div>
       ) : showClawManager ? (
         <motion.div
@@ -991,7 +1059,7 @@ export default function Home() {
           transition={{ duration: 0.22, ease: EASE }}
           style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
         >
-          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} />
+          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} registry={registry} onRegistryChange={setRegistry} />
         </motion.div>
       ) : (
       <motion.div
@@ -1195,7 +1263,7 @@ export default function Home() {
                 >
                   {/* ── 欢迎标题 + 卡片 — 选中技能后一起退出，叉掉后恢复 ── */}
                   <AnimatePresence>
-                    {activeSkills.length === 0 && !summonedAgent && (
+                    {activeSkills.length === 0 && !summonedAgent && !selectedTeamId && !selectedAgentId && (
                       <motion.div
                         key="welcome-content"
                         initial={{ opacity: 0, y: 16 }}
@@ -1436,18 +1504,21 @@ export default function Home() {
                     pointerEvents: "none",
                   }}
                 >
-                  {/* 头像 */}
+                  {/* 头像 —— 半身立像，从输入框后面伸出上半身
+                      半身像源图 380×532（比例 0.714）；可见高 148（168-20 与输入框重叠）
+                      宽度按源图比例 0.714 × 148 ≈ 106，用 contain 完整显示不裁切 */}
                   <img
                     src={summonedAgent.avatar}
                     alt={summonedAgent.name}
                     style={{
                       flexShrink: 0,
-                      width: 120,
-                      height: 106,
-                      objectFit: "cover",
-                      objectPosition: "top center",
+                      width: 106,
+                      height: 168,
+                      objectFit: "contain",
+                      objectPosition: "bottom center",
                       pointerEvents: "none",
                       marginLeft: 20,
+                      transform: "translateY(32px)",
                     }}
                   />
 
@@ -1495,6 +1566,75 @@ export default function Home() {
                   </div>
                 </motion.div>
               )}
+
+              {/* 团队召唤 banner：与专家同位置，贴近输入框上方，左对齐 */}
+              {chatPhase === "welcome" && !summonedAgent && selectedTeamId && (() => {
+                const team = registry.teams.find((t) => t.id === selectedTeamId);
+                if (!team) return null;
+                return (
+                  <motion.div
+                    key={`team-banner-${team.id}`}
+                    initial={{ y: 40, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1, transition: { duration: 0.35, ease: EASE } }}
+                    exit={{ y: 16, opacity: 0, transition: { duration: 0.2, ease: EASE } }}
+                    style={{
+                      position: "absolute",
+                      bottom: "calc(100% - 20px)",
+                      left: 0,
+                      right: 0,
+                      zIndex: 0,
+                      display: "flex",
+                      alignItems: "flex-end",
+                      paddingBottom: 20,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <div style={{
+                      marginLeft: 20,
+                      paddingBottom: 28,
+                    }}>
+                      <TeamSummonBanner team={team} />
+                    </div>
+                  </motion.div>
+                );
+              })()}
+
+              {/* 自定义分身 / 外部 Agent 召唤 banner：单头像 + "我是XXX……" */}
+              {chatPhase === "welcome" && !summonedAgent && !selectedTeamId && selectedAgentId && (() => {
+                const avatar = registry.avatars.find((a) => a.id === selectedAgentId);
+                const external = registry.externals.find((e) => e.id === selectedAgentId);
+                if (!avatar && !external) return null;
+                const name = avatar?.name ?? external?.name ?? "";
+                const avatarItem = avatar
+                  ? { letter: avatar.letter, bg: avatar.bg }
+                  : { letter: external!.abbr, bg: external!.bg };
+                return (
+                  <motion.div
+                    key={`agent-banner-${selectedAgentId}`}
+                    initial={{ y: 40, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1, transition: { duration: 0.35, ease: EASE } }}
+                    exit={{ y: 16, opacity: 0, transition: { duration: 0.2, ease: EASE } }}
+                    style={{
+                      position: "absolute",
+                      bottom: "calc(100% - 20px)",
+                      left: 0,
+                      right: 0,
+                      zIndex: 0,
+                      display: "flex",
+                      alignItems: "flex-end",
+                      paddingBottom: 20,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <div style={{
+                      marginLeft: 20,
+                      paddingBottom: 28,
+                    }}>
+                      <AgentSummonBanner avatar={avatarItem} name={name} nameColor={avatarItem.bg} />
+                    </div>
+                  </motion.div>
+                );
+              })()}
             </AnimatePresence>
 
             {/* ── 快捷提问标签：仅 welcome 阶段 + 无 agent 召唤时显示 ── */}
@@ -1517,7 +1657,7 @@ export default function Home() {
                     <div style={{
                       background: "#FCF4E8",
                       borderRadius: "24px 24px 0 0",
-                      padding: "16px 24px 32px",
+                      padding: "16px 24px 40px",
                     }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -1599,6 +1739,7 @@ export default function Home() {
                   onCreateExpert={() => setCreateExpertOpen(true)}
                   onCreateTeam={() => setCreateTeamOpen(true)}
                   onSelectAgent={(agentId) => handleSelectAgent(agentId)}
+                  agentOptions={agentOptions}
                   disableAgentSelector={chatPhase === "conversation"}
                   isGenerating={isGenerating}
                   onStop={handleStop}

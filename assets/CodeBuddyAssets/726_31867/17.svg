@@ -1,0 +1,4 @@
+<svg width="9" height="48" viewBox="0 0 9 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="9" height="48" fill="var(--nav-color-primarybg, white)" style="fill: var(--nav-color-primarybg, white);fill-opacity:1;"/>
+<path d="M8 16V32" stroke="var(--nav-divider-color-border, #DEE1E8)" style="stroke:#DEE1E8;stroke:color(display-p3 0.8706 0.8824 0.9098);stroke-opacity:1;"/>
+</svg>

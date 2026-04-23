@@ -3,6 +3,15 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CreateTeamDialog from "./create-team-dialog";
+import { ClusterAvatar, type ClusterAvatarItem } from "./secondary-nav";
+import {
+  DEFAULT_EXPERTS,
+  DEFAULT_EXTERNALS,
+  type AgentRegistry,
+  type Team as RegistryTeam,
+  type CustomAvatar as RegistryAvatar,
+  type ExternalAgent as RegistryExternal,
+} from "@/lib/agent-registry";
 
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
@@ -72,7 +81,7 @@ function Toast({ message, visible, type = "error", onDone }: { message: string; 
 function SectionTitle({ title, desc }: { title: string; desc: string }) {
   return (
     <div style={{ height: 50, display: "flex", alignItems: "center", padding: "0 24px", gap: 8 }}>
-      <span style={{ fontSize: 14, fontWeight: 500, color: C.textPrimary }}>{title}</span>
+      <span style={{ fontSize: 14, fontWeight: 500, color: "rgba(0,0,0,0.9)" }}>{title}</span>
       <span style={{ fontSize: 14, fontWeight: 400, color: C.textTertiary }}>{desc}</span>
     </div>
   );
@@ -147,6 +156,8 @@ function Card({ avatar, name, desc, badge, button, children }: {
 }
 
 // ── Avatar (round, with image or letter) ──────────────────────
+// 柠檬黄 #F1C40F 作为浅色背景需要配深色字，其他情况统一用白色
+const getAvatarTextColor = (bg?: string) => (bg && bg.toUpperCase() === "#F1C40F" ? "#333333" : "#FFF");
 function AvatarCircle({ src, letter, bg, size = 48, status }: { src?: string; letter?: string; bg?: string; size?: number; status?: "online" | "offline" }) {
   return (
     <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
@@ -157,7 +168,7 @@ function AvatarCircle({ src, letter, bg, size = 48, status }: { src?: string; le
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         {src ? <img src={src} alt="" style={{ width: size + 3, height: size + 3, objectFit: "cover" }} />
-          : <span style={{ fontSize: size * 0.5, fontWeight: 500, color: "#FFF" }}>{letter}</span>}
+          : <span style={{ fontSize: size * 0.5, fontWeight: 500, color: getAvatarTextColor(bg) }}>{letter}</span>}
       </div>
       {status === "online" && null}
     </div>
@@ -223,17 +234,70 @@ function ConnectedBadge() {
 
 // ── Main component ────────────────────────────────────────────
 type TeamMember = { id: string; name: string; abbr: string; abbrBg: string; category: string; role: "调度者" | "执行者" | "观察者"; statusColor: string; avatar?: string };
-type CustomTeam = { id: string; name: string; desc: string; members: TeamMember[] };
+type CustomTeam = {
+  id: string;
+  name: string;
+  desc: string;
+  members: TeamMember[];
+  /** 可选：自定义 Cluster 头像配置。若存在则用 ClusterAvatar 渲染；否则走默认 AvatarCircle */
+  clusterImgs?: ClusterAvatarItem[];
+};
+
+// 由 team.members 派生 ClusterAvatar 的 imgs 配置
+// - members ≥ 4：取前 4 个
+// - members === 3：取全部 3 个
+// - members < 3：返回 null（由调用方回退到 AvatarCircle）
+function deriveClusterImgs(members: TeamMember[]): ClusterAvatarItem[] | null {
+  if (members.length < 3) return null;
+  const picked = members.slice(0, members.length >= 4 ? 4 : 3);
+  return picked.map<ClusterAvatarItem>((m) =>
+    m.avatar ? m.avatar : { letter: m.abbr, bg: m.abbrBg }
+  );
+}
+const PRESET_OPS_TEAM: CustomTeam = {
+  id: "preset-ops-team",
+  name: "运营协作团队",
+  desc: "数据团队 + 运营助手协同，聚焦业务指标解读与落地",
+  members: [
+    { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+    { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+    { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+    { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4E73DF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
+  ],
+  clusterImgs: [
+    "/agents/dev-expert.png",
+    "/agents/analysis-expert.png",
+    "/agents/ops-expert.png",
+    { letter: "运", bg: "#4E73DF" },
+  ],
+};
 
 const ALL_AVAILABLE_MEMBERS: Omit<TeamMember, "role">[] = [
-  { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/2a.png" },
-  { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/3a.png" },
-  { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/1a.png" },
-  { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#E8524A", category: "数字分身", statusColor: "#FF7800", avatar: "/agents/4a.png" },
+  { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+  { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+  { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+  { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4E73DF", category: "数字分身", statusColor: "#FF7800" },
   { id: "lh", name: "Lighthouse", abbr: "LH", abbrBg: "#FF7800", category: "外部 Claw", statusColor: "#0CBF5B" },
   { id: "cp", name: "ClawPro", abbr: "CP", abbrBg: "#1664FF", category: "外部 Claw", statusColor: "#0CBF5B" },
   { id: "gp", name: "ChatGPT Plugin", abbr: "GP", abbrBg: "#00B96B", category: "外部 Claw", statusColor: "#0CBF5B" },
 ];
+
+// ── 自定义分身头像预设色板（新建分身时按数量轮询取色）
+//   极光蓝 / 灵动青 / 琥珀橙 / 胭脂红 / 电光紫 /
+//   深海蓝 / 柠檬黄 / 丛林绿 / 西柚色 / 钴蓝色
+const CUSTOM_AVATAR_BG_PALETTE = [
+  "#4E73DF", // 极光蓝
+  "#1ABC9C", // 灵动青
+  "#F39C12", // 琥珀橙
+  "#E74C3C", // 胭脂红
+  "#9B59B6", // 电光紫
+  "#34495E", // 深海蓝
+  "#F1C40F", // 柠檬黄（文字需用深色）
+  "#27AE60", // 丛林绿
+  "#FF6B6B", // 西柚色
+  "#3498DB", // 钴蓝色
+] as const;
+const pickAvatarBg = (idx: number) => CUSTOM_AVATAR_BG_PALETTE[idx % CUSTOM_AVATAR_BG_PALETTE.length];
 
 // ── 三点菜单 ──────────────────────────────────────────────────
 function MoreMenu({ onManage, onDelete }: { onManage: () => void; onDelete: () => void }) {
@@ -748,117 +812,12 @@ function CreateExternalClawDialog({ open, onClose, onCreate }: {
     setName(""); setPlatform(""); setApiUrl(""); setIp(""); setPort("");
   };
 
-  const fieldInputStyle: React.CSSProperties = {
-    width: "100%", height: 40, padding: "0 12px", borderRadius: 8,
-    border: `1px solid ${C.border}`, background: "#FAFBFC",
-    fontFamily: FONT, fontSize: 14, color: C.textPrimary, outline: "none", boxSizing: "border-box",
+  const handleClose = () => {
+    setName(""); setPlatform(""); setApiUrl(""); setIp(""); setPort("");
+    onClose();
   };
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }} onClick={onClose}
-          style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
-            transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
-            style={{ width: 640, maxHeight: "85vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
-          >
-            {/* Header */}
-            <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>连接外部 Claw</span>
-              <div onClick={onClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-              ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
-            </div>
-
-            {/* Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 20, scrollbarWidth: "none" }}>
-              {/* 名称 */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>名称 <span style={{ color: C.error }}>*</span></span>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：我的自定义 Claw" style={fieldInputStyle}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-              </div>
-
-              {/* 来源平台 */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>来源平台 <span style={{ color: C.error }}>*</span></span>
-                <div style={{ display: "flex", gap: 12 }}>
-                  {PLATFORMS.map((p) => (
-                    <div key={p.id} onClick={() => setPlatform(p.id)}
-                      style={{
-                        flex: 1, display: "flex", alignItems: "center", gap: 8,
-                        padding: "10px 14px", borderRadius: 8, cursor: "pointer",
-                        border: `1.5px solid ${platform === p.id ? "#7E9EFF" : C.border}`,
-                        background: platform === p.id ? "rgba(126,158,255,0.04)" : C.bgWhite,
-                        transition: "all 100ms",
-                      }}
-                    >
-                      <div style={{
-                        width: 16, height: 16, borderRadius: 8,
-                        border: `2px solid ${platform === p.id ? "#0052D9" : "#D6DBE3"}`,
-                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                      }}>
-                        {platform === p.id && <div style={{ width: 8, height: 8, borderRadius: 4, background: "#0052D9" }} />}
-                      </div>
-                      <div style={{ width: 28, height: 28, borderRadius: 6, background: p.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "#FFF" }}>{p.abbr}</span>
-                      </div>
-                      <span style={{ fontSize: 14, color: C.textPrimary }}>{p.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* API 接入地址 */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>API 接入地址 <span style={{ color: C.error }}>*</span></span>
-                <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api.example.com/v1/claw" style={fieldInputStyle}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-              </div>
-
-              {/* IP 地址 + 端口 */}
-              <div style={{ display: "flex", gap: 16 }}>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>IP 地址</span>
-                  <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="192.168.1.1" style={fieldInputStyle}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-                </div>
-                <div style={{ width: 120, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary }}>端口</span>
-                  <input value={port} onChange={(e) => setPort(e.target.value)} placeholder="8080" style={fieldInputStyle}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{ padding: "16px 24px", display: "flex", justifyContent: "flex-end", gap: 16, borderTop: `1px solid ${C.border}` }}>
-              <button onClick={onClose} style={{ width: 92, height: 40, borderRadius: 32, border: `1px solid #D6DBE3`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-              <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? "#000" : "#CCC", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none" }}>创建</button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// ── 创建数字分身弹窗（Figma: 640px） ─────────────────────────
-function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClose: () => void; onCreate: (name: string, desc: string, tags: string) => void }) {
-  const [name, setName] = useState("");
-  const [desc, setDesc] = useState("");
-  const [tags, setTags] = useState("");
-  const isValid = name.trim().length > 0;
-
-  const handleCreate = () => { if (isValid) { onCreate(name.trim(), desc.trim(), tags.trim()); setName(""); setDesc(""); setTags(""); } };
-
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: C.textTertiary, flexShrink: 0, width: 91, paddingTop: 7 };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 72, paddingTop: 7 };
   const fieldInputStyle: React.CSSProperties = {
     flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgWhite,
@@ -870,35 +829,149 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
       {open && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }} onClick={onClose}
-          style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          transition={{ duration: 0.2 }}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
-            transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
-            style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, padding: 24 }}
+            transition={{ duration: 0.2, ease: EASE }}
+            style={{ width: 640, maxHeight: "85vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
           >
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建自定义 Agent</span>
-              <div onClick={onClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
+            <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>连接外部 Claw</span>
+              <div onClick={handleClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
               ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
             </div>
 
-            {/* Form */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16, scrollbarWidth: "none" }}>
               {/* 名称 */}
               <div style={{ display: "flex", alignItems: "center" }}>
-                <div style={labelStyle}><span style={{ color: C.textTertiary }}>名称 </span><span style={{ color: C.error }}>*</span></div>
+                <div style={labelStyle}><span>名称 </span><span style={{ color: C.error }}>*</span></div>
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：我的自定义 Claw" style={fieldInputStyle}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
+              </div>
+
+              {/* 来源平台 */}
+              <div style={{ display: "flex", alignItems: "flex-start" }}>
+                <div style={labelStyle}><span>来源平台 </span><span style={{ color: C.error }}>*</span></div>
+                <div style={{ flex: 1, display: "flex", gap: 12 }}>
+                  {PLATFORMS.map((p) => (
+                    <div key={p.id} onClick={() => setPlatform(p.id)}
+                      style={{
+                        flex: 1, display: "flex", alignItems: "center", gap: 8,
+                        padding: "6px 12px", borderRadius: 8, cursor: "pointer", height: 32, boxSizing: "border-box",
+                        border: `1px solid ${platform === p.id ? "#7E9EFF" : C.border}`,
+                        background: platform === p.id ? "rgba(126,158,255,0.04)" : C.bgWhite,
+                        transition: "all 100ms",
+                      }}
+                    >
+                      <div style={{
+                        width: 14, height: 14, borderRadius: 7,
+                        border: `1.5px solid ${platform === p.id ? "#0052D9" : "#D6DBE3"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      }}>
+                        {platform === p.id && <div style={{ width: 7, height: 7, borderRadius: 4, background: "#0052D9" }} />}
+                      </div>
+                      <div style={{ width: 20, height: 20, borderRadius: 4, background: p.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#FFF" }}>{p.abbr}</span>
+                      </div>
+                      <span style={{ fontSize: 12, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* API 接入地址 */}
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={labelStyle}><span>API 地址 </span><span style={{ color: C.error }}>*</span></div>
+                <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api.example.com/v1/claw" style={fieldInputStyle}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
+              </div>
+
+              {/* IP 地址 */}
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={labelStyle}>IP 地址</div>
+                <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="192.168.1.1" style={fieldInputStyle}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
+              </div>
+
+              {/* 端口 */}
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={labelStyle}>端口</div>
+                <input value={port} onChange={(e) => setPort(e.target.value)} placeholder="8080" style={{ ...fieldInputStyle, flex: "none", width: 120 }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgWhite, borderRadius: "0 0 16px 16px" }}>
+              <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+              <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ── 创建数字分身弹窗（与 CreateTeamDialog 对齐） ─────────────────
+function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClose: () => void; onCreate: (name: string, desc: string, tags: string) => void }) {
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [tags, setTags] = useState("");
+  const isValid = name.trim().length > 0;
+
+  const handleCreate = () => { if (isValid) { onCreate(name.trim(), desc.trim(), tags.trim()); setName(""); setDesc(""); setTags(""); } };
+  const handleClose = () => { setName(""); setDesc(""); setTags(""); onClose(); };
+
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 72, paddingTop: 7 };
+  const fieldInputStyle: React.CSSProperties = {
+    flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
+    border: `1px solid ${C.border}`, background: C.bgWhite,
+    fontFamily: FONT, fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box",
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
+            transition={{ duration: 0.2, ease: EASE }}
+            style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column" }}
+          >
+            {/* Header */}
+            <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建自定义 Agent</span>
+              <div onClick={handleClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+              ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* 名称 */}
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={labelStyle}><span>名称 </span><span style={{ color: C.error }}>*</span></div>
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：我的监控助手" style={fieldInputStyle}
                   onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
               </div>
               {/* 描述 */}
               <div style={{ display: "flex", alignItems: "flex-start" }}>
                 <div style={labelStyle}>描述</div>
-                <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="简要描述分身目标和用途" rows={3}
+                <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="简要描述分身目标和用途" rows={2}
                   style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
                   onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
               </div>
@@ -911,9 +984,9 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
             </div>
 
             {/* Footer */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, marginTop: 32 }}>
-              <button onClick={onClose} style={{ width: 92, height: 40, borderRadius: 32, border: `1px solid #D6DBE3`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-              <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? "#000" : "#CCC", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none" }}>创建</button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgWhite, borderRadius: "0 0 16px 16px" }}>
+              <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+              <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
             </div>
           </motion.div>
         </motion.div>
@@ -1127,8 +1200,50 @@ function AvatarDetailModal({ data, onClose, onSave, onConfigSkill }: {
   );
 }
 
-export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSkillPlaza?: () => void } = {}) {
-  const [customTeams, setCustomTeams] = useState<CustomTeam[]>([]);
+export default function ClawManager({
+  onNavigateToSkillPlaza,
+  registry,
+  onRegistryChange,
+}: {
+  onNavigateToSkillPlaza?: () => void;
+  registry?: AgentRegistry;
+  onRegistryChange?: (next: AgentRegistry) => void;
+} = {}) {
+  // Mount 时若有外部 registry，从它恢复内部 state（避免卸载重挂丢失）
+  const initFromRegistry = () => {
+    if (!registry) return null;
+    const customTeams: CustomTeam[] = registry.teams
+      .filter((t) => t.id !== "bigdata-team")
+      .map((t) => ({
+        id: t.id === "ops-team" ? "preset-ops-team" : t.id,
+        name: t.name,
+        desc: t.desc,
+        clusterImgs: t.clusterImgs,
+        members: t.members,
+      }));
+    const presetAvatar = registry.avatars.find((a) => a.preset);
+    const avatarDeleted = !presetAvatar;
+    const avatarData = presetAvatar
+      ? {
+          name: presetAvatar.name,
+          desc: presetAvatar.desc,
+          tags: presetAvatar.tags,
+          skills: presetAvatar.skills.map((s) => ({ name: s.name, enabled: s.enabled })),
+        }
+      : null;
+    const customAvatars = registry.avatars
+      .filter((a) => !a.preset)
+      .map((a, idx) => ({ id: a.id, name: a.name, desc: a.desc, tags: a.tags, skills: a.skills.map((s) => ({ name: s.name, enabled: s.enabled })), bg: a.bg || pickAvatarBg(idx) }));
+    const lh1 = registry.externals.find((e) => e.id === "lh1");
+    const lh2 = registry.externals.find((e) => e.id === "lh2");
+    const customClaws = registry.externals
+      .filter((e) => !e.preset)
+      .map((e) => ({ id: e.id, name: e.name, abbr: e.abbr, bg: e.bg, platformLabel: e.platformLabel, apiUrl: e.apiUrl ?? "" }));
+    return { customTeams, avatarDeleted, avatarData, customAvatars, lh1State: lh1?.state ?? "disconnected", lh2State: lh2?.state ?? "connected", customClaws };
+  };
+  const initial = initFromRegistry();
+
+  const [customTeams, setCustomTeams] = useState<CustomTeam[]>(initial?.customTeams ?? [PRESET_OPS_TEAM]);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 成员管理弹窗
@@ -1160,8 +1275,9 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
 
   const handleCreate = (name: string, desc: string) => {
     const defaultMembers: TeamMember[] = [
-      { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", role: "调度者", statusColor: "#0CBF5B" },
-      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", role: "执行者", statusColor: "#0CBF5B" },
+      { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+      { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ];
     const newTeam: CustomTeam = { id: `team-${Date.now()}`, name, desc: desc || "自定义协作团队", members: defaultMembers };
     setCustomTeams((prev) => [...prev, newTeam]);
@@ -1176,7 +1292,8 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
   };
 
   const handleSaveMembers = (teamId: string, members: TeamMember[]) => {
-    setCustomTeams((prev) => prev.map((t) => t.id === teamId ? { ...t, members } : t));
+    // 编辑 members 后清掉旧的 clusterImgs 快照，让 UI 基于最新 members 动态派生头像
+    setCustomTeams((prev) => prev.map((t) => t.id === teamId ? { ...t, members, clusterImgs: undefined } : t));
     setManagingTeamId(null);
     showToast("成员配置已保存", "success");
   };
@@ -1185,16 +1302,16 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
   const deletingTeam = customTeams.find((t) => t.id === deletingTeamId);
 
   // 数字分身
-  const [avatarData, setAvatarData] = useState<AvatarData>({
+  const [avatarData, setAvatarData] = useState<AvatarData>(initial?.avatarData ?? {
     name: "运营助手", desc: "个人定制的运营分析助手，沉淀了日常运营经验",
     tags: ["运营", "数据分析", "日报"],
     skills: [{ name: "运营报表生成", enabled: true }, { name: "运营洞察", enabled: true }, { name: "知识沉淀", enabled: true }],
   });
-  const [avatarDeleted, setAvatarDeleted] = useState(false);
+  const [avatarDeleted, setAvatarDeleted] = useState(initial?.avatarDeleted ?? false);
   const [showAvatarDetail, setShowAvatarDetail] = useState(false);
   const [showAvatarDelete, setShowAvatarDelete] = useState(false);
   const [showCreateAvatar, setShowCreateAvatar] = useState(false);
-  const [customAvatars, setCustomAvatars] = useState<{ id: string; name: string; desc: string; tags: string[]; skills: { name: string; enabled: boolean }[] }[]>([]);
+  const [customAvatars, setCustomAvatars] = useState<{ id: string; name: string; desc: string; tags: string[]; skills: { name: string; enabled: boolean }[]; bg: string }[]>(initial?.customAvatars ?? []);
   const [viewingAvatarId, setViewingAvatarId] = useState<string | null>(null);
   const [deletingAvatarId, setDeletingAvatarId] = useState<string | null>(null);
 
@@ -1203,15 +1320,106 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
 
   // 外部 Claw
   const [showCreateExternalClaw, setShowCreateExternalClaw] = useState(false);
-  const [customClaws, setCustomClaws] = useState<{ id: string; name: string; abbr: string; bg: string; platformLabel: string; apiUrl: string }[]>([]);
+  const [customClaws, setCustomClaws] = useState<{ id: string; name: string; abbr: string; bg: string; platformLabel: string; apiUrl: string }[]>(initial?.customClaws ?? []);
   // Lighthouse 连接状态: "disconnected" | "connecting" | "connected" | "disconnecting"
-  const [lh1State, setLh1State] = useState<"disconnected" | "connecting" | "connected">("disconnected");
-  const [lh2State, setLh2State] = useState<"connected" | "disconnecting" | "disconnected">("connected");
+  const [lh1State, setLh1State] = useState<"disconnected" | "connecting" | "connected">(
+    (initial?.lh1State === "connected" || initial?.lh1State === "connecting" || initial?.lh1State === "disconnected") ? initial.lh1State : "disconnected"
+  );
+  const [lh2State, setLh2State] = useState<"connected" | "disconnecting" | "disconnected">(
+    (initial?.lh2State === "connected" || initial?.lh2State === "disconnected" || initial?.lh2State === "disconnecting") ? initial.lh2State : "connected"
+  );
   // 删除外部 Agent 确认弹窗
   const [deletingClawId, setDeletingClawId] = useState<string | null>(null);
   const [deletingClawName, setDeletingClawName] = useState("");
+  // 预置 Lighthouse 两张卡片的软删除状态（点"删除"后从列表隐藏）
+  const [lh1Hidden, setLh1Hidden] = useState(false);
+  const [lh2Hidden, setLh2Hidden] = useState(false);
   // 查看大数据专家详情
   const [viewingExpert, setViewingExpert] = useState<{ name: string; desc: string; skills: string[] } | null>(null);
+
+  // ── Registry 桥接 ────────────────────────────────────────────
+  // 把内部 state 打包成 AgentRegistry 推送给外部（page.tsx）
+  // 为避免循环同步，只有内部 state 变化时推送
+  const lastPushedRef = useRef<string>("");
+  useEffect(() => {
+    if (!onRegistryChange) return;
+    // 团队
+    const teams: RegistryTeam[] = customTeams.map((t) => ({
+      id: t.id === "preset-ops-team" ? "ops-team" : t.id,
+      name: t.name,
+      desc: t.desc,
+      clusterImgs: t.clusterImgs,
+      members: t.members,
+      preset: t.id === "preset-ops-team",
+    }));
+    // 加上固定的"大数据团队"（Agent 广场 UI 里硬编码，还未纳入 customTeams）
+    const bigdataTeam: RegistryTeam = {
+      id: "bigdata-team",
+      name: "大数据团队",
+      desc: "包含数据开发、分析、运维专家的协作团队",
+      preset: true,
+      clusterImgs: [
+        "/agents/dev-expert.png",
+        "/agents/analysis-expert.png",
+        "/agents/ops-expert.png",
+      ],
+      members: [
+        { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+        { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+        { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      ],
+    };
+
+    // 自定义分身
+    const avatars: RegistryAvatar[] = [];
+    if (!avatarDeleted) {
+      avatars.push({
+        id: "my-ops",
+        name: avatarData.name,
+        desc: avatarData.desc,
+        tags: avatarData.tags ?? [],
+        skills: (avatarData.skills ?? []).map((s) => ({ name: s.name, enabled: s.enabled })),
+        bg: "#4E73DF",
+        letter: "运",
+        preset: true,
+      });
+    }
+    customAvatars.forEach((a) => {
+      avatars.push({
+        id: a.id,
+        name: a.name,
+        desc: a.desc,
+        tags: a.tags ?? [],
+        skills: a.skills ?? [],
+        bg: a.bg,
+        letter: a.name.charAt(0),
+      });
+    });
+
+    // 外部 Agent
+    const externals: RegistryExternal[] = [
+      ...(lh1Hidden ? [] : [{ id: "lh1", name: "Lighthouse", abbr: "L", bg: "#0BD1E2", platformLabel: "Lighthouse", state: lh1State, preset: true } as RegistryExternal]),
+      ...(lh2Hidden ? [] : [{ id: "lh2", name: "Lighthouse", abbr: "L", bg: "#8A77FF", platformLabel: "Lighthouse", state: lh2State === "disconnecting" ? "connected" : lh2State, preset: true } as RegistryExternal]),
+      ...customClaws.map((c) => ({ id: c.id, name: c.name, abbr: c.abbr, bg: c.bg, platformLabel: c.platformLabel, apiUrl: c.apiUrl, state: "disconnected" as const })),
+    ];
+
+    // 任务保持 registry 原有的（由 page.tsx 管理，ClawManager 不改任务）
+    const tasks = registry?.tasks ?? [];
+
+    const next: AgentRegistry = {
+      teams: [bigdataTeam, ...teams],
+      experts: DEFAULT_EXPERTS,
+      avatars,
+      externals,
+      tasks,
+    };
+    const snapshot = JSON.stringify({ teams: next.teams, avatars: next.avatars, externals: next.externals });
+    if (snapshot !== lastPushedRef.current) {
+      lastPushedRef.current = snapshot;
+      onRegistryChange(next);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customTeams, avatarData, avatarDeleted, customAvatars, lh1State, lh2State, customClaws]);
 
   return (
     <div style={{
@@ -1231,40 +1439,52 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         <SectionTitle title="团队" desc="拉取不同来源 Agent 组建团队，协作完成复杂任务" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap", alignItems: "stretch" }}>
           <Card
-            avatar={<GridAvatar />}
+            avatar={<ClusterAvatar size={48} imgs={[
+              "/agents/dev-expert.png",
+              "/agents/analysis-expert.png",
+              "/agents/ops-expert.png",
+            ]} />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>大数据团队 (3)</span>}
             desc="包含数据开发、分析、运维专家的协作团队"
           />
-          {/* 动态创建的团队卡片 */}
-          {customTeams.map((team) => (
-            <Card
-              key={team.id}
-              avatar={<AvatarCircle letter={team.name.charAt(0)} bg="#7B68EE" />}
-              name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{team.name} ({team.members.length})</span>}
-              desc={team.desc}
-              badge={<MoreMenu onManage={() => setManagingTeamId(team.id)} onDelete={() => setDeletingTeamId(team.id)} />}
-            />
-          ))}
-          <CreateCard label="创建团队" onClick={handleCreateClick} disabled={isAtLimit} />
+          {/* 动态创建的团队卡片（含预置的"运营协作团队"） */}
+          {customTeams.map((team) => {
+            // 一律基于最新 members 动态派生头像；不使用 team.clusterImgs 快照，
+            // 避免编辑成员后仍显示旧图。
+            const cluster = deriveClusterImgs(team.members);
+            return (
+              <Card
+                key={team.id}
+                avatar={cluster
+                  ? <ClusterAvatar size={48} imgs={cluster} />
+                  : <AvatarCircle letter={team.name.charAt(0)} bg="#7B68EE" />
+                }
+                name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{team.name} ({team.members.length})</span>}
+                desc={team.desc}
+                badge={<MoreMenu onManage={() => setManagingTeamId(team.id)} onDelete={() => setDeletingTeamId(team.id)} />}
+              />
+            );
+          })}
+          {!isAtLimit && <CreateCard label="创建团队" onClick={handleCreateClick} />}
         </div>
 
         {/* 大数据专家 */}
         <SectionTitle title="大数据 Agent" desc="内置大数据专家团队，开箱即用" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap" }}>
           <Card
-            avatar={<AvatarCircle src="/icons/claw-mgr/7.svg" />}
+            avatar={<AvatarCircle src="/agents/dev-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Rigel·数据开发专家</span>}
             desc="负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。"
             badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Rigel·数据开发专家", desc: "负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。", skills: ["需求转数据模型", "生成调度方案", "自动数仓开发", "检测管道异常", "接入数据源", "优化任务性能"] })} />}
           />
           <Card
-            avatar={<AvatarCircle src="/icons/claw-mgr/10.svg" />}
+            avatar={<AvatarCircle src="/agents/analysis-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Vega·数据分析专家</span>}
             desc="从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。"
             badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Vega·数据分析专家", desc: "从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。", skills: ["自然语言取数", "智能趋势分析", "多维数据洞察", "生成数据报告", "异常归因", "指标拆解"] })} />}
           />
           <Card
-            avatar={<AvatarCircle src="/icons/claw-mgr/13.svg" />}
+            avatar={<AvatarCircle src="/agents/ops-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Orion·数据运维专家</span>}
             desc="负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。"
             badge={<ExpertDetailMenu onDetail={() => setViewingExpert({ name: "Orion·数据运维专家", desc: "负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。", skills: ["监测数据质量", "智能血缘维护", "自动管理元数据", "识别口径冲突", "安全脱敏", "标签治理"] })} />}
@@ -1276,7 +1496,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap", alignItems: "stretch" }}>
           {!avatarDeleted && (
             <Card
-              avatar={<AvatarCircle letter="运" bg="#E59858" />}
+              avatar={<AvatarCircle letter="运" bg="#4E73DF" />}
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{avatarData.name}</span>}
               desc={avatarData.desc}
               badge={<AvatarMoreMenu onDetail={() => setShowAvatarDetail(true)} onDelete={() => setShowAvatarDelete(true)} />}
@@ -1286,42 +1506,48 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
           {customAvatars.map((a) => (
             <Card
               key={a.id}
-              avatar={<AvatarCircle letter={a.name.charAt(0)} bg="#E59858" />}
+              avatar={<AvatarCircle letter={a.name.charAt(0)} bg={a.bg} />}
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{a.name}</span>}
               desc={a.desc || "自定义 Agent"}
               badge={<AvatarMoreMenu onDetail={() => setViewingAvatarId(a.id)} onDelete={() => setDeletingAvatarId(a.id)} />}
             />
           ))}
-          <CreateCard label="创建自定义 Agent" onClick={(1 + customAvatars.length) >= 3 ? undefined : () => setShowCreateAvatar(true)} disabled={(1 + customAvatars.length) >= 3} />
+          {(1 + customAvatars.length) < 3 && (
+            <CreateCard label="创建自定义 Agent" onClick={() => setShowCreateAvatar(true)} />
+          )}
         </div>
 
         {/* 外部 Claw */}
         <SectionTitle title="外部 Agent" desc="连接你在外部平台部署的 Agent" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 24px", flexWrap: "wrap", alignItems: "stretch" }}>
-          <ExternalClawCard
-            avatar={<AvatarCircle letter="L" bg="#0BD1E2" />}
-            name="Lighthouse"
-            desc="腾讯云轻量应用服务器，一键连接云端实例"
-            connected={lh1State === "connected"}
-            buttonLabel={lh1State === "connecting" ? "连接中..." : "连接"}
-            onButtonClick={() => {
-              if (lh1State === "disconnected") { setLh1State("connecting"); setTimeout(() => { setLh1State("connected"); showToast("连接成功", "success"); }, 1500); }
-            }}
-            onDisconnect={() => { setLh1State("disconnected"); showToast("已断开连接", "success"); }}
-            onDelete={() => { setDeletingClawId("lh1"); setDeletingClawName("Lighthouse"); }}
-          />
-          <ExternalClawCard
-            avatar={<AvatarCircle letter="L" bg="#8A77FF" />}
-            name="Lighthouse"
-            desc="腾讯云轻量应用服务器，一键连接云端实例"
-            connected={lh2State === "connected"}
-            buttonLabel={lh2State === "disconnecting" ? "断开中..." : "连接"}
-            onButtonClick={() => {
-              if (lh2State === "disconnected") { setLh2State("disconnecting"); setTimeout(() => { setLh2State("connected"); showToast("连接成功", "success"); }, 1500); }
-            }}
-            onDisconnect={() => { setLh2State("disconnecting"); setTimeout(() => { setLh2State("disconnected"); showToast("已断开连接", "success"); }, 1500); }}
-            onDelete={() => { setDeletingClawId("lh2"); setDeletingClawName("Lighthouse"); }}
-          />
+          {!lh1Hidden && (
+            <ExternalClawCard
+              avatar={<AvatarCircle letter="L" bg="#0BD1E2" />}
+              name="Lighthouse"
+              desc="腾讯云轻量应用服务器，一键连接云端实例"
+              connected={lh1State === "connected"}
+              buttonLabel={lh1State === "connecting" ? "连接中..." : "连接"}
+              onButtonClick={() => {
+                if (lh1State === "disconnected") { setLh1State("connecting"); setTimeout(() => { setLh1State("connected"); showToast("连接成功", "success"); }, 1500); }
+              }}
+              onDisconnect={() => { setLh1State("disconnected"); showToast("已断开连接", "success"); }}
+              onDelete={() => { setDeletingClawId("lh1"); setDeletingClawName("Lighthouse"); }}
+            />
+          )}
+          {!lh2Hidden && (
+            <ExternalClawCard
+              avatar={<AvatarCircle letter="L" bg="#8A77FF" />}
+              name="Lighthouse"
+              desc="腾讯云轻量应用服务器，一键连接云端实例"
+              connected={lh2State === "connected"}
+              buttonLabel={lh2State === "disconnecting" ? "断开中..." : "连接"}
+              onButtonClick={() => {
+                if (lh2State === "disconnected") { setLh2State("disconnecting"); setTimeout(() => { setLh2State("connected"); showToast("连接成功", "success"); }, 1500); }
+              }}
+              onDisconnect={() => { setLh2State("disconnecting"); setTimeout(() => { setLh2State("disconnected"); showToast("已断开连接", "success"); }, 1500); }}
+              onDelete={() => { setDeletingClawId("lh2"); setDeletingClawName("Lighthouse"); }}
+            />
+          )}
           {/* 自定义外部 Claw */}
           {customClaws.map((c) => (
             <ExternalClawCard
@@ -1346,7 +1572,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
           <TeamDetailModal
             team={managingTeam}
             onClose={() => setManagingTeamId(null)}
-            onSave={(updated) => { setCustomTeams((prev) => prev.map((t) => t.id === updated.id ? updated : t)); setManagingTeamId(null); showToast("团队信息已保存", "success"); }}
+            onSave={(updated) => { setCustomTeams((prev) => prev.map((t) => t.id === updated.id ? { ...updated, clusterImgs: undefined } : t)); setManagingTeamId(null); showToast("团队信息已保存", "success"); }}
           />
         )}
       </AnimatePresence>
@@ -1378,7 +1604,7 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
         open={showCreateAvatar}
         onClose={() => setShowCreateAvatar(false)}
         onCreate={(name, desc, tags) => {
-          setCustomAvatars((prev) => [...prev, { id: `avatar-${Date.now()}`, name, desc, tags: tags ? tags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean) : [], skills: [] }]);
+          setCustomAvatars((prev) => [...prev, { id: `avatar-${Date.now()}`, name, desc, tags: tags ? tags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean) : [], skills: [], bg: pickAvatarBg(prev.length) }]);
           setShowCreateAvatar(false);
           showToast("自定义 Agent 创建成功", "success");
         }}
@@ -1499,8 +1725,8 @@ export default function ClawManager({ onNavigateToSkillPlaza }: { onNavigateToSk
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
                 <button onClick={() => setDeletingClawId(null)} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
                 <button onClick={() => {
-                  if (deletingClawId === "lh1") { setLh1State("disconnected"); }
-                  else if (deletingClawId === "lh2") { setLh2State("disconnected"); }
+                  if (deletingClawId === "lh1") { setLh1Hidden(true); }
+                  else if (deletingClawId === "lh2") { setLh2Hidden(true); }
                   else { setCustomClaws((prev) => prev.filter((c) => c.id !== deletingClawId)); }
                   setDeletingClawId(null);
                   showToast("已从列表中移除", "success");

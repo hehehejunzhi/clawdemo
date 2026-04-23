@@ -196,9 +196,18 @@ const FilePreviewCard = ({
 export interface ChatInputHandle {
   focus: () => void;
   resetAgent: () => void;
+  /** 外部强制设置选中的 agent 标签（例如左栏点击 Section） */
+  setAgent: (label: string) => void;
 }
 
 export type ChatInputPreviewState = "default" | "active";
+
+/** Agent 下拉选项 */
+export interface AgentOption {
+  id: string;
+  label: string;
+  kind: "team" | "expert" | "avatar" | "external";
+}
 
 // ── Main component ─────────────────────────────────────────────
 interface ChatInputProps {
@@ -220,6 +229,10 @@ interface ChatInputProps {
   isGenerating?: boolean;
   /** 点击停止按钮的回调 */
   onStop?: () => void;
+  /** 动态下拉选项（若不传，使用默认硬编码项做兜底） */
+  agentOptions?: AgentOption[];
+  /** 默认选中的 agent 标签 */
+  defaultAgentLabel?: string;
 }
 
 export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ClaudeChatInput({
@@ -237,6 +250,8 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   disableAgentSelector = false,
   isGenerating = false,
   onStop,
+  agentOptions,
+  defaultAgentLabel,
 }, ref) {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<AttachedFile[]>([]);
@@ -245,7 +260,8 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState("大数据团队");
+  const defaultLabel = defaultAgentLabel ?? agentOptions?.[0]?.label ?? "大数据团队";
+  const [selectedAgent, setSelectedAgent] = useState(defaultLabel);
   const [selectedModel, setSelectedModel] = useState("Claude-Opus-4.6");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -275,8 +291,9 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   // 暴露 focus 方法给父组件
   useImperativeHandle(ref, () => ({
     focus: () => textareaRef.current?.focus(),
-    resetAgent: () => setSelectedAgent("大数据团队"),
-  }), []);
+    resetAgent: () => setSelectedAgent(defaultLabel),
+    setAgent: (label: string) => setSelectedAgent(label),
+  }), [defaultLabel]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -659,13 +676,13 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                         animation: "ci-menu-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
                       }}>
                         {/* 主要选项 */}
-                        {[
-                          { id: "bigdata-team", label: "大数据团队" },
-                          { id: "ops-expert", label: "数据运维专家" },
-                          { id: "analysis-expert", label: "数据分析专家" },
-                          { id: "dev-expert", label: "数据开发专家" },
-                          { id: "ops-team", label: "运营协作团队" },
-                        ].map((item) => (
+                        {(agentOptions ?? [
+                          { id: "bigdata-team", label: "大数据团队", kind: "team" as const },
+                          { id: "ops-expert", label: "数据运维专家", kind: "expert" as const },
+                          { id: "analysis-expert", label: "数据分析专家", kind: "expert" as const },
+                          { id: "dev-expert", label: "数据开发专家", kind: "expert" as const },
+                          { id: "ops-team", label: "运营协作团队", kind: "team" as const },
+                        ]).map((item) => (
                           <div
                             key={item.id}
                             className="ci-menu-item"

@@ -177,15 +177,16 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
 // ── Collapsible section ───────────────────────────────────────
 const COLLAPSE_ANIM = { duration: 0.25, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] };
 
-function CollapsibleSection({ header, children, defaultOpen = false }: {
+function CollapsibleSection({ header, children, defaultOpen = false, onHeaderClick }: {
   header: React.ReactNode | ((expanded: boolean) => React.ReactNode);
   children: React.ReactNode;
   defaultOpen?: boolean;
+  onHeaderClick?: () => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div>
-      <div onClick={() => setOpen(v => !v)}>
+      <div onClick={() => { setOpen(v => !v); onHeaderClick?.(); }}>
         {typeof header === "function" ? header(open) : header}
       </div>
       <AnimatePresence initial={false}>
@@ -267,6 +268,134 @@ function GridAvatar({ imgs }: { imgs: [string, string, string, string] }) {
   );
 }
 
+// ── Cluster avatar (元宝派风格：多头像圆形叠放) ──
+// - 无容器底色；用 mask 挖洞实现相邻 strokeW 描边视觉 + 相邻 overlap
+// - 3 头像布局：上方并排 2 + 下方居中 1（循环压叠）
+// - 4 头像布局：2×2；循环压叠：上左>上右>下右>下左>上左
+// - 每项支持图片路径（string）或 { letter, bg } 纯色首字样式
+// - 支持 size 参数（默认 32），其余尺寸按比例缩放
+export type ClusterAvatarItem = string | { letter: string; bg: string };
+
+// 柠檬黄 (#F1C40F) 等浅色背景需要配深色字
+export const getLetterTextColor = (bg?: string) =>
+  bg && bg.toUpperCase() === "#F1C40F" ? "#333333" : "#FFFFFF";
+
+export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; size?: number }) {
+  const containerSize = size;
+  // 比例基准：size=32 时 sub=18, overlap=4, strokeW=1.2
+  const sub = size * (18 / 32);
+  const overlap = size * (4 / 32);
+  const step = sub - overlap;
+  const r = sub / 2;
+  const strokeW = size * (1.2 / 32);
+  const rMask = r + strokeW;
+
+  // 上排起点：让 (sub + step) 居中于 containerSize
+  const rowWidth = sub + step; // = 32
+  const rowStartX = (containerSize - rowWidth) / 2; // = 0
+
+  const count = imgs.length;
+
+  type CellPos = { left: number; top: number };
+  const positions: CellPos[] =
+    count === 3
+      ? [
+          { left: rowStartX, top: 0 },                       // 上左
+          { left: rowStartX + step, top: 0 },                // 上右
+          { left: (containerSize - sub) / 2, top: step },    // 下居中
+        ]
+      : [
+          { left: rowStartX, top: 0 },                       // 上左
+          { left: rowStartX + step, top: 0 },                // 上右
+          { left: rowStartX, top: step },                    // 下左
+          { left: rowStartX + step, top: step },             // 下右
+        ];
+
+  // 压叠关系：每个圆被哪个邻圆压住（要在 mask 中扣除其与该邻圆重叠的部分）
+  // 3 头像：
+  //   上左(0) 被 上右(1) 压  → 扣除 上右
+  //   上右(1) 被 下居中(2) 压 → 扣除 下居中
+  //   下居中(2) 被 上左(0) 压 → 扣除 上左
+  // 4 头像循环：
+  //   上左(0) 被 下左(2) 压 → 扣除 下左
+  //   上右(1) 被 上左(0) 压 → 扣除 上左
+  //   下左(2) 被 下右(3) 压 → 扣除 下右
+  //   下右(3) 被 上右(1) 压 → 扣除 上右
+  const pressedBy: Record<number, number> =
+    count === 3
+      ? { 0: 1, 1: 2, 2: 0 }
+      : { 0: 2, 1: 0, 2: 3, 3: 1 };
+
+  // 构造每个圆的 mask-image：用 subtract 合成，从自身圆中挖掉邻圆的范围（邻圆半径略大 strokeW，形成 1.5px 视觉缝隙）
+  const buildMaskStyle = (i: number): React.CSSProperties => {
+    const neighborIdx = pressedBy[i];
+    if (neighborIdx === undefined) return {};
+    const neighborCx = positions[neighborIdx].left - positions[i].left + r;
+    const neighborCy = positions[neighborIdx].top - positions[i].top + r;
+
+    const baseMask = `radial-gradient(circle at ${r}px ${r}px, #000 ${r}px, transparent ${r + 0.5}px)`;
+    const subMask = `radial-gradient(circle at ${neighborCx}px ${neighborCy}px, #000 ${rMask}px, transparent ${rMask + 0.5}px)`;
+
+    return {
+      maskImage: `${baseMask}, ${subMask}`,
+      maskComposite: "subtract",
+      WebkitMaskImage: `${baseMask}, ${subMask}`,
+      WebkitMaskComposite: "source-out",
+    } as React.CSSProperties;
+  };
+
+  return (
+    <div style={{
+      width: containerSize,
+      height: containerSize,
+      flexShrink: 0,
+      position: "relative",
+    }}>
+      {imgs.slice(0, 4).map((item, i) => {
+        const isLetter = typeof item !== "string";
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: positions[i].left,
+              top: positions[i].top,
+              width: sub,
+              height: sub,
+              borderRadius: "50%",
+              overflow: "hidden",
+              background: isLetter ? item.bg : "#FFFFFF",
+              boxSizing: "border-box",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              ...buildMaskStyle(i),
+            }}
+          >
+            {isLetter ? (
+              <span style={{
+                fontFamily: FONT,
+                fontSize: size * (10 / 32),
+                fontWeight: 500,
+                color: "#FFFFFF",
+                lineHeight: 1,
+              }}>
+                {item.letter}
+              </span>
+            ) : (
+              <img
+                src={item}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Single avatar ─────────────────────────────────────────────
 function SingleAvatar({ src }: { src: string }) {
   return (
@@ -291,9 +420,13 @@ interface SecondaryNavProps {
   onTaskClick?: (task: { id: string; title: string }) => void;
   activeTaskId?: string | null;
   activeMenu?: "skill-plaza" | "claw-manager" | null;
+  /** Agent Registry（可选；传入时下区按 registry 动态渲染，否则隐藏下区） */
+  registry?: import("@/lib/agent-registry").AgentRegistry;
+  /** 点击左栏团队/专家/分身/外部 Agent 的 Section Header 时触发 */
+  onAgentSelect?: (agentId: string, label: string) => void;
 }
 
-export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu }: SecondaryNavProps) {
+export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu, registry, onAgentSelect }: SecondaryNavProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   const contentFade: React.CSSProperties = {
@@ -436,79 +569,139 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
         {/* 下区：团队 & 专家列表（可折叠） */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 20 }}>
 
-          {/* 大数据团队 */}
-          <CollapsibleSection
-            defaultOpen={true}
-            header={(expanded) => (
-              <SectionHeader
-                avatar={<SingleAvatar src="/agents/team-badge.png" />}
-                label="大数据团队"
-                expanded={expanded}
-              />
-            )}
-          >
-            <TaskItem status="pending" title="慢 SQL 查询与调优" active={activeTaskId === "t1"} onClick={() => onTaskClick?.({ id: "t1", title: "慢 SQL 查询与调优" })} />
-            <TaskItem status="pending" title="统计近 7 天各渠道用户支付金额，按天汇总" active={activeTaskId === "t2"} onClick={() => onTaskClick?.({ id: "t2", title: "统计近 7 天各渠道用户支付金额，按天汇总" })} />
-            <TaskItem status="check" title="接入业务库【订单表】数据源" active={activeTaskId === "t3"} onClick={() => onTaskClick?.({ id: "t3", title: "接入业务库【订单表】数据源" })} />
-            <TaskItem status="check" title="接入业务库【用户表】数据源" active={activeTaskId === "t4"} onClick={() => onTaskClick?.({ id: "t4", title: "接入业务库【用户表】数据源" })} />
-            <TaskItem status="check" title="猫眼_客户留存指标分析" active={activeTaskId === "t5"} onClick={() => onTaskClick?.({ id: "t5", title: "猫眼_客户留存指标分析" })} />
-            <TaskItem status="check" title="T+1 调度工作流编排" active={activeTaskId === "t6"} onClick={() => onTaskClick?.({ id: "t6", title: "T+1 调度工作流编排" })} />
-          </CollapsibleSection>
+          {registry && (
+            <>
+              {/* 团队 */}
+              {registry.teams.map((team, idx) => {
+                const imgs = (team.members.length >= 3
+                  ? team.members.slice(0, team.members.length >= 4 ? 4 : 3).map((m) => (m.avatar ? m.avatar : { letter: m.abbr, bg: m.abbrBg }))
+                  : null);
+                const teamTasks = registry.tasks.filter((t) => t.agentId === team.id);
+                return (
+                  <CollapsibleSection
+                    key={team.id}
+                    defaultOpen={idx === 0}
+                    onHeaderClick={() => onAgentSelect?.(team.id, team.name)}
+                    header={(expanded) => (
+                      <SectionHeader
+                        avatar={imgs ? <ClusterAvatar imgs={imgs} /> : <SingleAvatar src="/agents/team-badge.png" />}
+                        label={team.name}
+                        expanded={expanded}
+                      />
+                    )}
+                  >
+                    {teamTasks.map((task) => (
+                      <TaskItem
+                        key={task.id}
+                        status={task.status}
+                        title={task.title}
+                        active={activeTaskId === task.id}
+                        onClick={() => onTaskClick?.({ id: task.id, title: task.title })}
+                      />
+                    ))}
+                  </CollapsibleSection>
+                );
+              })}
 
-          {/* Rigel·数据运维专家 */}
-          <CollapsibleSection
-            header={(expanded) => (
-              <SectionHeader
-                avatar={<SingleAvatar src="/agents/dev-expert.png" />}
-                label="Rigel·数据开发专家"
-                expanded={expanded}
-              />
-            )}
-          >
-            <TaskItem status="loading" title="数仓分层模型搭建" active={activeTaskId === "t7"} onClick={() => onTaskClick?.({ id: "t7", title: "数仓分层模型搭建" })} />
-            <TaskItem status="check" title="ODS 层数据接入验证" active={activeTaskId === "t8"} onClick={() => onTaskClick?.({ id: "t8", title: "ODS 层数据接入验证" })} />
-          </CollapsibleSection>
+              {/* 内置专家 */}
+              {registry.experts.map((expert) => {
+                const expertTasks = registry.tasks.filter((t) => t.agentId === expert.id);
+                return (
+                  <CollapsibleSection
+                    key={expert.id}
+                    onHeaderClick={() => onAgentSelect?.(expert.id, expert.shortTitle)}
+                    header={(expanded) => (
+                      <SectionHeader
+                        avatar={<SingleAvatar src={expert.avatar} />}
+                        label={expert.fullName}
+                        expanded={expanded}
+                      />
+                    )}
+                  >
+                    {expertTasks.map((task) => (
+                      <TaskItem
+                        key={task.id}
+                        status={task.status}
+                        title={task.title}
+                        active={activeTaskId === task.id}
+                        onClick={() => onTaskClick?.({ id: task.id, title: task.title })}
+                      />
+                    ))}
+                  </CollapsibleSection>
+                );
+              })}
 
-          {/* Vega·数据分析专家 */}
-          <CollapsibleSection
-            header={(expanded) => (
-              <SectionHeader
-                avatar={<SingleAvatar src="/agents/analysis-expert.png" />}
-                label="Vega·数据分析专家"
-                expanded={expanded}
-              />
-            )}
-          >
-            <TaskItem status="pending" title="用户留存率趋势分析" />
-            <TaskItem status="check" title="GMV 周报数据提取" />
-          </CollapsibleSection>
+              {/* 自定义数字分身 */}
+              {registry.avatars.map((av) => {
+                const avTasks = registry.tasks.filter((t) => t.agentId === av.id);
+                return (
+                  <CollapsibleSection
+                    key={av.id}
+                    onHeaderClick={() => onAgentSelect?.(av.id, av.name)}
+                    header={(expanded) => (
+                      <SectionHeader
+                        avatar={
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 100, flexShrink: 0,
+                            background: av.bg, display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>
+                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFFFFF", lineHeight: 1 }}>{av.letter}</span>
+                          </div>
+                        }
+                        label={av.name}
+                        expanded={expanded}
+                      />
+                    )}
+                  >
+                    {avTasks.map((task) => (
+                      <TaskItem
+                        key={task.id}
+                        status={task.status}
+                        title={task.title}
+                        active={activeTaskId === task.id}
+                        onClick={() => onTaskClick?.({ id: task.id, title: task.title })}
+                      />
+                    ))}
+                  </CollapsibleSection>
+                );
+              })}
 
-          {/* Orion·数据开发专家 */}
-          <CollapsibleSection
-            header={(expanded) => (
-              <SectionHeader
-                avatar={<SingleAvatar src="/agents/ops-expert.png" />}
-                label="Orion·数据运维专家"
-                expanded={expanded}
-              />
-            )}
-          >
-            <TaskItem status="loading" title="元数据血缘扫描" />
-          </CollapsibleSection>
-
-          {/* 运营协作团队 */}
-          <CollapsibleSection
-            header={(expanded) => (
-              <SectionHeader
-                avatar={<SingleAvatar src="/agents/team-badge.png" />}
-                label="运营协作团队"
-                expanded={expanded}
-              />
-            )}
-          >
-            <TaskItem status="check" title="运营周报看板搭建" active={activeTaskId === "t12"} onClick={() => onTaskClick?.({ id: "t12", title: "运营周报看板搭建" })} />
-            <TaskItem status="pending" title="活动效果归因分析" active={activeTaskId === "t13"} onClick={() => onTaskClick?.({ id: "t13", title: "活动效果归因分析" })} />
-          </CollapsibleSection>
+              {/* 外部 Agent */}
+              {registry.externals.map((ex) => {
+                const exTasks = registry.tasks.filter((t) => t.agentId === ex.id);
+                return (
+                  <CollapsibleSection
+                    key={ex.id}
+                    onHeaderClick={() => onAgentSelect?.(ex.id, ex.name)}
+                    header={(expanded) => (
+                      <SectionHeader
+                        avatar={
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 100, flexShrink: 0,
+                            background: ex.bg, display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>
+                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: getLetterTextColor(ex.bg), lineHeight: 1 }}>{ex.abbr}</span>
+                          </div>
+                        }
+                        label={ex.name}
+                        expanded={expanded}
+                      />
+                    )}
+                  >
+                    {exTasks.map((task) => (
+                      <TaskItem
+                        key={task.id}
+                        status={task.status}
+                        title={task.title}
+                        active={activeTaskId === task.id}
+                        onClick={() => onTaskClick?.({ id: task.id, title: task.title })}
+                      />
+                    ))}
+                  </CollapsibleSection>
+                );
+              })}
+            </>
+          )}
 
         </div>
       </div>
