@@ -620,6 +620,8 @@ export default function Home() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   // 对话流分步揭示：0=用户气泡, 1=思考摘要, 2=Plan卡片
   const [revealStep, setRevealStep] = useState(0);
+  // 工具标签展开/收起（默认收起）
+  const [toolsExpanded, setToolsExpanded] = useState(false);
   // 左侧任务列表当前选中
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   // 即时模式（侧边栏点击进入，不逐字吐出）
@@ -1535,18 +1537,42 @@ export default function Home() {
                         <>
                           <Plan />
                           <div style={{
-                            display: "flex", flexWrap: "wrap", gap: 8,
+                            display: "flex", flexDirection: "column", gap: 8,
                           }}>
-                            {["TaskDecompose(slow_sql_analysis)", "ClusterValidate(emr-ccrnhw11)", "TodoWrite(4_phases)"].map((tag) => (
+                            {/* 标题行：调用N个工具 + chevron（可点击展开/收起） */}
+                            <div
+                              onClick={() => setToolsExpanded((v) => !v)}
+                              style={{ display: "flex", alignItems: "center", gap: 2, height: 28, cursor: "pointer", userSelect: "none" }}
+                            >
+                              <span style={{
+                                fontFamily: FONT, fontSize: 16, fontWeight: 400,
+                                lineHeight: "28px", color: "rgba(0,0,0,0.5)",
+                              }}>调用3个工具</span>
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{
+                                flexShrink: 0,
+                                transition: "transform 0.2s ease",
+                                transform: toolsExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                              }}>
+                                <path d="M5.39063 11.6666L9.05729 7.99998L5.39062 4.33331L6.33343 3.3905L10.9429 7.99998L6.33343 12.6095L5.39063 11.6666Z" fill="rgba(0,0,0,0.5)" />
+                              </svg>
+                            </div>
+                            {/* 工具列表：展开时显示 */}
+                            {toolsExpanded && ["TaskDecompose(slow_sql_analysis)", "ClusterValidate(emr-ccrnhw11)", "TodoWrite(4_phases)"].map((tag) => (
                               <div key={tag} style={{
                                 display: "inline-flex", alignItems: "center",
-                                height: 24, padding: "0 8px",
-                                background: "#EDF0F5", borderRadius: 40,
-                                flexShrink: 0,
+                                height: 28, gap: 4,
                               }}>
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                                  <g clipPath="url(#toolClip)">
+                                    <path d="M4.93314 1.70093C4.33249 1.70093 3.76403 1.83785 3.25774 2.08196L4.23733 3.05455C4.80199 3.61519 4.80199 4.52417 4.23733 5.0848C3.67266 5.64543 2.75713 5.64543 2.19247 5.0848L1.32015 4.21869C1.17312 4.62297 1.09298 5.05902 1.09298 5.51364C1.09298 7.61935 2.81227 9.32634 4.93314 9.32634C5.44051 9.32634 5.92487 9.22867 6.36823 9.05123L10.2452 12.9005C10.8097 13.461 11.725 13.461 12.2895 12.9005C12.854 12.34 12.854 11.4313 12.2895 10.8708L8.44646 7.05523C8.65659 6.58386 8.77331 6.06228 8.77331 5.51364C8.77331 3.40792 7.05402 1.70093 4.93314 1.70093Z" stroke="rgba(0,0,0,0.9)" strokeWidth="1.33333" strokeLinejoin="round" />
+                                    <path d="M4.17667 10.9296C4.25839 10.7352 4.29924 10.638 4.35808 10.5954C4.39818 10.5664 4.44328 10.5525 4.48453 10.5564C4.54504 10.5622 4.5917 10.6324 4.68503 10.7727C4.88951 11.0803 4.99175 11.2341 5.12192 11.3545C5.21323 11.439 5.3145 11.5111 5.42427 11.5697C5.58075 11.6532 5.75954 11.6993 6.11712 11.7917C6.28032 11.8339 6.36192 11.855 6.38719 11.9103C6.40442 11.9479 6.40606 11.9951 6.39178 12.0425C6.37083 12.1121 6.29241 12.1825 6.13556 12.3234C5.79189 12.6322 5.62005 12.7865 5.47262 12.9638C5.3692 13.0881 5.27501 13.2205 5.19143 13.359C5.07228 13.5563 4.98276 13.7693 4.80372 14.1952C4.722 14.3895 4.68114 14.4867 4.62231 14.5293C4.5822 14.5583 4.5371 14.5722 4.49585 14.5683C4.43534 14.5626 4.38868 14.4924 4.29536 14.352C4.09088 14.0445 3.98864 13.8907 3.85846 13.7702C3.76715 13.6857 3.66588 13.6137 3.55611 13.5551C3.39964 13.4716 3.22085 13.4254 2.86327 13.333C2.70007 13.2908 2.61847 13.2698 2.59319 13.2145C2.57596 13.1768 2.57433 13.1296 2.5886 13.0822C2.60955 13.0127 2.68798 12.9422 2.84483 12.8013C3.1885 12.4926 3.36033 12.3382 3.50777 12.161C3.61119 12.0366 3.70537 11.9042 3.78895 11.7658C3.9081 11.5684 3.99762 11.3554 4.17667 10.9296Z" fill="rgba(0,0,0,0.9)" />
+                                    <path d="M12.8702 3.00492C12.9817 2.7397 13.0374 2.60709 13.1177 2.54899C13.1724 2.50938 13.234 2.4904 13.2903 2.49576C13.3728 2.50362 13.4365 2.59938 13.5638 2.79091C13.8429 3.21056 13.9824 3.42039 14.16 3.58476C14.2846 3.70007 14.4228 3.7984 14.5725 3.87832C14.786 3.99225 15.03 4.05528 15.5179 4.18134C15.7406 4.23887 15.852 4.26764 15.8864 4.34306C15.91 4.39449 15.9122 4.45884 15.8927 4.52353C15.8641 4.61841 15.7571 4.71455 15.5431 4.90682C15.0741 5.32809 14.8397 5.53873 14.6385 5.7806C14.4974 5.95027 14.3689 6.13088 14.2548 6.31982C14.0923 6.58915 13.9701 6.87971 13.7258 7.46082C13.6143 7.72603 13.5585 7.85864 13.4783 7.91674C13.4235 7.95635 13.362 7.97534 13.3057 7.96998C13.2232 7.96212 13.1595 7.86636 13.0321 7.67483C12.7531 7.25518 12.6136 7.04535 12.436 6.88097C12.3114 6.76567 12.1732 6.66734 12.0234 6.58742C11.8099 6.47349 11.566 6.41046 11.0781 6.2844C10.8554 6.22687 10.744 6.1981 10.7095 6.12267C10.686 6.07125 10.6838 6.00689 10.7033 5.94221C10.7319 5.84732 10.8389 5.75119 11.0529 5.55892C11.5218 5.13764 11.7563 4.92701 11.9575 4.68513C12.0986 4.51546 12.2271 4.33485 12.3411 4.14592C12.5037 3.87658 12.6259 3.58603 12.8702 3.00492Z" fill="rgba(0,0,0,0.9)" />
+                                  </g>
+                                  <defs><clipPath id="toolClip"><rect width="16" height="16" fill="white" transform="matrix(-1 0 0 1 16 0)" /></clipPath></defs>
+                                </svg>
                                 <span style={{
-                                  fontFamily: FONT, fontSize: 12, fontWeight: 400,
-                                  color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap",
+                                  fontFamily: FONT, fontSize: 16, fontWeight: 400,
+                                  lineHeight: "28px", color: "rgba(0,0,0,0.9)",
                                 }}>{tag}</span>
                               </div>
                             ))}
@@ -1981,7 +2007,7 @@ export default function Home() {
         onClose={() => setCreateExpertOpen(false)}
         onCreate={(name, desc, tags) => {
           // 新建自定义 Agent：注入 registry.avatars
-          const PALETTE = ["#4E73DF", "#1ABC9C", "#F39C12", "#E74C3C", "#9B59B6", "#34495E", "#F1C40F", "#27AE60", "#FF6B6B", "#3498DB"];
+          const PALETTE = ["#4B79FF", "#00DBB0", "#FFB834", "#BE63FF", "#FFD736", "#17DF6B", "#FF6B6B"];
           const existing = registry.avatars.filter((a) => !a.preset).length;
           const bg = PALETTE[existing % PALETTE.length];
           setRegistry((prev) => ({
@@ -2004,9 +2030,9 @@ export default function Home() {
         onCreateExternal={(data) => {
           // 连接外部 Agent：注入 registry.externals
           const platformMeta: Record<string, { label: string; abbr: string; bg: string }> = {
-            lighthouse: { label: "Lighthouse", abbr: "LH", bg: "#E59858" },
-            clawpro: { label: "ClawPro", abbr: "CP", bg: "#1664FF" },
-            chatgpt: { label: "ChatGPT Plugin", abbr: "GP", bg: "#00B96B" },
+            lighthouse: { label: "Lighthouse", abbr: "LH", bg: "#FFB834" },
+            clawpro: { label: "ClawPro", abbr: "CP", bg: "#4B79FF" },
+            chatgpt: { label: "ChatGPT Plugin", abbr: "GP", bg: "#17DF6B" },
           };
           const meta = platformMeta[data.platform] ?? { label: data.platform, abbr: "EX", bg: "#4E73DF" };
           setRegistry((prev) => ({

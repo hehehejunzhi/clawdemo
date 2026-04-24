@@ -34,8 +34,6 @@ function BannerAvatar({ item, zIndex, size = AVATAR_SIZE }: { item: ClusterAvata
         height: size,
         borderRadius: "50%",
         background: isLetter ? item.bg : AVATAR_BG,
-        outline: `${AVATAR_STROKE_W}px solid ${AVATAR_STROKE}`,
-        outlineOffset: -AVATAR_STROKE_W,
         overflow: "hidden",
         flexShrink: 0,
         zIndex,

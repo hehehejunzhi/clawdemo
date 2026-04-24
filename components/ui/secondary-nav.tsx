@@ -249,7 +249,7 @@ function GridAvatar({ imgs }: { imgs: [string, string, string, string] }) {
   return (
     <div style={{
       width: 32, height: 32, borderRadius: 100, flexShrink: 0,
-      background: C.avatarBg, border: `1.6px solid ${C.avatarBorder}`,
+      background: C.avatarBg,
       overflow: "hidden", position: "relative",
     }}>
       <div style={{ position: "absolute", width: 16, height: 16, left: 0, top: 0, overflow: "hidden" }}>
@@ -276,9 +276,21 @@ function GridAvatar({ imgs }: { imgs: [string, string, string, string] }) {
 // - 支持 size 参数（默认 32），其余尺寸按比例缩放
 export type ClusterAvatarItem = string | { letter: string; bg: string };
 
-// 柠檬黄 (#F1C40F) 等浅色背景需要配深色字
-export const getLetterTextColor = (bg?: string) =>
-  bg && bg.toUpperCase() === "#F1C40F" ? "#333333" : "#FFFFFF";
+// 自定义头像色板（来自 Figma 设计稿 771_721）
+// 每个背景色对应固定文字色；未匹配时回退白色
+const LETTER_TEXT_COLOR_MAP: Record<string, string> = {
+  "#4B79FF": "#FFFFFF",
+  "#00DBB0": "#FFFFFF",
+  "#FFB834": "#000000",
+  "#BE63FF": "#FFFFFF",
+  "#FFD736": "#000000",
+  "#17DF6B": "#000000",
+  "#FF6B6B": "#FFFFFF",
+};
+export const getLetterTextColor = (bg?: string) => {
+  if (!bg) return "#FFFFFF";
+  return LETTER_TEXT_COLOR_MAP[bg.toUpperCase()] ?? "#FFFFFF";
+};
 
 export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; size?: number }) {
   const containerSize = size;
@@ -377,7 +389,7 @@ export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; 
                 fontFamily: FONT,
                 fontSize: size * (10 / 32),
                 fontWeight: 500,
-                color: "#FFFFFF",
+                color: getLetterTextColor(item.bg),
                 lineHeight: 1,
               }}>
                 {item.letter}
@@ -401,7 +413,7 @@ function SingleAvatar({ src }: { src: string }) {
   return (
     <div style={{
       width: 32, height: 32, borderRadius: 100, flexShrink: 0,
-      background: C.avatarBg, border: `1.6px solid ${C.avatarBorder}`,
+      background: C.avatarBg,
       overflow: "hidden",
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
@@ -645,7 +657,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
                             width: 32, height: 32, borderRadius: 100, flexShrink: 0,
                             background: av.bg, display: "flex", alignItems: "center", justifyContent: "center",
                           }}>
-                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFFFFF", lineHeight: 1 }}>{av.letter}</span>
+                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: getLetterTextColor(av.bg), lineHeight: 1 }}>{av.letter}</span>
                           </div>
                         }
                         label={av.name}

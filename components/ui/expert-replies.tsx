@@ -956,13 +956,12 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
                 </div>
               )}
 
-              {/* Tags */}
+              {/* Tags — icon + 文字样式 */}
               {line.tags && line.tags.length > 0 && (
                 <div style={{
-                  display: "flex", flexWrap: "wrap", gap: 8,
-                  paddingLeft: 0, paddingTop: 0, paddingBottom: 0,
+                  display: "flex", flexDirection: "column", gap: 4,
                 }}>
-                  {line.tags.map((tag) => <TagPill key={tag} label={tag} />)}
+                  {line.tags.map((tag) => <SkillCallTag key={tag} label={tag} />)}
                 </div>
               )}
 

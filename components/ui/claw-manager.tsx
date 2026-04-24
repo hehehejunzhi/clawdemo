@@ -160,19 +160,35 @@ function Card({ avatar, name, desc, badge, button, children, onDialog }: {
 }
 
 // ── Avatar (round, with image or letter) ──────────────────────
-// 柠檬黄 #F1C40F 作为浅色背景需要配深色字，其他情况统一用白色
-const getAvatarTextColor = (bg?: string) => (bg && bg.toUpperCase() === "#F1C40F" ? "#333333" : "#FFF");
+// 自定义头像色板（来自 Figma 设计稿 771_721）
+// 每个背景色对应固定的文字色（白 or 黑）
+const CUSTOM_AVATAR_PALETTE: ReadonlyArray<{ bg: string; fg: string }> = [
+  { bg: "#4B79FF", fg: "#FFFFFF" }, // 蓝
+  { bg: "#00DBB0", fg: "#FFFFFF" }, // 青绿
+  { bg: "#FFB834", fg: "#000000" }, // 橙黄
+  { bg: "#BE63FF", fg: "#FFFFFF" }, // 紫
+  { bg: "#FFD736", fg: "#000000" }, // 亮黄
+  { bg: "#17DF6B", fg: "#000000" }, // 绿
+  { bg: "#FF6B6B", fg: "#FFFFFF" }, // 红
+];
+
+const getAvatarTextColor = (bg?: string) => {
+  if (!bg) return "#FFFFFF";
+  const hit = CUSTOM_AVATAR_PALETTE.find((p) => p.bg.toUpperCase() === bg.toUpperCase());
+  return hit ? hit.fg : "#FFFFFF";
+};
+
 function AvatarCircle({ src, letter, bg, size = 48, status }: { src?: string; letter?: string; bg?: string; size?: number; status?: "online" | "offline" }) {
   return (
     <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
       <div style={{
         width: size, height: size, borderRadius: size,
-        background: bg ?? "#EEEEEE", border: "1px solid #E7E7E7",
+        background: bg ?? "#EEEEEE",
         overflow: "hidden",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         {src ? <img src={src} alt="" style={{ width: size + 3, height: size + 3, objectFit: "cover" }} />
-          : <span style={{ fontSize: size * 0.5, fontWeight: 500, color: getAvatarTextColor(bg) }}>{letter}</span>}
+          : <span style={{ fontSize: size * 0.5, fontWeight: 600, color: getAvatarTextColor(bg) }}>{letter}</span>}
       </div>
       {status === "online" && null}
     </div>
@@ -263,44 +279,32 @@ const PRESET_OPS_TEAM: CustomTeam = {
   name: "运营协作团队",
   desc: "数据团队 + 运营助手协同，聚焦业务指标解读与落地",
   members: [
-    { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
-    { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-    { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
-    { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4E73DF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
+    { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+    { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+    { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+    { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
   ],
   clusterImgs: [
     "/agents/dev-expert.png",
     "/agents/analysis-expert.png",
     "/agents/ops-expert.png",
-    { letter: "运", bg: "#4E73DF" },
+    { letter: "运", bg: "#4B79FF" },
   ],
 };
 
 const ALL_AVAILABLE_MEMBERS: Omit<TeamMember, "role">[] = [
-  { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-  { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
-  { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
-  { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4E73DF", category: "数字分身", statusColor: "#FF7800" },
-  { id: "lh", name: "Lighthouse", abbr: "LH", abbrBg: "#FF7800", category: "外部 Claw", statusColor: "#0CBF5B" },
-  { id: "cp", name: "ClawPro", abbr: "CP", abbrBg: "#1664FF", category: "外部 Claw", statusColor: "#0CBF5B" },
-  { id: "gp", name: "ChatGPT Plugin", abbr: "GP", abbrBg: "#00B96B", category: "外部 Claw", statusColor: "#0CBF5B" },
+  { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+  { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+  { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+  { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", statusColor: "#FF7800" },
+  { id: "lh", name: "Lighthouse", abbr: "LH", abbrBg: "#FFB834", category: "外部 Claw", statusColor: "#0CBF5B" },
+  { id: "cp", name: "ClawPro", abbr: "CP", abbrBg: "#4B79FF", category: "外部 Claw", statusColor: "#0CBF5B" },
+  { id: "gp", name: "ChatGPT Plugin", abbr: "GP", abbrBg: "#17DF6B", category: "外部 Claw", statusColor: "#0CBF5B" },
 ];
 
 // ── 自定义分身头像预设色板（新建分身时按数量轮询取色）
-//   极光蓝 / 灵动青 / 琥珀橙 / 胭脂红 / 电光紫 /
-//   深海蓝 / 柠檬黄 / 丛林绿 / 西柚色 / 钴蓝色
-const CUSTOM_AVATAR_BG_PALETTE = [
-  "#4E73DF", // 极光蓝
-  "#1ABC9C", // 灵动青
-  "#F39C12", // 琥珀橙
-  "#E74C3C", // 胭脂红
-  "#9B59B6", // 电光紫
-  "#34495E", // 深海蓝
-  "#F1C40F", // 柠檬黄（文字需用深色）
-  "#27AE60", // 丛林绿
-  "#FF6B6B", // 西柚色
-  "#3498DB", // 钴蓝色
-] as const;
+// 来自 Figma 设计稿 771_721，颜色与 CUSTOM_AVATAR_PALETTE 一一对应
+const CUSTOM_AVATAR_BG_PALETTE = CUSTOM_AVATAR_PALETTE.map((p) => p.bg);
 const pickAvatarBg = (idx: number) => CUSTOM_AVATAR_BG_PALETTE[idx % CUSTOM_AVATAR_BG_PALETTE.length];
 
 // ── 三点菜单 ──────────────────────────────────────────────────
@@ -793,9 +797,9 @@ function ExternalClawCard({ avatar, name, desc, connected, buttonLabel, onButton
 
 // ── 创建外部 Claw 弹窗 ───────────────────────────────────────
 const PLATFORMS = [
-  { id: "lh", label: "Lighthouse", abbr: "LH", bg: "#E59858" },
-  { id: "cp", label: "ClawPro", abbr: "CP", bg: "#1664FF" },
-  { id: "gp", label: "ChatGPT Plugin", abbr: "GP", bg: "#00B96B" },
+  { id: "lh", label: "Lighthouse", abbr: "LH", bg: "#FFB834" },
+  { id: "cp", label: "ClawPro", abbr: "CP", bg: "#4B79FF" },
+  { id: "gp", label: "ChatGPT Plugin", abbr: "GP", bg: "#17DF6B" },
 ];
 
 function CreateExternalClawDialog({ open, onClose, onCreate }: {
@@ -1244,12 +1248,11 @@ export default function ClawManager({
     const customAvatars = registry.avatars
       .filter((a) => !a.preset)
       .map((a, idx) => ({ id: a.id, name: a.name, desc: a.desc, tags: a.tags, skills: a.skills.map((s) => ({ name: s.name, enabled: s.enabled })), bg: a.bg || pickAvatarBg(idx) }));
-    const lh1 = registry.externals.find((e) => e.id === "lh1");
     const lh2 = registry.externals.find((e) => e.id === "lh2");
     const customClaws = registry.externals
       .filter((e) => !e.preset)
       .map((e) => ({ id: e.id, name: e.name, abbr: e.abbr, bg: e.bg, platformLabel: e.platformLabel, apiUrl: e.apiUrl ?? "" }));
-    return { customTeams, avatarDeleted, avatarData, customAvatars, lh1State: lh1?.state ?? "disconnected", lh2State: lh2?.state ?? "connected", customClaws };
+    return { customTeams, avatarDeleted, avatarData, customAvatars, lh2State: lh2?.state ?? "connected", customClaws };
   };
   const initial = initFromRegistry();
 
@@ -1285,9 +1288,9 @@ export default function ClawManager({
 
   const handleCreate = (name: string, desc: string) => {
     const defaultMembers: TeamMember[] = [
-      { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
-      { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+      { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ];
     const newTeam: CustomTeam = { id: `team-${Date.now()}`, name, desc: desc || "自定义协作团队", members: defaultMembers };
     setCustomTeams((prev) => [...prev, newTeam]);
@@ -1331,18 +1334,14 @@ export default function ClawManager({
   // 外部 Claw
   const [showCreateExternalClaw, setShowCreateExternalClaw] = useState(false);
   const [customClaws, setCustomClaws] = useState<{ id: string; name: string; abbr: string; bg: string; platformLabel: string; apiUrl: string }[]>(initial?.customClaws ?? []);
-  // Lighthouse 连接状态: "disconnected" | "connecting" | "connected" | "disconnecting"
-  const [lh1State, setLh1State] = useState<"disconnected" | "connecting" | "connected">(
-    (initial?.lh1State === "connected" || initial?.lh1State === "connecting" || initial?.lh1State === "disconnected") ? initial.lh1State : "disconnected"
-  );
+  // Coze 连接状态
   const [lh2State, setLh2State] = useState<"connected" | "disconnecting" | "disconnected">(
     (initial?.lh2State === "connected" || initial?.lh2State === "disconnected" || initial?.lh2State === "disconnecting") ? initial.lh2State : "connected"
   );
   // 删除外部 Agent 确认弹窗
   const [deletingClawId, setDeletingClawId] = useState<string | null>(null);
   const [deletingClawName, setDeletingClawName] = useState("");
-  // 预置 Lighthouse 两张卡片的软删除状态（点"删除"后从列表隐藏）
-  const [lh1Hidden, setLh1Hidden] = useState(false);
+  // 预置卡片的软删除状态
   const [lh2Hidden, setLh2Hidden] = useState(false);
 
   // ── Registry 桥接 ────────────────────────────────────────────
@@ -1372,9 +1371,9 @@ export default function ClawManager({
         "/agents/ops-expert.png",
       ],
       members: [
-        { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#1664FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
-        { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#7B68EE", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-        { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#3BAFB9", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+        { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+        { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+        { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
       ],
     };
 
@@ -1387,7 +1386,7 @@ export default function ClawManager({
         desc: avatarData.desc,
         tags: avatarData.tags ?? [],
         skills: (avatarData.skills ?? []).map((s) => ({ name: s.name, enabled: s.enabled })),
-        bg: "#4E73DF",
+        bg: "#4B79FF",
         letter: "运",
         preset: true,
       });
@@ -1406,8 +1405,7 @@ export default function ClawManager({
 
     // 外部 Agent
     const externals: RegistryExternal[] = [
-      ...(lh1Hidden ? [] : [{ id: "lh1", name: "Lighthouse", abbr: "L", bg: "#0BD1E2", platformLabel: "Lighthouse", state: lh1State, preset: true } as RegistryExternal]),
-      ...(lh2Hidden ? [] : [{ id: "lh2", name: "Lighthouse", abbr: "L", bg: "#8A77FF", platformLabel: "Lighthouse", state: lh2State === "disconnecting" ? "connected" : lh2State, preset: true } as RegistryExternal]),
+      ...(lh2Hidden ? [] : [{ id: "lh2", name: "Coze", abbr: "C", bg: "#BE63FF", platformLabel: "Coze", state: lh2State === "disconnecting" ? "connected" : lh2State, preset: true } as RegistryExternal]),
       ...customClaws.map((c) => ({ id: c.id, name: c.name, abbr: c.abbr, bg: c.bg, platformLabel: c.platformLabel, apiUrl: c.apiUrl, state: "disconnected" as const })),
     ];
 
@@ -1427,7 +1425,7 @@ export default function ClawManager({
       onRegistryChange(next);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customTeams, avatarData, avatarDeleted, customAvatars, lh1State, lh2State, customClaws]);
+  }, [customTeams, avatarData, avatarDeleted, customAvatars, lh2State, customClaws]);
 
   return (
     <div style={{
@@ -1467,7 +1465,7 @@ export default function ClawManager({
                 key={team.id}
                 avatar={cluster
                   ? <ClusterAvatar size={48} imgs={cluster} />
-                  : <AvatarCircle letter={team.name.charAt(0)} bg="#7B68EE" />
+                  : <AvatarCircle letter={team.name.charAt(0)} bg="#BE63FF" />
                 }
                 name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{team.name} ({team.members.length})</span>}
                 desc={team.desc}
@@ -1507,7 +1505,7 @@ export default function ClawManager({
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap", alignItems: "stretch" }}>
           {!avatarDeleted && (
             <Card
-              avatar={<AvatarCircle letter="运" bg="#4E73DF" />}
+              avatar={<AvatarCircle letter="运" bg="#4B79FF" />}
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{avatarData.name}</span>}
               desc={avatarData.desc}
               badge={(hovered) => <AvatarMoreMenu visible={hovered} onDetail={() => setShowAvatarDetail(true)} onDelete={() => setShowAvatarDelete(true)} />}
@@ -1533,34 +1531,19 @@ export default function ClawManager({
         {/* 外部 Claw */}
         <SectionTitle title="外部 Agent" desc="连接你在外部平台部署的 Agent" />
         <div style={{ display: "flex", gap: 16, padding: "0 24px 24px", flexWrap: "wrap", alignItems: "stretch" }}>
-          {!lh1Hidden && (
-            <ExternalClawCard
-              avatar={<AvatarCircle letter="L" bg="#0BD1E2" />}
-              name="Lighthouse"
-              desc="腾讯云轻量应用服务器，一键连接云端实例"
-              connected={lh1State === "connected"}
-              buttonLabel={lh1State === "connecting" ? "连接中..." : "连接"}
-              onButtonClick={() => {
-                if (lh1State === "connected") { onAgentDialog?.("lh1", "Lighthouse"); return; }
-                if (lh1State === "disconnected") { setLh1State("connecting"); setTimeout(() => { setLh1State("connected"); showToast("连接成功", "success"); }, 1500); }
-              }}
-              onDisconnect={() => { setLh1State("disconnected"); showToast("已断开连接", "success"); }}
-              onDelete={() => { setDeletingClawId("lh1"); setDeletingClawName("Lighthouse"); }}
-            />
-          )}
           {!lh2Hidden && (
             <ExternalClawCard
-              avatar={<AvatarCircle letter="L" bg="#8A77FF" />}
-              name="Lighthouse"
-              desc="腾讯云轻量应用服务器，一键连接云端实例"
+              avatar={<AvatarCircle letter="C" bg="#BE63FF" />}
+              name="Coze"
+              desc="字节跳动 AI Bot 开发平台，快速构建智能体"
               connected={lh2State === "connected"}
               buttonLabel={lh2State === "disconnecting" ? "断开中..." : "连接"}
               onButtonClick={() => {
-                if (lh2State === "connected") { onAgentDialog?.("lh2", "Lighthouse"); return; }
+                if (lh2State === "connected") { onAgentDialog?.("lh2", "Coze"); return; }
                 if (lh2State === "disconnected") { setLh2State("disconnecting"); setTimeout(() => { setLh2State("connected"); showToast("连接成功", "success"); }, 1500); }
               }}
               onDisconnect={() => { setLh2State("disconnecting"); setTimeout(() => { setLh2State("disconnected"); showToast("已断开连接", "success"); }, 1500); }}
-              onDelete={() => { setDeletingClawId("lh2"); setDeletingClawName("Lighthouse"); }}
+              onDelete={() => { setDeletingClawId("lh2"); setDeletingClawName("Coze"); }}
             />
           )}
           {/* 自定义外部 Claw */}
@@ -1741,8 +1724,7 @@ export default function ClawManager({
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
                 <button onClick={() => setDeletingClawId(null)} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
                 <button onClick={() => {
-                  if (deletingClawId === "lh1") { setLh1Hidden(true); }
-                  else if (deletingClawId === "lh2") { setLh2Hidden(true); }
+                  if (deletingClawId === "lh2") { setLh2Hidden(true); }
                   else { setCustomClaws((prev) => prev.filter((c) => c.id !== deletingClawId)); }
                   setDeletingClawId(null);
                   showToast("已从列表中移除", "success");
