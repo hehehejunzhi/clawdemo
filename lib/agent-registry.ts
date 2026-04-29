@@ -191,10 +191,10 @@ export const DEFAULT_AVATARS: CustomAvatar[] = [
 export const DEFAULT_EXTERNALS: ExternalAgent[] = [
   {
     id: "lh2",
-    name: "Coze",
-    abbr: "C",
+    name: "Lighthouse",
+    abbr: "L",
     bg: "#BE63FF",
-    platformLabel: "Coze",
+    platformLabel: "Lighthouse",
     state: "connected",
     preset: true,
   },

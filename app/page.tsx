@@ -1412,7 +1412,7 @@ export default function Home() {
                             lineHeight: "40px",
                             color: "#000",
                             whiteSpace: "nowrap",
-                          }}>专家团随时待命</span>
+                          }}>自进化的数据专家团随时待命</span>
                         </div>
                         <div style={{ marginTop: -20 }}>
                           <MotionTargetOverlay

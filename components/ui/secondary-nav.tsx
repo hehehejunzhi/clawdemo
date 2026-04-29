@@ -388,7 +388,7 @@ export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; 
               <span style={{
                 fontFamily: FONT,
                 fontSize: size * (10 / 32),
-                fontWeight: 500,
+                fontWeight: 600,
                 color: getLetterTextColor(item.bg),
                 lineHeight: 1,
               }}>
@@ -657,7 +657,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
                             width: 32, height: 32, borderRadius: 100, flexShrink: 0,
                             background: av.bg, display: "flex", alignItems: "center", justifyContent: "center",
                           }}>
-                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: getLetterTextColor(av.bg), lineHeight: 1 }}>{av.letter}</span>
+                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: getLetterTextColor(av.bg), lineHeight: 1 }}>{av.letter}</span>
                           </div>
                         }
                         label={av.name}
@@ -692,7 +692,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
                             width: 32, height: 32, borderRadius: 100, flexShrink: 0,
                             background: ex.bg, display: "flex", alignItems: "center", justifyContent: "center",
                           }}>
-                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: getLetterTextColor(ex.bg), lineHeight: 1 }}>{ex.abbr}</span>
+                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: getLetterTextColor(ex.bg), lineHeight: 1 }}>{ex.abbr}</span>
                           </div>
                         }
                         label={ex.name}

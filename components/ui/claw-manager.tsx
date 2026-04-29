@@ -188,7 +188,7 @@ function AvatarCircle({ src, letter, bg, size = 48, status }: { src?: string; le
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         {src ? <img src={src} alt="" style={{ width: size + 3, height: size + 3, objectFit: "cover" }} />
-          : <span style={{ fontSize: size * 0.5, fontWeight: 600, color: getAvatarTextColor(bg) }}>{letter}</span>}
+          : <span style={{ fontFamily: FONT, fontSize: size * 0.5, fontWeight: 600, color: getAvatarTextColor(bg) }}>{letter}</span>}
       </div>
       {status === "online" && null}
     </div>
@@ -201,7 +201,7 @@ function GridAvatar({ status }: { status?: "online" | "offline" }) {
     <div style={{ position: "relative", flexShrink: 0, width: 48, height: 48 }}>
       <div style={{
         width: 48, height: 48, borderRadius: 150,
-        background: "#EEEEEE", border: "0.86px solid #E7E7E7",
+        background: "#EEEEEE",
         overflow: "hidden", position: "relative",
       }}>
         <div style={{ position: "absolute", width: 48, height: 24, left: 0, top: 0, overflow: "hidden" }}>
@@ -1334,7 +1334,7 @@ export default function ClawManager({
   // 外部 Claw
   const [showCreateExternalClaw, setShowCreateExternalClaw] = useState(false);
   const [customClaws, setCustomClaws] = useState<{ id: string; name: string; abbr: string; bg: string; platformLabel: string; apiUrl: string }[]>(initial?.customClaws ?? []);
-  // Coze 连接状态
+  // Lighthouse 连接状态
   const [lh2State, setLh2State] = useState<"connected" | "disconnecting" | "disconnected">(
     (initial?.lh2State === "connected" || initial?.lh2State === "disconnected" || initial?.lh2State === "disconnecting") ? initial.lh2State : "connected"
   );
@@ -1405,7 +1405,7 @@ export default function ClawManager({
 
     // 外部 Agent
     const externals: RegistryExternal[] = [
-      ...(lh2Hidden ? [] : [{ id: "lh2", name: "Coze", abbr: "C", bg: "#BE63FF", platformLabel: "Coze", state: lh2State === "disconnecting" ? "connected" : lh2State, preset: true } as RegistryExternal]),
+      ...(lh2Hidden ? [] : [{ id: "lh2", name: "Lighthouse", abbr: "L", bg: "#BE63FF", platformLabel: "Lighthouse", state: lh2State === "disconnecting" ? "connected" : lh2State, preset: true } as RegistryExternal]),
       ...customClaws.map((c) => ({ id: c.id, name: c.name, abbr: c.abbr, bg: c.bg, platformLabel: c.platformLabel, apiUrl: c.apiUrl, state: "disconnected" as const })),
     ];
 
@@ -1533,9 +1533,9 @@ export default function ClawManager({
         <div style={{ display: "flex", gap: 16, padding: "0 24px 24px", flexWrap: "wrap", alignItems: "stretch" }}>
           {!lh2Hidden && (
             <ExternalClawCard
-              avatar={<AvatarCircle letter="C" bg="#BE63FF" />}
-              name="Coze"
-              desc="字节跳动 AI Bot 开发平台，快速构建智能体"
+              avatar={<AvatarCircle letter="L" bg="#BE63FF" />}
+              name="Lighthouse"
+              desc="腾讯云轻量应用服务器，一键连接云端实例"
               connected={lh2State === "connected"}
               buttonLabel={lh2State === "disconnecting" ? "断开中..." : "连接"}
               onButtonClick={() => {

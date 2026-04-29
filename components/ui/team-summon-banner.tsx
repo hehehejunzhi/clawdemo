@@ -45,9 +45,9 @@ function BannerAvatar({ item, zIndex, size = AVATAR_SIZE }: { item: ClusterAvata
       {isLetter ? (
         <span
           style={{
-            fontFamily: FONT_INTER,
+            fontFamily: FONT,
             fontSize: letterFontSize,
-            fontWeight: 500,
+            fontWeight: 600,
             color: isLetter ? getLetterTextColor(item.bg) : "#FFFFFF",
             lineHeight: 1,
           }}
