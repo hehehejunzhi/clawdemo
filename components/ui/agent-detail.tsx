@@ -87,7 +87,7 @@ export interface RadarValues {
   values: [number, number, number, number, number];
 }
 
-function Radar({ values, size = 220 }: { values: number[]; size?: number }) {
+function Radar({ values, size = 220, color = C.brand, gradient }: { values: number[]; size?: number; color?: string; gradient?: { from: string; to: string } }) {
   const cx = size / 2;
   const cy = size / 2;
   // 把 r 控制小一些，让 1.18×r 的标签也能完整落在 viewBox 内
@@ -107,8 +107,19 @@ function Radar({ values, size = 220 }: { values: number[]; size?: number }) {
     .map((v, i) => pointAt(i, Math.max(0, Math.min(1, v / 100))).join(","))
     .join(" ");
 
+  // 渐变 id（每个雷达独立，避免多实例冲突）
+  const gradientId = React.useId();
+
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+      {gradient && (
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={gradient.from} />
+            <stop offset="100%" stopColor={gradient.to} />
+          </linearGradient>
+        </defs>
+      )}
       {/* 同心多边形 */}
       {[0.25, 0.5, 0.75, 1].map((k) => (
         <polygon
@@ -127,15 +138,15 @@ function Radar({ values, size = 220 }: { values: number[]; size?: number }) {
       {/* 数据多边形 */}
       <polygon
         points={dataPoints}
-        fill={C.brand}
-        fillOpacity={0.18}
-        stroke={C.brand}
+        fill={gradient ? `url(#${gradientId})` : color}
+        fillOpacity={0.22}
+        stroke={gradient ? `url(#${gradientId})` : color}
         strokeWidth={1.5}
       />
       {/* 数据点 */}
       {values.map((v, i) => {
         const [x, y] = pointAt(i, Math.max(0, Math.min(1, v / 100)));
-        return <circle key={i} cx={x} cy={y} r={3} fill={C.brand} />;
+        return <circle key={i} cx={x} cy={y} r={3} fill={color} />;
       })}
       {/* 轴标签 */}
       {RADAR_AXES.map((label, i) => {
@@ -413,6 +424,10 @@ export interface AgentDetailProps {
 export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }: AgentDetailProps) {
   const [tab, setTab] = React.useState<"evolve" | "memory">("evolve");
 
+  // Mock 等级 & 阶级（决定徽章 / 进度条 / 雷达图主色）
+  const level = 12;
+  const tier = getLevelTier(level);
+
   // Mock 雷达数据
   const radarValues = [85, 92, 88, 70, 65];
 
@@ -500,7 +515,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
                   lineHeight: "30px", color: C.textPrimary, marginTop: 2,
                 }}>{expert.shortTitle}</div>
               </div>
-              <LevelBadge level={12} />
+              <LevelBadge level={level} />
             </div>
 
             {/* 成长值进度条 */}
@@ -513,7 +528,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
                 <span style={{ color: C.textSecondary, fontWeight: 500 }}>500 / 2000</span>
               </div>
               <div style={{ width: "100%", height: 6, borderRadius: 3, background: C.borderLight, overflow: "hidden" }}>
-                <div style={{ width: "25%", height: "100%", borderRadius: 3, background: C.brand }} />
+                <div style={{ width: "25%", height: "100%", borderRadius: 3, background: tier.mainGradient }} />
               </div>
             </div>
 
@@ -557,7 +572,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
 
             {/* 雷达图 + 右侧 KPI（KPI 靠右） */}
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Radar values={radarValues} size={220} />
+              <Radar values={radarValues} size={220} color={tier.mainSolid} gradient={tier.gradientStops} />
               <div style={{
                 display: "flex", flexDirection: "column", justifyContent: "space-between",
                 gap: 20, paddingLeft: 4, paddingRight: 2,
@@ -689,23 +704,36 @@ function TabBtn({ active, onClick, children }: { active?: boolean; onClick?: () 
   );
 }
 
-// ── 等级徽章 ──────────────────────────────────────────────────
-// 1-30 级、31-80 级、81+ 级分别对应三套背景图与文字渐变色
+// ── 等级阶级（B / A / S） ────────────────────────────────────
+// 1-30 → B 阶 / 31-80 → A 阶 / 81+ → S 阶
+// 每阶有：徽章背景图、徽章文字渐变、主色渐变（用于进度条/雷达图）、主色实体（SVG fill 兜底）
 const LEVEL_TIERS = [
   {
+    tier: "B" as const,
     max: 30,
     bg: "/agents/level/lv-1-30.png",
     gradient: "linear-gradient(180deg, #446A8C 0%, #365D72 73.12%)",
+    mainGradient: "linear-gradient(90deg, #3B82F6 0%, #3DBBEE 49.57%, #2DD4BF 100%)",
+    mainSolid: "#3DBBEE",
+    gradientStops: { from: "#3B82F6", to: "#2DD4BF" },
   },
   {
+    tier: "A" as const,
     max: 80,
     bg: "/agents/level/lv-31-80.png",
     gradient: "linear-gradient(180deg, #926444 0%, #664331 73.12%)",
+    mainGradient: "linear-gradient(90deg, #F38927 0%, #FDDC6C 80.52%, #FFEAA1 100%)",
+    mainSolid: "#F38927",
+    gradientStops: { from: "#F38927", to: "#FFEAA1" },
   },
   {
+    tier: "S" as const,
     max: Infinity,
     bg: "/agents/level/lv-81.png",
     gradient: "linear-gradient(180deg, #6A53A4 0%, #4F4077 73.12%)",
+    mainGradient: "linear-gradient(90deg, #3E4DFA 0%, #C474FF 100%)",
+    mainSolid: "#7C5EFA",
+    gradientStops: { from: "#3E4DFA", to: "#C474FF" },
   },
 ] as const;
 
