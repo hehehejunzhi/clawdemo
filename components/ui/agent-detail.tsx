@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { AnimatePresence } from "framer-motion";
+import { SkillDetailModal, type SkillDetail } from "@/components/ui/skill-plaza";
 import type { BuiltinExpert } from "@/lib/agent-registry";
 
 // ── Design tokens ──────────────────────────────────────────────
@@ -532,26 +534,36 @@ interface SkillItem {
   name: string;
   desc: string;
   tag: "task" | "builtin" | "skillhub";
+  category: string;
+  version: string;
+  author: string;
 }
 
 const DEFAULT_SKILLS: SkillItem[] = [
-  { name: "incident-runbook-v2", desc: "基于历史故障经验沉淀的 runbook，覆盖 OOM、磁盘满、慢查询场景", tag: "task" },
-  { name: "Cluster-Health-Monitor", desc: "集群健康巡检，实时监控 CPU / 内存 / 磁盘 / 网络指标", tag: "builtin" },
-  { name: "Presto-Native-Executor", desc: "Presto 原生 C++ 算子加速，3-5x 性能提升", tag: "skillhub" },
-  { name: "Capacity-Forecaster", desc: "基于历史数据预测集群容量需求，辅助扩缩容决策", tag: "skillhub" },
-  { name: "Presto-Native-Executor", desc: "Presto 原生 C++ 算子加速，3-5x 性能提升", tag: "skillhub" },
+  { name: "incident-runbook-v2", desc: "基于历史故障经验沉淀的 runbook，覆盖 OOM、磁盘满、慢查询场景", tag: "task", category: "故障应急", version: "2.1.0", author: "Rigel · 任务沉淀" },
+  { name: "Cluster-Health-Monitor", desc: "集群健康巡检，实时监控 CPU / 内存 / 磁盘 / 网络指标", tag: "builtin", category: "集群运维", version: "1.4.2", author: "WeData Team" },
+  { name: "Presto-Native-Executor", desc: "Presto 原生 C++ 算子加速，3-5x 性能提升", tag: "skillhub", category: "性能调优", version: "0.9.0", author: "SkillHub · Community" },
+  { name: "Capacity-Forecaster", desc: "基于历史数据预测集群容量需求，辅助扩缩容决策", tag: "skillhub", category: "容量规划", version: "1.0.3", author: "SkillHub · Tencent" },
+  { name: "Slow-Query-Analyzer", desc: "分析慢查询根因，给出执行计划与索引优化建议", tag: "skillhub", category: "性能调优", version: "1.2.0", author: "SkillHub · Community" },
 ];
 
-function SkillList({ items = DEFAULT_SKILLS }: { items?: SkillItem[] }) {
+function SkillList({ items = DEFAULT_SKILLS, onSkillClick }: { items?: SkillItem[]; onSkillClick?: (s: SkillItem) => void }) {
   return (
     <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}>
       {items.map((s, i) => (
         <li
           key={i}
+          onClick={() => onSkillClick?.(s)}
           style={{
-            padding: "12px 0",
+            padding: "12px 8px",
+            margin: "0 -8px",
+            borderRadius: 6,
             borderBottom: i === items.length - 1 ? "none" : `1px solid ${C.borderLight}`,
+            cursor: onSkillClick ? "pointer" : "default",
+            transition: "background 100ms",
           }}
+          onMouseEnter={(e) => { if (onSkillClick) (e.currentTarget as HTMLLIElement).style.background = C.hoverBg; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLLIElement).style.background = "transparent"; }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{
@@ -585,6 +597,8 @@ export interface AgentDetailProps {
 
 export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }: AgentDetailProps) {
   const [tab, setTab] = React.useState<"evolve" | "memory">("evolve");
+  // 点击技能列表项后展示的弹窗
+  const [skillDetail, setSkillDetail] = React.useState<SkillDetail | null>(null);
 
   // Mock 等级 & 阶级（决定徽章 / 进度条 / 雷达图主色）
   const level = 12;
@@ -835,7 +849,13 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
                   </button>
                 }
               >
-                <SkillList />
+                <SkillList onSkillClick={(s) => setSkillDetail({
+                  title: s.name,
+                  desc: s.desc,
+                  category: s.category,
+                  version: s.version,
+                  author: s.author,
+                })} />
               </Card>
             </div>
 
@@ -871,6 +891,13 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
           </Card>
         </main>
       </div>
+
+      {/* Skill 详情弹窗 */}
+      <AnimatePresence>
+        {skillDetail && (
+          <SkillDetailModal detail={skillDetail} onClose={() => setSkillDetail(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -71,9 +71,9 @@ function Toast({ message, visible, type, onDone }: { message: string; visible: b
 }
 
 // ── Skill 详情弹窗 ──────────────────────────────────────────
-type SkillDetail = { title: string; desc: string; category: string; version: string; author: string };
+export type SkillDetail = { title: string; desc: string; category: string; version: string; author: string };
 
-function SkillDetailModal({ detail, onClose }: { detail: SkillDetail; onClose: () => void }) {
+export function SkillDetailModal({ detail, onClose }: { detail: SkillDetail; onClose: () => void }) {
   // 点击遮罩关闭
   return (
     <motion.div
