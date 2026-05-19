@@ -1,9 +1,11 @@
 "use client";
 
 import React from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { SkillDetailModal, type SkillDetail } from "@/components/ui/skill-plaza";
 import type { BuiltinExpert } from "@/lib/agent-registry";
+
+const EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
 // ── Design tokens ──────────────────────────────────────────────
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -587,11 +589,107 @@ function SkillList({ items = DEFAULT_SKILLS, onSkillClick }: { items?: SkillItem
   );
 }
 
+// ── Agent Skills 配置弹窗 ────────────────────────────────────
+// 替代「跳转到 SkillPlaza」的行为：仅展示当前 Agent 拥有的技能列表
+function AgentSkillsModal({
+  agentName,
+  items = DEFAULT_SKILLS,
+  onClose,
+  onSkillClick,
+}: {
+  agentName: string;
+  items?: SkillItem[];
+  onClose: () => void;
+  onSkillClick?: (s: SkillItem) => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 8800,
+        background: "rgba(0,0,0,0.35)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.2, ease: EASE }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 560, maxHeight: "80vh",
+          background: C.cardBg, borderRadius: 16,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          position: "relative",
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          padding: "20px 24px 12px",
+          display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12,
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontFamily: FONT, fontSize: 18, fontWeight: 600,
+              lineHeight: "26px", color: C.textPrimary,
+            }}>
+              配置 Skill
+            </div>
+            <div style={{
+              marginTop: 2, fontFamily: FONT, fontSize: 13, fontWeight: 400,
+              lineHeight: "20px", color: C.textTertiary,
+            }}>
+              {agentName} · 共 {items.length} 个技能
+            </div>
+          </div>
+          {/* 关闭按钮 */}
+          <div
+            onClick={onClose}
+            style={{
+              flexShrink: 0,
+              width: 28, height: 28, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", background: "transparent",
+              transition: "background 100ms",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+        </div>
+
+        {/* 分割线 */}
+        <div style={{ height: 1, background: C.borderLight, margin: "0 24px" }} />
+
+        {/* Body：技能列表（可滚动） */}
+        <div style={{
+          flex: 1, minHeight: 0, overflowY: "auto",
+          padding: "4px 24px 20px",
+        }}>
+          <SkillList items={items} onSkillClick={onSkillClick} />
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── 主组件 ────────────────────────────────────────────────────
 export interface AgentDetailProps {
   expert: BuiltinExpert;
   onBack?: () => void;
   onDialog?: () => void;
+  /** 可选：自定义「配置 Skill」点击行为。若不传，则默认弹出当前 Agent 的技能配置弹窗。 */
   onConfigSkill?: () => void;
 }
 
@@ -599,6 +697,8 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
   const [tab, setTab] = React.useState<"evolve" | "memory">("evolve");
   // 点击技能列表项后展示的弹窗
   const [skillDetail, setSkillDetail] = React.useState<SkillDetail | null>(null);
+  // 「配置 Skill」按钮触发的弹窗
+  const [skillsModalOpen, setSkillsModalOpen] = React.useState(false);
 
   // Mock 等级 & 阶级（决定徽章 / 进度条 / 雷达图主色）
   const level = 12;
@@ -832,7 +932,10 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
                 style={{ height: 320, overflowY: "auto", padding: "4px 20px 20px" }}
                 extra={
                   <button
-                    onClick={onConfigSkill}
+                    onClick={() => {
+                      if (onConfigSkill) onConfigSkill();
+                      else setSkillsModalOpen(true);
+                    }}
                     style={{
                       height: 22, padding: "0 4px", borderRadius: 4,
                       border: "none", background: "transparent",
@@ -905,6 +1008,23 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
           </Card>
         </main>
       </div>
+
+      {/* 配置 Skill 弹窗（仅当前 Agent 的技能列表） */}
+      <AnimatePresence>
+        {skillsModalOpen && (
+          <AgentSkillsModal
+            agentName={expert.fullName}
+            onClose={() => setSkillsModalOpen(false)}
+            onSkillClick={(s) => setSkillDetail({
+              title: s.name,
+              desc: s.desc,
+              category: s.category,
+              version: s.version,
+              author: s.author,
+            })}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Skill 详情弹窗 */}
       <AnimatePresence>

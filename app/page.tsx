@@ -1215,7 +1215,6 @@ export default function Home() {
                     chatInputRef.current?.setAgent(expert.shortTitle);
                     handleSelectAgent(expert.id);
                   }}
-                  onConfigSkill={() => { setDetailView(null); setShowSkillPlaza(true); }}
                 />
               );
             }
