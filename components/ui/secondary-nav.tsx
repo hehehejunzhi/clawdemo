@@ -426,6 +426,8 @@ function SingleAvatar({ src }: { src: string }) {
 interface SecondaryNavProps {
   onToggle?: () => void;
   onCollapsedChange?: (collapsed: boolean) => void;
+  /** 受控收起状态；传入时由父组件维护 collapsed，否则由内部 state 维护 */
+  collapsed?: boolean;
   onNewTask?: () => void;
   onSkillPlaza?: () => void;
   onClawManager?: () => void;
@@ -438,8 +440,13 @@ interface SecondaryNavProps {
   onAgentSelect?: (agentId: string, label: string) => void;
 }
 
-export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu, registry, onAgentSelect }: SecondaryNavProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function SecondaryNav({ collapsed: collapsedProp, onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu, registry, onAgentSelect }: SecondaryNavProps) {
+  const [collapsedState, setCollapsedState] = useState(false);
+  const collapsed = collapsedProp ?? collapsedState;
+  const setCollapsed = (next: boolean) => {
+    if (collapsedProp === undefined) setCollapsedState(next);
+    onCollapsedChange?.(next);
+  };
 
   const contentFade: React.CSSProperties = {
     transition: `opacity ${CONTENT_FADE}s ease`,
@@ -505,7 +512,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               <ToolbarButton onClick={() => {}} title="搜索">
                 <img src="/icons/nav/2.svg" alt="" style={{ width: 16, height: 16 }} />
               </ToolbarButton>
-              <ToolbarButton onClick={() => { setCollapsed(true); onCollapsedChange?.(true); }} title="收起面板">
+              <ToolbarButton onClick={() => { setCollapsed(true); }} title="收起面板">
                 <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
               </ToolbarButton>
             </div>
@@ -520,7 +527,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           pointerEvents: collapsed ? "auto" : "none",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <ToolbarButton onClick={() => { setCollapsed(false); onCollapsedChange?.(false); }} title="展开面板">
+          <ToolbarButton onClick={() => { setCollapsed(false); }} title="展开面板">
             <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
           </ToolbarButton>
         </div>

@@ -1116,7 +1116,7 @@ export default function Home() {
       <PrimaryNav />
 
       {/* ── 二级导航面板 ── */}
-      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); setDetailView(null); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); setDetailView(null); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); setDetailView(null); }} onTaskClick={(task) => { setDetailView(null); handleTaskClick(task); }} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
+      {targetView === "dataclaw" && <SecondaryNav collapsed={isSecondaryCollapsed} onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); setDetailView(null); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); setDetailView(null); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); setDetailView(null); }} onTaskClick={(task) => { setDetailView(null); handleTaskClick(task); }} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
         // 左栏点击 Section Header：
         // - 团队 / 内置专家 → 打开详情页
         // - 其他（分身 / 外部 Agent）→ 维持原"召唤气泡"行为
@@ -1207,6 +1207,7 @@ export default function Home() {
                   onBack={goBackFromDetail}
                   secondaryCollapsed={isSecondaryCollapsed}
                   onNewChat={() => { setDetailView(null); handleNewChat(); }}
+                  onExpandSecondary={() => setIsSecondaryCollapsed(false)}
                   onDialog={() => {
                     setDetailView(null);
                     if (chatPhase === "conversation") {
@@ -1229,6 +1230,7 @@ export default function Home() {
                 onBack={goBackFromDetail}
                 secondaryCollapsed={isSecondaryCollapsed}
                 onNewChat={() => { setDetailView(null); handleNewChat(); }}
+                onExpandSecondary={() => setIsSecondaryCollapsed(false)}
                 onDialog={() => {
                   setDetailView(null);
                   if (chatPhase === "conversation") handleNewChat();

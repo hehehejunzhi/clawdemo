@@ -1039,12 +1039,13 @@ export interface AgentDetailProps {
   expert: BuiltinExpert;
   onBack?: () => void;
   onDialog?: () => void;
-  /** SecondaryNav 是否收起；收起时 header 左侧补一个「新建对话」按钮 */
+  /** SecondaryNav 是否收起；收起时 header 左侧补「新建对话」「展开面板」按钮 */
   secondaryCollapsed?: boolean;
   onNewChat?: () => void;
+  onExpandSecondary?: () => void;
 }
 
-export default function AgentDetail({ expert, onBack, onDialog, secondaryCollapsed, onNewChat }: AgentDetailProps) {
+export default function AgentDetail({ expert, onBack, onDialog, secondaryCollapsed, onNewChat, onExpandSecondary }: AgentDetailProps) {
   const [tab, setTab] = React.useState<"evolve" | "memory">("evolve");
   // 点击技能列表项后展示的弹窗
   const [skillDetail, setSkillDetail] = React.useState<SkillDetail | null>(null);
@@ -1073,23 +1074,40 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
         background: C.titlebarBg,
         borderBottom: `1px solid ${C.borderLight}`,
       }}>
-        {/* SecondaryNav 收起时左侧露出「新建对话」入口 */}
+        {/* SecondaryNav 收起时左侧露出「新建对话」+「展开面板」入口（与 SecondaryNav 顶部按钮样式一致） */}
         {secondaryCollapsed && (
-          <button
-            onClick={onNewChat}
-            aria-label="新建对话"
-            title="新建对话"
-            style={{
-              width: 32, height: 32, borderRadius: 8, border: "none",
-              background: "transparent", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              padding: 0, marginRight: 4,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-          >
-            <IconAiNewChat size={16} color="rgba(0,0,0,0.6)" />
-          </button>
+          <>
+            <button
+              onClick={onNewChat}
+              aria-label="新建对话"
+              title="新建对话"
+              style={{
+                width: 32, height: 32, borderRadius: 8, border: "none",
+                background: "transparent", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 0,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <IconAiNewChat size={16} color="rgba(0,0,0,0.6)" />
+            </button>
+            <button
+              onClick={onExpandSecondary}
+              aria-label="展开面板"
+              title="展开面板"
+              style={{
+                width: 32, height: 32, borderRadius: 8, border: "none",
+                background: "transparent", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 0, marginRight: 4,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
+            </button>
+          </>
         )}
         <button
           onClick={onBack}
