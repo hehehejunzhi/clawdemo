@@ -1161,7 +1161,12 @@ export default function Home() {
           transition={{ duration: 0.22, ease: EASE }}
           style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
         >
-          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} registry={registry} onRegistryChange={setRegistry} onAgentDialog={(agentId, label) => {
+          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} registry={registry} onRegistryChange={setRegistry} onAgentDetail={(kind, id) => {
+            // Agent 广场点击卡片本体 → 跳转详情页
+            setShowSkillPlaza(false);
+            setShowClawManager(false);
+            setDetailView({ type: kind === "team" ? "team" : "agent", id });
+          }} onAgentDialog={(agentId, label) => {
             // 点卡片「对话」按钮：关闭 Agent 广场回到聊天主界面，并召唤对应 Agent banner
             setShowSkillPlaza(false);
             setShowClawManager(false);

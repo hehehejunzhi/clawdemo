@@ -113,7 +113,7 @@ function DialogBtn({ label, icon, onClick }: { label: string; icon?: boolean; on
 }
 
 // ── Card shell (340 x 168, horizontal layout) ─────────────────
-function Card({ avatar, name, desc, badge, button, children, onDialog }: {
+function Card({ avatar, name, desc, badge, button, children, onDialog, onCardClick }: {
   avatar: React.ReactNode;
   name: React.ReactNode;
   desc: string;
@@ -123,10 +123,13 @@ function Card({ avatar, name, desc, badge, button, children, onDialog }: {
   children?: React.ReactNode;
   /** 点击默认「对话」按钮时触发（仅当未传 button 覆写时有效） */
   onDialog?: () => void;
+  /** 点击卡片本体（非按钮/菜单区域）时触发 —— 用于下钻到详情页 */
+  onCardClick?: () => void;
 }) {
   const [h, setH] = useState(false);
   return (
     <div
+      onClick={onCardClick}
       onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
       style={{
         width: 340, minHeight: 168, background: C.bgWhite, borderRadius: 16,
@@ -152,7 +155,10 @@ function Card({ avatar, name, desc, badge, button, children, onDialog }: {
       </div>
       {children}
       {/* Bottom: action button */}
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div
+        style={{ display: "flex", justifyContent: "flex-end" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {button ?? <DialogBtn label="对话" onClick={onDialog} />}
       </div>
     </div>
@@ -1216,12 +1222,15 @@ export default function ClawManager({
   registry,
   onRegistryChange,
   onAgentDialog,
+  onAgentDetail,
 }: {
   onNavigateToSkillPlaza?: () => void;
   registry?: AgentRegistry;
   onRegistryChange?: (next: AgentRegistry) => void;
   /** 点击卡片「对话」按钮时触发：由 page.tsx 关闭 ClawManager 并召唤对应 agent banner */
   onAgentDialog?: (agentId: string, label: string) => void;
+  /** 点击卡片本体时触发：由 page.tsx 跳转到 Agent / Team 详情页（仅团队和内置专家有效） */
+  onAgentDetail?: (kind: "team" | "expert", id: string) => void;
 } = {}) {
   // Mount 时若有外部 registry，从它恢复内部 state（避免卸载重挂丢失）
   const initFromRegistry = () => {
@@ -1453,6 +1462,7 @@ export default function ClawManager({
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>大数据团队 (3)</span>}
             desc="包含数据开发、分析、运维专家的协作团队"
             onDialog={() => onAgentDialog?.("bigdata-team", "大数据团队")}
+            onCardClick={() => onAgentDetail?.("team", "bigdata-team")}
           />
           {/* 动态创建的团队卡片（含预置的"运营协作团队"） */}
           {customTeams.map((team) => {
@@ -1471,6 +1481,7 @@ export default function ClawManager({
                 desc={team.desc}
                 badge={(hovered) => <MoreMenu visible={hovered} onManage={() => setManagingTeamId(team.id)} onDelete={() => setDeletingTeamId(team.id)} />}
                 onDialog={() => onAgentDialog?.(registryTeamId, team.name)}
+                onCardClick={() => onAgentDetail?.("team", registryTeamId)}
               />
             );
           })}
@@ -1485,18 +1496,21 @@ export default function ClawManager({
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Rigel·数据开发专家</span>}
             desc="负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。"
             onDialog={() => onAgentDialog?.("dev-expert", "数据开发专家")}
+            onCardClick={() => onAgentDetail?.("expert", "dev-expert")}
           />
           <Card
             avatar={<AvatarCircle src="/agents/analysis-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Vega·数据分析专家</span>}
             desc="从海量数据提取关键洞察，构建数据模型与可视化报告，提供业务决策支持。"
             onDialog={() => onAgentDialog?.("analysis-expert", "数据分析专家")}
+            onCardClick={() => onAgentDetail?.("expert", "analysis-expert")}
           />
           <Card
             avatar={<AvatarCircle src="/agents/ops-expert.png" />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Orion·数据运维专家</span>}
             desc="负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。"
             onDialog={() => onAgentDialog?.("ops-expert", "数据运维专家")}
+            onCardClick={() => onAgentDetail?.("expert", "ops-expert")}
           />
         </div>
 
