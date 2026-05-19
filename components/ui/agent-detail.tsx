@@ -809,11 +809,12 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
 4. 新增技能「分区表调优」（用户批准的 Agent 提议）`} />
           </Card>
 
-          {/* Agent 技能 + Agent 自进化（左右并排） */}
+          {/* Agent 技能 + Agent 自进化（左右并排，固定 320px 内部滚动） */}
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <Card
                 title={`Agent 技能 (${expert.skills.length})`}
+                style={{ height: 320, overflowY: "auto" }}
                 extra={
                   <button
                     onClick={onConfigSkill}
@@ -838,7 +839,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <Card title="Agent 自进化">
+              <Card title="Agent 自进化" style={{ height: 320, overflowY: "auto" }}>
                 <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
                   <TabBtn active={tab === "evolve"} onClick={() => setTab("evolve")}>自进化概览</TabBtn>
                   <TabBtn active={tab === "memory"} onClick={() => setTab("memory")}>记忆沉淀</TabBtn>
