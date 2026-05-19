@@ -392,15 +392,42 @@ function Heatmap() {
     cells.push(col);
   }
 
-  const CELL = 12;
-  const GAP = 3;
+  // ── 宽度自适应：根据容器宽度反推 CELL / GAP ─────────────────
+  // 在 1920×1080（详情卡片可用宽 ≈ 1156）下，CELL 命中上限 16，整图完整无溢出
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const LABEL_W = 28;      // 周几标签列宽
+  const LABEL_GAP = 6;     // 标签列与网格列的间距
+  const GAP = 3;           // 单元格 row/column gap
+  const CELL_MIN = 10;
+  const CELL_MAX = 16;
+  const [cell, setCell] = React.useState<number>(12);
+
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    const el = containerRef.current;
+    const compute = () => {
+      const w = el.clientWidth;
+      // 可用绘制宽度 = 总宽 - 标签列 - 标签-网格间距
+      const drawable = w - LABEL_W - LABEL_GAP;
+      // 52 列单元格 + 51 个 GAP：drawable = 52*CELL + 51*GAP
+      const next = Math.floor((drawable - 51 * GAP) / HEATMAP_WEEKS);
+      const clamped = Math.max(CELL_MIN, Math.min(CELL_MAX, next));
+      setCell(clamped);
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const CELL = cell;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div ref={containerRef} style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
       {/* 月份标签 */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: `28px repeat(${HEATMAP_WEEKS}, ${CELL + GAP}px)`,
+        gridTemplateColumns: `${LABEL_W}px repeat(${HEATMAP_WEEKS}, ${CELL + GAP}px)`,
         fontFamily: FONT, fontSize: 11, color: C.textTertiary, lineHeight: "16px",
       }}>
         <div />
@@ -418,8 +445,8 @@ function Heatmap() {
       {/* 7 行 × 52 列网格 */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: `28px 1fr`,
-        gap: 6,
+        gridTemplateColumns: `${LABEL_W}px 1fr`,
+        gap: LABEL_GAP,
       }}>
         {/* 周几标签列 */}
         <div style={{ display: "flex", flexDirection: "column", gap: GAP }}>
