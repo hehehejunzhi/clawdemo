@@ -1319,9 +1319,9 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
               { value: "24", label: "技能" },
               { value: "27", label: "合并请求" },
             ]} />
-            <div style={{ marginTop: 20 }}>
-              <Heatmap />
-            </div>
+            {/* 数据组与热力图之间分割线 */}
+            <div style={{ height: 1, background: C.borderLight, margin: "20px 0" }} />
+            <Heatmap />
           </Card>
         </main>
       </div>
