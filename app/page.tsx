@@ -1115,8 +1115,10 @@ export default function Home() {
       {/* ── 左侧一级导航 ── */}
       <PrimaryNav />
 
-      {/* ── 二级导航面板 ── */}
-      {targetView === "dataclaw" && <SecondaryNav collapsed={isSecondaryCollapsed} onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); setDetailView(null); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); setDetailView(null); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); setDetailView(null); }} onTaskClick={(task) => { setDetailView(null); handleTaskClick(task); }} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
+      {/* ── 二级导航面板 ──
+           详情页（AgentDetail / TeamDetail）下若 SecondaryNav 已收起，则完全隐藏窄栏，
+           展开/新建对话入口由详情页 header 提供，避免左侧出现 68px 空白带 */}
+      {targetView === "dataclaw" && !(detailView && isSecondaryCollapsed) && <SecondaryNav collapsed={isSecondaryCollapsed} onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); setDetailView(null); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); setDetailView(null); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); setDetailView(null); }} onTaskClick={(task) => { setDetailView(null); handleTaskClick(task); }} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
         // 左栏点击 Section Header：
         // - 团队 / 内置专家 → 打开详情页
         // - 其他（分身 / 外部 Agent）→ 维持原"召唤气泡"行为
