@@ -34,17 +34,11 @@ const C = {
 
 function Card({ title, extra, children, style }: { title?: string; extra?: React.ReactNode; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <section style={{
-      background: C.cardBg,
-      border: `1px solid ${C.border}`,
-      borderRadius: 12,
-      padding: 20,
-      ...style,
-    }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {(title || extra) && (
         <header style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          marginBottom: 14,
+          padding: "0 4px",
         }}>
           {title && <h3 style={{
             margin: 0, fontFamily: FONT, fontSize: 16, fontWeight: 600,
@@ -53,8 +47,16 @@ function Card({ title, extra, children, style }: { title?: string; extra?: React
           {extra}
         </header>
       )}
-      {children}
-    </section>
+      <section style={{
+        background: C.cardBg,
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        padding: 20,
+        ...style,
+      }}>
+        {children}
+      </section>
+    </div>
   );
 }
 
