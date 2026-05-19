@@ -462,10 +462,8 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
         {/* ── 左列：单卡片，内部用分割线分区 ── */}
         <aside style={{ width: 360, flexShrink: 0 }}>
           <div style={{
-            background: C.cardBg,
-            border: `1px solid ${C.border}`,
-            borderRadius: 12,
-            padding: 20,
+            background: "transparent",
+            padding: 0,
             display: "flex", flexDirection: "column", gap: 16,
           }}>
             {/* 立绘 */}
