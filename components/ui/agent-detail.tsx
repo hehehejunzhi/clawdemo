@@ -152,7 +152,7 @@ function Radar({ values, size = 220, color = C.brand, gradient }: { values: numb
         const a = angleFor(i);
         const cosA = Math.cos(a);
         const sinA = Math.sin(a);
-        // 标签锚点距离圆心 1.25 r；左右标签再加一点水平偏移，避免文字与五维图边线重合
+        // 标签锚点距离圆心 1.25 r
         const baseK = 1.25;
         const [x, y] = pointAt(i, baseK);
         // 水平 anchor：靠右的轴文字 start、靠左的轴 end、近垂直 middle
@@ -162,13 +162,20 @@ function Radar({ values, size = 220, color = C.brand, gradient }: { values: numb
         // 垂直 baseline：靠上 auto（让文字底部贴合 y）、靠下 hanging、近水平 middle
         const baseline: "auto" | "middle" | "hanging" =
           sinA < -eps ? "auto" : sinA > eps ? "hanging" : "middle";
-        // 给左右标签再向外推 4px，给水平方向更多呼吸空间
-        const dx = cosA > eps ? 4 : cosA < -eps ? -4 : 0;
+        // 单条轴的额外像素微调（按 RADAR_AXES 索引：0 ETL处理 / 1 智能分析 / 2 数据查询 / 3 预测能力 / 4 决策支持）
+        const PER_AXIS_OFFSET: Array<[number, number]> = [
+          [0, 10],    // ETL处理：下 10
+          [-10, 0],   // 智能分析：左 10
+          [-10, -10], // 数据查询：左 10、上 10
+          [10, -10],  // 预测能力：右 10、上 10
+          [10, 0],    // 决策支持：右 10
+        ];
+        const [ox, oy] = PER_AXIS_OFFSET[i] ?? [0, 0];
         return (
           <text
             key={label}
-            x={x + dx}
-            y={y}
+            x={x + ox}
+            y={y + oy}
             fontSize={12}
             fontFamily={FONT}
             fill={C.textSecondary}
