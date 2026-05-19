@@ -614,8 +614,11 @@ export default function Home() {
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const [showSkillPlaza, setShowSkillPlaza] = useState(false);
   const [showClawManager, setShowClawManager] = useState(false);
-  // Agent / Team 详情页：null 时不显示
-  const [detailView, setDetailView] = useState<{ type: "agent" | "team"; id: string } | null>(null);
+  // Agent / Team 详情页：null 时不显示。`from` 记录触发详情页的来源（用于返回时还原）
+  const [detailView, setDetailView] = useState<
+    | { type: "agent" | "team"; id: string; from: "claw-manager" | "secondary-nav" }
+    | null
+  >(null);
   // Agent Registry — Agent 广场/左侧工具栏/对话下拉共享的唯一数据源
   const [registry, setRegistry] = useState<AgentRegistry>(DEFAULT_REGISTRY);
   // 选中的团队 id（非默认"大数据团队"时在 welcome 区显示 TeamSummonBanner）
@@ -1122,7 +1125,7 @@ export default function Home() {
         if (isTeam || isExpert) {
           setShowSkillPlaza(false);
           setShowClawManager(false);
-          setDetailView({ type: isTeam ? "team" : "agent", id: agentId });
+          setDetailView({ type: isTeam ? "team" : "agent", id: agentId, from: "secondary-nav" });
           return;
         }
         // 非团队/专家：保持原召唤逻辑
@@ -1162,10 +1165,10 @@ export default function Home() {
           style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
         >
           <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} registry={registry} onRegistryChange={setRegistry} onAgentDetail={(kind, id) => {
-            // Agent 广场点击卡片本体 → 跳转详情页
+            // Agent 广场点击卡片本体 → 跳转详情页（记录 from 以便返回时回到 Agent 广场）
             setShowSkillPlaza(false);
             setShowClawManager(false);
-            setDetailView({ type: kind === "team" ? "team" : "agent", id });
+            setDetailView({ type: kind === "team" ? "team" : "agent", id, from: "claw-manager" });
           }} onAgentDialog={(agentId, label) => {
             // 点卡片「对话」按钮：关闭 Agent 广场回到聊天主界面，并召唤对应 Agent banner
             setShowSkillPlaza(false);
@@ -1189,14 +1192,19 @@ export default function Home() {
           transition={{ duration: 0.22, ease: EASE }}
           style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
         >
-          {detailView.type === "agent" ? (
-            (() => {
+          {(() => {
+            const goBackFromDetail = () => {
+              const from = detailView?.from;
+              setDetailView(null);
+              if (from === "claw-manager") setShowClawManager(true);
+            };
+            if (detailView.type === "agent") {
               const expert = registry.experts.find((e) => e.id === detailView.id);
               if (!expert) { setDetailView(null); return null; }
               return (
                 <AgentDetail
                   expert={expert}
-                  onBack={() => setDetailView(null)}
+                  onBack={goBackFromDetail}
                   onDialog={() => {
                     setDetailView(null);
                     if (chatPhase === "conversation") {
@@ -1210,29 +1218,26 @@ export default function Home() {
                   onConfigSkill={() => { setDetailView(null); setShowSkillPlaza(true); }}
                 />
               );
-            })()
-          ) : (
-            (() => {
-              const team = registry.teams.find((t) => t.id === detailView.id);
-              if (!team) { setDetailView(null); return null; }
-              return (
-                <TeamDetail
-                  team={team}
-                  experts={registry.experts}
-                  onBack={() => setDetailView(null)}
-                  onDialog={() => {
-                    setDetailView(null);
-                    if (chatPhase === "conversation") handleNewChat();
-                    chatInputRef.current?.setAgent(team.name);
-                    handleSelectAgent(team.id);
-                  }}
-                  onMemberManage={() => { setDetailView(null); setShowClawManager(true); }}
-                  onEdit={() => { setDetailView(null); setShowClawManager(true); }}
-                  onDelete={() => { setDetailView(null); }}
-                />
-              );
-            })()
-          )}
+            }
+            const team = registry.teams.find((t) => t.id === detailView.id);
+            if (!team) { setDetailView(null); return null; }
+            return (
+              <TeamDetail
+                team={team}
+                experts={registry.experts}
+                onBack={goBackFromDetail}
+                onDialog={() => {
+                  setDetailView(null);
+                  if (chatPhase === "conversation") handleNewChat();
+                  chatInputRef.current?.setAgent(team.name);
+                  handleSelectAgent(team.id);
+                }}
+                onMemberManage={() => { setDetailView(null); setShowClawManager(true); }}
+                onEdit={() => { setDetailView(null); setShowClawManager(true); }}
+                onDelete={() => { setDetailView(null); }}
+              />
+            );
+          })()}
         </motion.div>
       ) : (
       <motion.div
