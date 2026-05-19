@@ -393,14 +393,14 @@ function Heatmap() {
   }
 
   // ── 宽度自适应：根据容器宽度反推 CELL / GAP ─────────────────
-  // 在 1920×1080（详情卡片可用宽 ≈ 1156）下，CELL 命中上限 16，整图完整无溢出
+  // 网格撑满卡片宽度；cell 为正方形，行高随之增大
   const containerRef = React.useRef<HTMLDivElement>(null);
   const LABEL_W = 28;      // 周几标签列宽
   const LABEL_GAP = 6;     // 标签列与网格列的间距
   const GAP = 3;           // 单元格 row/column gap
   const CELL_MIN = 10;
-  const CELL_MAX = 16;
-  const [cell, setCell] = React.useState<number>(12);
+  const CELL_MAX = 28;     // 放宽上限，1920 下约 21px，撑满卡片
+  const [cell, setCell] = React.useState<number>(16);
 
   React.useEffect(() => {
     if (!containerRef.current) return;
