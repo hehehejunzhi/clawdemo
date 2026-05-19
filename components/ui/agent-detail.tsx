@@ -177,8 +177,9 @@ function Radar({ values, size = 220, color = C.brand, gradient }: { values: numb
             x={x + ox}
             y={y + oy}
             fontSize={12}
+            fontWeight={500}
             fontFamily={FONT}
-            fill={C.textSecondary}
+            fill={C.textTertiary}
             textAnchor={anchor}
             dominantBaseline={baseline}
           >
