@@ -466,19 +466,22 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
             padding: 0,
             display: "flex", flexDirection: "column", gap: 16,
           }}>
-            {/* 立绘 —— 大数据 Agent / 自定义 Agent 统一使用这张配图 */}
+            {/* 立绘 —— 大数据 Agent / 自定义 Agent 统一使用这张配图（按切图比例 659:579） */}
             <div style={{
-              width: "100%", aspectRatio: "1 / 1",
-              borderRadius: 12, overflow: "hidden",
-              display: "flex", alignItems: "flex-end", justifyContent: "center",
+              width: "100%",
+              aspectRatio: "659 / 579",
+              borderRadius: 12,
+              overflow: "hidden",
               position: "relative",
             }}>
               <img
                 src="/agents/hero/default-agent.png"
                 alt={expert.fullName}
                 style={{
-                  width: "100%", height: "100%",
-                  objectFit: "contain", objectPosition: "center bottom",
+                  width: "100%",
+                  height: "100%",
+                  display: "block",
+                  objectFit: "contain",
                 }}
               />
             </div>
