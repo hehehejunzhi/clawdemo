@@ -715,7 +715,7 @@ function getLevelTier(level: number) {
 
 function LevelBadge({ level }: { level: number }) {
   const tier = getLevelTier(level);
-  // 切图尺寸 129×48，按 2× DPR 缩到 ~64×24（与原 Lv 标签高度接近）
+  // 切图尺寸 129×48，保持 ~2.69 长宽比；高度 24 对应宽度 64.5
   const W = 64;
   const H = 24;
   return (
@@ -724,10 +724,16 @@ function LevelBadge({ level }: { level: number }) {
       backgroundImage: `url(${tier.bg})`,
       backgroundSize: "100% 100%",
       backgroundRepeat: "no-repeat",
-      display: "flex", alignItems: "center", justifyContent: "center",
       position: "relative",
     }}>
+      {/* 绝对定位 + 100% 宽高 + flex 居中：italic 不会撑高基线，文字始终位于背景几何中心 */}
       <span style={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
         fontFamily: "'Geom', 'GeomBold', var(--font-geist-sans), 'PingFang SC', sans-serif",
         fontSize: 13, fontWeight: 700, fontStyle: "italic",
         lineHeight: 1, letterSpacing: 0.2,
@@ -735,8 +741,10 @@ function LevelBadge({ level }: { level: number }) {
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
         backgroundClip: "text",
-        // 兼容性兜底（不支持 background-clip:text 的环境会显示渐变起点色）
+        // 兼容性兜底
         color: "#365D72",
+        // italic 视觉重心略偏左，向右补偿 1px，让文字居于背景几何中心
+        paddingLeft: 2,
       }}>Lv. {level}</span>
     </div>
   );
