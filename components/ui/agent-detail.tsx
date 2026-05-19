@@ -821,8 +821,15 @@ function LevelBadge({ level }: { level: number }) {
 function KPIItem({ value, label }: { value: string; label: string }) {
   return (
     <div style={{ textAlign: "right" }}>
-      <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: 600, lineHeight: "28px", color: C.textPrimary, fontFeatureSettings: '"tnum"' }}>{value}</div>
-      <div style={{ marginTop: 2, fontFamily: FONT, fontSize: 12, color: C.textTertiary, lineHeight: "18px" }}>{label}</div>
+      <div style={{
+        fontFamily: "'Geom', 'GeomRegular', var(--font-geist-sans), 'PingFang SC', sans-serif",
+        fontSize: 14, fontWeight: 400, lineHeight: "22px",
+        color: C.textPrimary, fontFeatureSettings: '"tnum"',
+      }}>{value}</div>
+      <div style={{
+        marginTop: 2, fontFamily: FONT, fontSize: 12, fontWeight: 500,
+        lineHeight: "22px", color: C.textTertiary,
+      }}>{label}</div>
     </div>
   );
 }
