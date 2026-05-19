@@ -23,6 +23,8 @@ import CreateExpertDialog from "@/components/ui/create-expert-dialog";
 import CreateTeamDialog from "@/components/ui/create-team-dialog";
 import SkillPlaza from "@/components/ui/skill-plaza";
 import ClawManager from "@/components/ui/claw-manager";
+import AgentDetail from "@/components/ui/agent-detail";
+import TeamDetail from "@/components/ui/team-detail";
 import { DEFAULT_REGISTRY, type AgentRegistry } from "@/lib/agent-registry";
 import TeamSummonBanner, { AgentSummonBanner } from "@/components/ui/team-summon-banner";
 
@@ -612,6 +614,8 @@ export default function Home() {
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const [showSkillPlaza, setShowSkillPlaza] = useState(false);
   const [showClawManager, setShowClawManager] = useState(false);
+  // Agent / Team 详情页：null 时不显示
+  const [detailView, setDetailView] = useState<{ type: "agent" | "team"; id: string } | null>(null);
   // Agent Registry — Agent 广场/左侧工具栏/对话下拉共享的唯一数据源
   const [registry, setRegistry] = useState<AgentRegistry>(DEFAULT_REGISTRY);
   // 选中的团队 id（非默认"大数据团队"时在 welcome 区显示 TeamSummonBanner）
@@ -1109,24 +1113,26 @@ export default function Home() {
       <PrimaryNav />
 
       {/* ── 二级导航面板 ── */}
-      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} onTaskClick={handleTaskClick} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
+      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); setDetailView(null); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); setDetailView(null); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); setDetailView(null); }} onTaskClick={(task) => { setDetailView(null); handleTaskClick(task); }} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
         // 左栏点击 Section Header：
-        // 1) 退出 Agent 广场/技能广场视图，回到聊天主界面
-        // 2) 同步输入框下拉选中
-        // 3) 如果是专家，召唤气泡；否则只选中（团队/分身/外部）
-        // 4) 若当前处于 conversation 阶段且点击的是"其他人物"，先重置回 welcome，
-        //    再召唤新人物的 banner；点"当前人物"则保持不动（不新开对话）。
+        // - 团队 / 内置专家 → 打开详情页
+        // - 其他（分身 / 外部 Agent）→ 维持原"召唤气泡"行为
+        const isTeam = registry.teams.some((t) => t.id === agentId);
+        const isExpert = registry.experts.some((e) => e.id === agentId);
+        if (isTeam || isExpert) {
+          setShowSkillPlaza(false);
+          setShowClawManager(false);
+          setDetailView({ type: isTeam ? "team" : "agent", id: agentId });
+          return;
+        }
+        // 非团队/专家：保持原召唤逻辑
         setShowSkillPlaza(false);
         setShowClawManager(false);
+        setDetailView(null);
         if (chatPhase === "conversation") {
-          // 判断点击的是否是当前 summoned 的同一人物
           const targetInfo = AGENT_MAP[agentId];
           const isSameAgent = targetInfo && summonedAgent && targetInfo.title === summonedAgent.title;
-          if (isSameAgent) {
-            // 同一人物：不触发任何切换，保持对话详情
-            return;
-          }
-          // 其他人物：回到 welcome，再召唤新 banner
+          if (isSameAgent) return;
           handleNewChat();
         }
         chatInputRef.current?.setAgent(label);
@@ -1168,6 +1174,60 @@ export default function Home() {
             chatInputRef.current?.setAgent(label);
             handleSelectAgent(agentId);
           }} />
+        </motion.div>
+      ) : detailView ? (
+        <motion.div
+          key={`detail-${detailView.type}-${detailView.id}`}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22, ease: EASE }}
+          style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
+        >
+          {detailView.type === "agent" ? (
+            (() => {
+              const expert = registry.experts.find((e) => e.id === detailView.id);
+              if (!expert) { setDetailView(null); return null; }
+              return (
+                <AgentDetail
+                  expert={expert}
+                  onBack={() => setDetailView(null)}
+                  onDialog={() => {
+                    setDetailView(null);
+                    if (chatPhase === "conversation") {
+                      const targetInfo = AGENT_MAP[expert.id];
+                      const isSameAgent = targetInfo && summonedAgent && targetInfo.title === summonedAgent.title;
+                      if (!isSameAgent) handleNewChat();
+                    }
+                    chatInputRef.current?.setAgent(expert.shortTitle);
+                    handleSelectAgent(expert.id);
+                  }}
+                  onConfigSkill={() => { setDetailView(null); setShowSkillPlaza(true); }}
+                />
+              );
+            })()
+          ) : (
+            (() => {
+              const team = registry.teams.find((t) => t.id === detailView.id);
+              if (!team) { setDetailView(null); return null; }
+              return (
+                <TeamDetail
+                  team={team}
+                  experts={registry.experts}
+                  onBack={() => setDetailView(null)}
+                  onDialog={() => {
+                    setDetailView(null);
+                    if (chatPhase === "conversation") handleNewChat();
+                    chatInputRef.current?.setAgent(team.name);
+                    handleSelectAgent(team.id);
+                  }}
+                  onMemberManage={() => { setDetailView(null); setShowClawManager(true); }}
+                  onEdit={() => { setDetailView(null); setShowClawManager(true); }}
+                  onDelete={() => { setDetailView(null); }}
+                />
+              );
+            })()
+          )}
         </motion.div>
       ) : (
       <motion.div
