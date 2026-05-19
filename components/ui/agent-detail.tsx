@@ -3,6 +3,7 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SkillDetailModal, PillTabs, type SkillDetail } from "@/components/ui/skill-plaza";
+import { IconAiNewChat } from "@/components/ui/wedata-icons";
 import type { BuiltinExpert } from "@/lib/agent-registry";
 
 // ── Design tokens ──────────────────────────────────────────────
@@ -1038,9 +1039,12 @@ export interface AgentDetailProps {
   expert: BuiltinExpert;
   onBack?: () => void;
   onDialog?: () => void;
+  /** SecondaryNav 是否收起；收起时 header 左侧补一个「新建对话」按钮 */
+  secondaryCollapsed?: boolean;
+  onNewChat?: () => void;
 }
 
-export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailProps) {
+export default function AgentDetail({ expert, onBack, onDialog, secondaryCollapsed, onNewChat }: AgentDetailProps) {
   const [tab, setTab] = React.useState<"evolve" | "memory">("evolve");
   // 点击技能列表项后展示的弹窗
   const [skillDetail, setSkillDetail] = React.useState<SkillDetail | null>(null);
@@ -1069,6 +1073,24 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
         background: C.titlebarBg,
         borderBottom: `1px solid ${C.borderLight}`,
       }}>
+        {/* SecondaryNav 收起时左侧露出「新建对话」入口 */}
+        {secondaryCollapsed && (
+          <button
+            onClick={onNewChat}
+            aria-label="新建对话"
+            title="新建对话"
+            style={{
+              width: 32, height: 32, borderRadius: 8, border: "none",
+              background: "transparent", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: 0, marginRight: 4,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <IconAiNewChat size={16} color="rgba(0,0,0,0.6)" />
+          </button>
+        )}
         <button
           onClick={onBack}
           aria-label="返回"

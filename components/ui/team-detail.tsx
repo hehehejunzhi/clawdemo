@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ClusterAvatar } from "@/components/ui/secondary-nav";
+import { IconAiNewChat } from "@/components/ui/wedata-icons";
 import type { Team, BuiltinExpert } from "@/lib/agent-registry";
 
 // ── Design tokens（与 agent-detail 保持一致） ───────────────
@@ -269,9 +270,12 @@ export interface TeamDetailProps {
   onMemberManage?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  /** SecondaryNav 是否收起；收起时 header 左侧补一个「新建对话」按钮 */
+  secondaryCollapsed?: boolean;
+  onNewChat?: () => void;
 }
 
-export default function TeamDetail({ team, experts, onBack, onDialog, onMemberManage, onEdit, onDelete }: TeamDetailProps) {
+export default function TeamDetail({ team, experts, onBack, onDialog, onMemberManage, onEdit, onDelete, secondaryCollapsed, onNewChat }: TeamDetailProps) {
   const [tab, setTab] = React.useState<"evolve" | "memory">("evolve");
 
   // 默认 cluster 头像
@@ -324,6 +328,23 @@ export default function TeamDetail({ team, experts, onBack, onDialog, onMemberMa
         borderBottom: `1px solid ${C.borderLight}`,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {secondaryCollapsed && (
+            <button
+              onClick={onNewChat}
+              aria-label="新建对话"
+              title="新建对话"
+              style={{
+                width: 32, height: 32, borderRadius: 8, border: "none",
+                background: "transparent", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 0, marginRight: 4,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <IconAiNewChat size={16} color="rgba(0,0,0,0.6)" />
+            </button>
+          )}
           <button
             onClick={onBack}
             aria-label="返回"

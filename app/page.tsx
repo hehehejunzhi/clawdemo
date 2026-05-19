@@ -1205,6 +1205,8 @@ export default function Home() {
                 <AgentDetail
                   expert={expert}
                   onBack={goBackFromDetail}
+                  secondaryCollapsed={isSecondaryCollapsed}
+                  onNewChat={() => { setDetailView(null); handleNewChat(); }}
                   onDialog={() => {
                     setDetailView(null);
                     if (chatPhase === "conversation") {
@@ -1225,6 +1227,8 @@ export default function Home() {
                 team={team}
                 experts={registry.experts}
                 onBack={goBackFromDetail}
+                secondaryCollapsed={isSecondaryCollapsed}
+                onNewChat={() => { setDetailView(null); handleNewChat(); }}
                 onDialog={() => {
                   setDetailView(null);
                   if (chatPhase === "conversation") handleNewChat();
