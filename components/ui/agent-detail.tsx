@@ -593,7 +593,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
 
             {/* 雷达图 + 右侧 KPI（KPI 靠右） */}
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Radar values={radarValues} size={220} color={tier.mainSolid} gradient={tier.gradientStops} />
+              <Radar values={radarValues} size={226} color={tier.mainSolid} gradient={tier.gradientStops} />
               <div style={{
                 display: "flex", flexDirection: "column", justifyContent: "space-between",
                 gap: 20, paddingLeft: 4, paddingRight: 2,
