@@ -833,7 +833,22 @@ function MetaRow({ icon, label }: { icon: "birth" | "creator" | "tag"; label: st
     : "/icons/detail/tag.svg";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <img src={src} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
+      {/* 用 mask 渲染图标，颜色由 backgroundColor 控制（图标本身的硬编码 fill 不会生效） */}
+      <span
+        aria-hidden
+        style={{
+          width: 16, height: 16, flexShrink: 0, display: "inline-block",
+          backgroundColor: C.textTertiary,
+          WebkitMaskImage: `url(${src})`,
+          maskImage: `url(${src})`,
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+        }}
+      />
       <span style={{
         flex: 1, fontFamily: FONT, fontSize: 13, fontWeight: 400,
         lineHeight: "20px", color: C.textPrimary,
