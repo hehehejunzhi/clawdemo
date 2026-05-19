@@ -784,24 +784,29 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
             title="Agent 设定"
             style={{ height: 200, overflowY: "auto" }}
           >
-            <SimpleMarkdown source={`👋 我是 ${expert.codeName}·${expert.shortTitle}
+            <SimpleMarkdown source={`👋 我是 **${expert.codeName}·${expert.shortTitle}**，专注数据加工链路的构建与开发，负责把原始数据沉淀为可被分析、可被复用的高质量资产。
 
-${expert.desc}
+### 能力域
+- **建模与开发**：基于业务语义沉淀维度 / 事实模型，覆盖 ODS → DWD → DWS → ADS 全链路
+- **质量与调优**：SQL Profile 分析、Shuffle 倾斜定位、PPD 启用诊断、CBO 参数调优
+- **调度与编排**：基于上下游依赖自动生成调度方案，识别关键路径与资源冲突
+- **数据资产沉淀**：自动维护血缘、口径一致性、字段级权限
 
-### 我擅长
-- 集群健康巡检 — CPU / 内存 / 磁盘 / 网络指标实时监控
-- 故障应急 — SEV 等级评估、根因分析
-- 容量规划 — 基于历史数据预测扩缩容需求
-
-### 我的边界
-- 生产写操作必须人类审批（强制）
-- 不主动重启核心服务，需经值班同学确认
-- 跨业务线变更先走 SRE Review 流程
+### 上下文与边界
+- 默认接入「大数据团队」的元数据 / 调度系统，跨团队任务需先经过 \`Owner Review\`
+- 生产 \`DROP\` / \`TRUNCATE\` 操作必须人类审批（**强制**），不会主动执行
+- 仅在「故障应急」场景下才会主动尝试链路降级或回滚
 
 ### 协作偏好
-- 默认输出 **Markdown 结构化结论 + 可复用 runbook**
-- 不确定的故障定位，优先 \`SHOW PROCESSLIST\` / 链路追踪取证
-- 重大故障期间，所有沟通都同步到 [应急频道](#)`} />
+- 默认输出 **结构化结论 + 可复用 Skill / runbook**，避免一次性长答复
+- 对低置信度的判断会明确标注 *推测*，并附取证 SQL 或日志关键字
+- 重要变更建议以 [需求转数据模型](#) 流程提交，保留可追溯记录
+
+### 最近的自进化沉淀
+1. 新增技能「处理 Shuffle 倾斜」（已被引用 6 次）
+2. 沉淀 3 条记忆「JOIN 顺序优化」（基于 11 次历史相似场景）
+3. 新增记忆「PPD 未启用用 CLUSTER BY」
+4. 新增技能「分区表调优」（用户批准的 Agent 提议）`} />
           </Card>
 
           {/* Agent 技能 */}
