@@ -815,12 +815,19 @@ function MemoryDetailModal({ item, onClose }: { item: MemoryItem; onClose: () =>
           </div>
         </div>
 
-        {/* Content：留 20px 上间距与设计稿 itemSpacing=20 对齐；可滚动 */}
-        <div style={{
-          flex: 1, minHeight: 0, marginTop: 20,
-          overflowY: "auto",
-          paddingRight: 4, /* 避免滚动条贴边 */
-        }}>
+        {/* Content：可滚动；首块去掉上 margin、末块去掉下 margin，避免与弹窗边缘形成额外空隙 */}
+        <div
+          className="memory-modal-content"
+          style={{
+            flex: 1, minHeight: 0, marginTop: 20,
+            overflowY: "auto",
+            paddingRight: 4, /* 避免滚动条贴边 */
+          }}
+        >
+          <style>{`
+            .memory-modal-content > :first-child { margin-top: 0 !important; }
+            .memory-modal-content > :last-child  { margin-bottom: 0 !important; }
+          `}</style>
           <SimpleMarkdown source={item.content} />
         </div>
       </motion.div>
