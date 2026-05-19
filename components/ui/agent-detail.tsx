@@ -809,30 +809,51 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
 4. 新增技能「分区表调优」（用户批准的 Agent 提议）`} />
           </Card>
 
-          {/* Agent 技能 */}
-          <Card
-            title={`Agent 技能 (${expert.skills.length})`}
-            extra={
-              <button
-                onClick={onConfigSkill}
-                style={{
-                  height: 28, padding: "0 12px", borderRadius: 14,
-                  border: `1px solid ${C.borderLight}`, background: "#FFFFFF",
-                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
-                  fontFamily: FONT, fontSize: 13, color: C.textSecondary,
-                }}
+          {/* Agent 技能 + Agent 自进化（左右并排） */}
+          <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Card
+                title={`Agent 技能 (${expert.skills.length})`}
+                extra={
+                  <button
+                    onClick={onConfigSkill}
+                    style={{
+                      height: 28, padding: "0 12px", borderRadius: 14,
+                      border: `1px solid ${C.borderLight}`, background: "#FFFFFF",
+                      cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
+                      fontFamily: FONT, fontSize: 13, color: C.textSecondary,
+                    }}
+                  >
+                    <span style={{ width: 14, height: 14, display: "inline-flex" }}>
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M7 1L8.5 5.5L13 5.5L9.25 8.3L10.75 13L7 10.2L3.25 13L4.75 8.3L1 5.5L5.5 5.5L7 1Z" stroke="rgba(0,0,0,0.6)" strokeWidth="1.2" fill="none" strokeLinejoin="round"/>
+                      </svg>
+                    </span>
+                    配置 Skill
+                  </button>
+                }
               >
-                <span style={{ width: 14, height: 14, display: "inline-flex" }}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 1L8.5 5.5L13 5.5L9.25 8.3L10.75 13L7 10.2L3.25 13L4.75 8.3L1 5.5L5.5 5.5L7 1Z" stroke="rgba(0,0,0,0.6)" strokeWidth="1.2" fill="none" strokeLinejoin="round"/>
-                  </svg>
-                </span>
-                配置 Skill
-              </button>
-            }
-          >
-            <SkillList />
-          </Card>
+                <SkillList />
+              </Card>
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Card title="Agent 自进化">
+                <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+                  <TabBtn active={tab === "evolve"} onClick={() => setTab("evolve")}>自进化概览</TabBtn>
+                  <TabBtn active={tab === "memory"} onClick={() => setTab("memory")}>记忆沉淀</TabBtn>
+                </div>
+                {tab === "evolve" ? (
+                  <EvolutionTimeline />
+                ) : (
+                  <div style={{
+                    padding: "40px 20px", textAlign: "center",
+                    fontFamily: FONT, fontSize: 13, color: C.textTertiary,
+                  }}>暂无记忆沉淀数据</div>
+                )}
+              </Card>
+            </div>
+          </div>
 
           {/* Agent 活跃度 */}
           <Card title="Agent 活跃度">
@@ -845,22 +866,6 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
             <div style={{ marginTop: 20 }}>
               <Heatmap />
             </div>
-          </Card>
-
-          {/* Agent 自进化 */}
-          <Card title="Agent 自进化">
-            <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-              <TabBtn active={tab === "evolve"} onClick={() => setTab("evolve")}>自进化概览</TabBtn>
-              <TabBtn active={tab === "memory"} onClick={() => setTab("memory")}>记忆沉淀</TabBtn>
-            </div>
-            {tab === "evolve" ? (
-              <EvolutionTimeline />
-            ) : (
-              <div style={{
-                padding: "40px 20px", textAlign: "center",
-                fontFamily: FONT, fontSize: 13, color: C.textTertiary,
-              }}>暂无记忆沉淀数据</div>
-            )}
           </Card>
         </main>
       </div>
