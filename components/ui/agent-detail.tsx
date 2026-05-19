@@ -544,21 +544,21 @@ const DEFAULT_SKILLS: SkillItem[] = [
 
 function SkillList({ items = DEFAULT_SKILLS }: { items?: SkillItem[] }) {
   return (
-    <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+    <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}>
       {items.map((s, i) => (
         <li
           key={i}
           style={{
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: C.titlebarBg,
-            border: `1px solid ${C.borderLight}`,
+            padding: "12px 0",
+            borderBottom: i === items.length - 1 ? "none" : `1px solid ${C.borderLight}`,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{
               fontFamily: FONT, fontSize: 14, fontWeight: 600,
               lineHeight: "22px", color: C.textPrimary,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              minWidth: 0,
             }}>{s.name}</span>
             {s.tag === "task" && <Chip tone="warm">任务中补齐</Chip>}
             {s.tag === "builtin" && <Chip tone="blue">内置 Skill</Chip>}
@@ -567,6 +567,7 @@ function SkillList({ items = DEFAULT_SKILLS }: { items?: SkillItem[] }) {
           <p style={{
             margin: "4px 0 0", fontFamily: FONT, fontSize: 13, fontWeight: 400,
             lineHeight: "20px", color: C.textTertiary,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{s.desc}</p>
         </li>
       ))}
