@@ -90,7 +90,8 @@ export interface RadarValues {
 function Radar({ values, size = 220 }: { values: number[]; size?: number }) {
   const cx = size / 2;
   const cy = size / 2;
-  const r = size * 0.38;
+  // 把 r 控制小一些，让 1.18×r 的标签也能完整落在 viewBox 内
+  const r = size * 0.32;
   const n = RADAR_AXES.length;
   const angleFor = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
 
@@ -458,9 +459,8 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
         padding: "20px 32px",
         display: "flex", gap: 28,
       }}>
-        {/* ── 左列 ── */}
-        <aside style={{ width: 360, flexShrink: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* 立绘 + 名字 */}
+        {/* ── 左列：单卡片，内部用分割线分区 ── */}
+        <aside style={{ width: 360, flexShrink: 0 }}>
           <div style={{
             background: C.cardBg,
             border: `1px solid ${C.border}`,
@@ -537,65 +537,52 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
               ))}
             </div>
 
-            {/* 对话按钮 */}
+            {/* 对话按钮（图标对齐 Agent 广场卡片） */}
             <button
               onClick={onDialog}
               style={{
                 width: "100%", height: 40, borderRadius: 100,
-                border: "1px solid transparent",
-                background: "linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 55%) padding-box, linear-gradient(180deg, #EDF0F5 0%, #D6DBE3 100%) border-box",
+                border: "1px solid #E9EBF0",
+                background: "linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 55%)",
                 boxShadow: "0px 2px 4px -2px rgba(0,0,0,0.12)",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                 cursor: "pointer", padding: "0 16px",
                 fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary,
+                transition: "background 100ms",
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "#F2F4F8"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 55%)"; }}
             >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="6" stroke="rgba(0,0,0,0.5)" strokeWidth="1.3" fill="none"/>
-                <path d="M8 5V8L10 10" stroke="rgba(0,0,0,0.5)" strokeWidth="1.3" strokeLinecap="round"/>
-              </svg>
+              <img src="/icons/claw-mgr/dialog-icon.svg" alt="" style={{ width: 16, height: 16 }} />
               对话
             </button>
-          </div>
 
-          {/* 雷达图 + KPI */}
-          <div style={{
-            background: C.cardBg,
-            border: `1px solid ${C.border}`,
-            borderRadius: 12,
-            padding: 20,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <Radar values={radarValues} size={180} />
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-                <div>
-                  <div style={{ fontFamily: FONT, fontSize: 18, fontWeight: 600, lineHeight: "24px", color: C.textPrimary }}>24</div>
-                  <div style={{ fontFamily: FONT, fontSize: 12, color: C.textTertiary, lineHeight: "18px" }}>掌握技能</div>
-                </div>
-                <div>
-                  <div style={{ fontFamily: FONT, fontSize: 18, fontWeight: 600, lineHeight: "24px", color: C.textPrimary }}>92.2%</div>
-                  <div style={{ fontFamily: FONT, fontSize: 12, color: C.textTertiary, lineHeight: "18px" }}>任务成功率</div>
-                </div>
-                <div>
-                  <div style={{ fontFamily: FONT, fontSize: 18, fontWeight: 600, lineHeight: "24px", color: C.textPrimary }}>98.2%</div>
-                  <div style={{ fontFamily: FONT, fontSize: 12, color: C.textTertiary, lineHeight: "18px" }}>平均响应速度</div>
-                </div>
+            {/* 分割线 */}
+            <div style={{ height: 1, background: C.borderLight, margin: "4px 0" }} />
+
+            {/* 雷达图 + 右侧 KPI（KPI 靠右） */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Radar values={radarValues} size={220} />
+              <div style={{
+                display: "flex", flexDirection: "column", justifyContent: "space-between",
+                gap: 20, paddingLeft: 4, paddingRight: 2,
+                alignItems: "flex-end",
+              }}>
+                <KPIItem value="24" label="掌握技能" />
+                <KPIItem value="92.2%" label="任务成功率" />
+                <KPIItem value="98.2%" label="平均响应速度" />
               </div>
             </div>
-          </div>
 
-          {/* 元信息 */}
-          <div style={{
-            background: C.cardBg,
-            border: `1px solid ${C.border}`,
-            borderRadius: 12,
-            padding: "16px 20px",
-            display: "flex", flexDirection: "column", gap: 10,
-            fontFamily: FONT, fontSize: 13, color: C.textSecondary,
-          }}>
-            <MetaRow icon="cake" label="诞生于 2025-03-12（357 天前）" />
-            <MetaRow icon="user" label="由 user2 创建" />
-            <MetaRow icon="tag" label="大数据团队2、运营团队、集群管理团队" />
+            {/* 分割线 */}
+            <div style={{ height: 1, background: C.borderLight, margin: "4px 0" }} />
+
+            {/* 元信息 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <MetaRow icon="birth" label="诞生于 2025-03-12（357 天前）" />
+              <MetaRow icon="creator" label="由 user2 创建" />
+              <MetaRow icon="tag" label="大数据团队2、运营团队、集群管理团队" />
+            </div>
           </div>
         </aside>
 
@@ -707,32 +694,22 @@ function TabBtn({ active, onClick, children }: { active?: boolean; onClick?: () 
   );
 }
 
-function MetaRow({ icon, label }: { icon: "cake" | "user" | "tag"; label: string }) {
+function KPIItem({ value, label }: { value: string; label: string }) {
+  return (
+    <div style={{ textAlign: "right" }}>
+      <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: 600, lineHeight: "28px", color: C.textPrimary, fontFeatureSettings: '"tnum"' }}>{value}</div>
+      <div style={{ marginTop: 2, fontFamily: FONT, fontSize: 12, color: C.textTertiary, lineHeight: "18px" }}>{label}</div>
+    </div>
+  );
+}
+
+function MetaRow({ icon, label }: { icon: "birth" | "creator" | "tag"; label: string }) {
+  const src = icon === "birth" ? "/icons/detail/birth.svg"
+    : icon === "creator" ? "/icons/detail/creator.svg"
+    : "/icons/detail/tag.svg";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ width: 16, height: 16, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", color: C.textTertiary }}>
-        {icon === "cake" && (
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M3 14V8H13V14H3Z" stroke="currentColor" strokeWidth="1.2"/>
-            <path d="M5 8V6M8 8V5M11 8V6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-            <circle cx="5" cy="3.5" r="1" fill="currentColor"/>
-            <circle cx="8" cy="3" r="1" fill="currentColor"/>
-            <circle cx="11" cy="3.5" r="1" fill="currentColor"/>
-          </svg>
-        )}
-        {icon === "user" && (
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.2"/>
-            <path d="M3 14C3 11.5 5 10 8 10S13 11.5 13 14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-          </svg>
-        )}
-        {icon === "tag" && (
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M2 8.5L7.5 3H13V8.5L7.5 14L2 8.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-            <circle cx="10" cy="6" r="1" fill="currentColor"/>
-          </svg>
-        )}
-      </span>
+      <img src={src} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
       <span style={{ flex: 1, fontFamily: FONT, fontSize: 13, color: C.textSecondary, lineHeight: "20px" }}>{label}</span>
     </div>
   );

@@ -63,7 +63,7 @@ function Chip({ children }: { children: React.ReactNode }) {
 const RADAR_AXES = ["ETL处理", "智能分析", "数据查询", "预测能力", "决策支持"] as const;
 
 function Radar({ values, size = 180 }: { values: number[]; size?: number }) {
-  const cx = size / 2; const cy = size / 2; const r = size * 0.38; const n = RADAR_AXES.length;
+  const cx = size / 2; const cy = size / 2; const r = size * 0.32; const n = RADAR_AXES.length;
   const angleFor = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
   const pointAt = (i: number, k: number) => {
     const a = angleFor(i);
