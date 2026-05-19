@@ -165,10 +165,10 @@ function Radar({ values, size = 220, color = C.brand, gradient }: { values: numb
         // 单条轴的额外像素微调（按 RADAR_AXES 索引：0 ETL处理 / 1 智能分析 / 2 数据查询 / 3 预测能力 / 4 决策支持）
         const PER_AXIS_OFFSET: Array<[number, number]> = [
           [0, 10],    // ETL处理：下 10
-          [-10, 0],   // 智能分析：左 10
+          [-20, 0],   // 智能分析：左 20
           [-10, -10], // 数据查询：左 10、上 10
           [10, -10],  // 预测能力：右 10、上 10
-          [10, 0],    // 决策支持：右 10
+          [20, 0],    // 决策支持：右 20
         ];
         const [ox, oy] = PER_AXIS_OFFSET[i] ?? [0, 0];
         return (
