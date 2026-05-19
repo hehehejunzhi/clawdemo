@@ -21,7 +21,7 @@ const C = {
 } as const;
 
 // ── 内置专家列表（用于判断是否显示预置 Skill tab）──────────
-const BUILTIN_EXPERTS = new Set(["数据开发专家", "数据分析专家", "数据运维专家"]);
+const BUILTIN_EXPERTS = new Set(["数据开发专家", "数据分析专家", "智能管家"]);
 
 // ── Toast 组件（顶部展示，支持 success/error）─────────────────
 function Toast({ message, visible, type, onDone }: { message: string; visible: boolean; type?: "success" | "error"; onDone: () => void }) {
@@ -521,7 +521,7 @@ interface SkillPlazaProps {
 export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
   // ── 内置专家：固定来自 registry.experts（shortTitle） ──
   const builtinExperts = useMemo(
-    () => registry?.experts.map((e) => e.shortTitle) ?? ["数据开发专家", "数据分析专家", "数据运维专家"],
+    () => registry?.experts.map((e) => e.shortTitle) ?? ["数据开发专家", "数据分析专家", "智能管家"],
     [registry?.experts]
   );
   // 自定义分身：来自 registry.avatars（id + name，允许同名）
@@ -620,7 +620,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
       { icon: "归", iconBg: "#E8524A", title: "异常归因分析", desc: "自动检测指标波动并定位根因维度。", category: "数据分析", version: "1.3.0", author: "WeData Team" },
       { icon: "预", iconBg: "#FF7800", title: "趋势预测", desc: "基于历史数据生成未来 7/14/30 天的趋势预测。", category: "数据分析", version: "1.0.0", author: "WeData Team" },
     ],
-    "数据运维专家": [
+    "智能管家": [
       { icon: "监", iconBg: "#FF7800", title: "集群健康监控", desc: "实时监控 HDFS/YARN/Spark 集群健康状态。", defaultTag: true, category: "运维", version: "2.1.0", author: "WeData Team" },
       { icon: "扩", iconBg: "#E8524A", title: "弹性扩缩容", desc: "根据负载自动触发节点扩缩容策略。", category: "运维", version: "1.2.0", author: "WeData Team" },
       { icon: "日", iconBg: "#4C8DEF", title: "日志智能分析", desc: "对 Executor 日志做聚类分析，快速定位故障模式。", category: "运维", version: "1.5.0", author: "WeData Team" },

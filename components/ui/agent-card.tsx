@@ -556,7 +556,7 @@ const ic = "rgba(0,0,0,0.45)";
 // ── 预设数据：Rigel 名片 ────────────────────────────────────────
 export const RIGEL_DATA: AgentCardProps = {
   name: "Rigel",
-  title: "数据运维专家",
+  title: "智能管家",
   avatar: "/agents/1a.png",
   summonText: "今天想开发什么数仓？",
   description:

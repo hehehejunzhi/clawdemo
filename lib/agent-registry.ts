@@ -123,8 +123,8 @@ export const DEFAULT_EXPERTS: BuiltinExpert[] = [
   },
   {
     id: "ops-expert",
-    fullName: "Orion·数据运维专家",
-    shortTitle: "数据运维专家",
+    fullName: "Orion·智能管家",
+    shortTitle: "智能管家",
     codeName: "Orion",
     desc: "负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。",
     avatar: "/agents/ops-expert.png",
@@ -149,7 +149,7 @@ export const DEFAULT_TEAMS: Team[] = [
     members: [
       { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ],
   },
   {
@@ -165,7 +165,7 @@ export const DEFAULT_TEAMS: Team[] = [
     members: [
       { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
       { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
     ],
   },
@@ -215,7 +215,7 @@ export const DEFAULT_TASKS: AgentTask[] = [
   // Vega·数据分析专家
   { id: "t9", title: "用户留存率趋势分析", status: "pending", agentId: "analysis-expert" },
   { id: "t10", title: "GMV 周报数据提取", status: "check", agentId: "analysis-expert" },
-  // Orion·数据运维专家
+  // Orion·智能管家
   { id: "t11", title: "元数据血缘扫描", status: "loading", agentId: "ops-expert" },
   // 运营协作团队
   { id: "t12", title: "运营周报看板搭建", status: "check", agentId: "ops-team" },

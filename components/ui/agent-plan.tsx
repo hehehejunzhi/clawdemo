@@ -55,7 +55,7 @@ const TOTAL_TASKS = 4; // figma 显示 x/4
 const initialTasks: Task[] = [
   {
     id: "1",
-    title: "@大数据运维专家 加载 EMR 技能，通过 DescribeSparkQueries 接口检索所有慢 SQL",
+    title: "@大智能管家 加载 EMR 技能，通过 DescribeSparkQueries 接口检索所有慢 SQL",
     description: "连接广州地域集群 emr-ccrnhw11，检索慢 SQL 列表",
     status: "completed",
     dependencies: [],

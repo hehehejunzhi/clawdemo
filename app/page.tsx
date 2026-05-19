@@ -112,7 +112,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到慢 SQL 检索与调优任务，我来作为调度者拆解任务并分派给团队成员",
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         overview: "已收到慢 SQL 检索任务，我将准备相关对应脚本和权限，分步执行",
         lines: [
           {
@@ -145,7 +145,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         delay: 6000,
         dividerBefore: true,
         overview: "数据齐全了，让我生成一个清晰的报告",
@@ -298,7 +298,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "数据源健康探针已部署，每 5 分钟检测连接可用性，异常自动切换备库。" },
         ],
@@ -334,7 +334,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来规划 T+1 数据调度的工作流编排方案",
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "工作流拓扑已生成：ODS 层采集 → DWD 清洗 → DWS 汇总 → ADS 应用，共 23 个节点。" },
           { text: "关键路径分析：最长执行链 ODS→DWD→DWS_user→ADS_retention，预估耗时 47 分钟。", tags: ["ods_sync", "dwd_clean", "dws_aggregate", "ads_report"] },
@@ -364,7 +364,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     singleExpert: true,
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "数仓分层方案已设计：ODS（原始层）→ DWD（明细层）→ DWS（汇总层）→ ADS（应用层）。" },
           { text: "ODS 层：12 张业务源表镜像，保留原始字段，增加 ds 分区和 etl_time 审计字段。", tags: ["ODS", "DWD", "DWS", "ADS"] },
@@ -373,7 +373,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         delay: 3000,
         lines: [
           { text: "ADS 层指标体系已梳理：覆盖 DAU、GMV、客单价、留存率等 28 个核心指标。" },
@@ -391,14 +391,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     singleExpert: true,
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "ODS 层 12 张表逐一对账：源端总行数 vs ODS 行数，误差率均 < 0.01%。" },
           { text: "字段级校验：抽样 10 万条做字段值 MD5 对比，一致率 100%。", tags: ["ods_orders", "ods_users", "ods_payments", "ods_products"] },
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         delay: 2500,
         lines: [
           { text: "增量同步验证：模拟业务写入 1000 条测试数据，T+1 后全部正确落入 ODS 对应分区。" },
@@ -480,7 +480,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "血缘图谱已同步至数据目录平台，支持影响分析和变更评估。" },
           { text: "增量血缘捕获已开启，后续 SQL 变更将自动更新血缘关系。" },
@@ -825,9 +825,9 @@ export default function Home() {
 
   // ── 单专家回复数据：仅该专家一人回复 ──────────────────────────
   const SINGLE_EXPERT_REPLIES: Record<string, ExpertReplyDataType[]> = {
-    "数据运维专家": [
+    "智能管家": [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         delay: 1200,
         lines: [
           { text: "正在检查华东区数据链路状态，扫描 ODS → DWD → DWS → ADS 全链路节点。" },
@@ -1003,7 +1003,7 @@ export default function Home() {
       setUserMessage(task.title);
       setSummonedAgent({
         name: "Rigel",
-        title: "数据运维专家",
+        title: "智能管家",
         avatar: "/agents/dev-expert.png",
       });
       setChatPhase("conversation");
@@ -1038,7 +1038,7 @@ export default function Home() {
     setUserMessage(conv?.userMsg ?? task.title);
     setSummonedAgent({
       name: "Rigel",
-      title: "数据运维专家",
+      title: "智能管家",
       avatar: "/agents/dev-expert.png",
     });
     setChatPhase("conversation");

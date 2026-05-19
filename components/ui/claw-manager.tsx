@@ -287,7 +287,7 @@ const PRESET_OPS_TEAM: CustomTeam = {
   members: [
     { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
     { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-    { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+    { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
   ],
   clusterImgs: [
@@ -300,7 +300,7 @@ const PRESET_OPS_TEAM: CustomTeam = {
 
 const ALL_AVAILABLE_MEMBERS: Omit<TeamMember, "role">[] = [
   { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-  { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+  { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
   { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
   { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", statusColor: "#FF7800" },
   { id: "lh", name: "Lighthouse", abbr: "LH", abbrBg: "#FFB834", category: "外部 Claw", statusColor: "#0CBF5B" },
@@ -1299,7 +1299,7 @@ export default function ClawManager({
     const defaultMembers: TeamMember[] = [
       { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ];
     const newTeam: CustomTeam = { id: `team-${Date.now()}`, name, desc: desc || "自定义协作团队", members: defaultMembers };
     setCustomTeams((prev) => [...prev, newTeam]);
@@ -1382,7 +1382,7 @@ export default function ClawManager({
       members: [
         { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
         { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-        { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+        { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
       ],
     };
 
@@ -1507,9 +1507,9 @@ export default function ClawManager({
           />
           <Card
             avatar={<AvatarCircle src="/agents/ops-expert.png" />}
-            name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Orion·数据运维专家</span>}
+            name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Orion·智能管家</span>}
             desc="负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。"
-            onDialog={() => onAgentDialog?.("ops-expert", "数据运维专家")}
+            onDialog={() => onAgentDialog?.("ops-expert", "智能管家")}
             onCardClick={() => onAgentDetail?.("expert", "ops-expert")}
           />
         </div>
