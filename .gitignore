@@ -52,3 +52,4 @@ next-env.d.ts
 /tasks/gstack-skills-guide.md
 /tasks/privacy-cleanup-todo.md
 .env*.local
+.cache/
