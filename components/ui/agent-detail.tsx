@@ -436,7 +436,11 @@ function Heatmap() {
           const monthIdx = Math.floor((w / HEATMAP_WEEKS) * MONTH_LABELS.length);
           const showLabel = w % 4 === 2 && monthIdx < MONTH_LABELS.length;
           return (
-            <div key={w} style={{ width: CELL + GAP }}>
+            <div key={w} style={{
+              width: CELL + GAP,
+              whiteSpace: "nowrap",
+              overflow: "visible",
+            }}>
               {showLabel ? MONTH_LABELS[monthIdx] : ""}
             </div>
           );
