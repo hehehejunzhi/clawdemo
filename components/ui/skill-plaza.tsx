@@ -160,17 +160,24 @@ export function PillTabs<Id extends string = string>({
   activeId,
   onChange,
   layoutId = "pill-tabs-indicator",
+  size = "md",
 }: {
   tabs: ReadonlyArray<PillTabItem<Id>>;
   activeId: Id;
   onChange: (id: Id) => void;
   /** 多实例并存时显式区分，避免 framer-motion layoutId 冲突 */
   layoutId?: string;
+  /** md（默认 44/40，padding 16）/ sm（32/28，padding 12） */
+  size?: "md" | "sm";
 }) {
+  const outerH = size === "sm" ? 32 : 44;
+  const innerH = size === "sm" ? 28 : 40;
+  const padX = size === "sm" ? 12 : 16;
+  const fontSize = size === "sm" ? 13 : 14;
   return (
     <div style={{
       display: "inline-flex", alignItems: "center",
-      height: 44, padding: 2,
+      height: outerH, padding: 2,
       borderRadius: 100,
       background: "#F2F4F8",
       boxShadow: "inset 0 2px 2px rgba(0,0,0,0.03)",
@@ -184,7 +191,7 @@ export function PillTabs<Id extends string = string>({
             onClick={() => onChange(tab.id)}
             style={{
               position: "relative",
-              height: 40, padding: "0 16px",
+              height: innerH, padding: `0 ${padX}px`,
               display: "flex", alignItems: "center", justifyContent: "center",
               borderRadius: 100,
               cursor: "pointer",
@@ -213,7 +220,7 @@ export function PillTabs<Id extends string = string>({
             }}>
               <span style={{
                 gridArea: "stack",
-                fontFamily: FONT, fontSize: 14, fontWeight: 400,
+                fontFamily: FONT, fontSize, fontWeight: 400,
                 color: "rgba(0,0,0,0.70)",
                 opacity: selected ? 0 : 1,
                 textAlign: "center",
@@ -221,7 +228,7 @@ export function PillTabs<Id extends string = string>({
               }}>{tab.label}</span>
               <span style={{
                 gridArea: "stack",
-                fontFamily: FONT, fontSize: 14, fontWeight: 600,
+                fontFamily: FONT, fontSize, fontWeight: 600,
                 color: "#000000",
                 opacity: selected ? 1 : 0,
                 textAlign: "center",

@@ -856,6 +856,7 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
                     activeId={tab}
                     onChange={(id) => setTab(id as "evolve" | "memory")}
                     layoutId="agent-evolve-tab-indicator"
+                    size="sm"
                   />
                 </div>
                 {tab === "evolve" ? (
