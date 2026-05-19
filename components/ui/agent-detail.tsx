@@ -147,25 +147,33 @@ function Radar({ values, size = 220, color = C.brand, gradient }: { values: numb
         strokeWidth={1.5}
       />
       {/* 顶点不再渲染圆点 */}
-      {/* 轴标签：左右两侧（i=1 智能分析、i=4 决策支持）外移更多，避免文字遮挡五维图 */}
+      {/* 轴标签：按角度自动决定 anchor / baseline，保证文字始终朝远离圆心方向延伸 */}
       {RADAR_AXES.map((label, i) => {
-        // 顶部 i=0 / 右上 i=1 / 右下 i=2 / 左下 i=3 / 左上 i=4
-        const isSideRight = i === 1 || i === 2;
-        const isSideLeft = i === 3 || i === 4;
-        const k = isSideRight || isSideLeft ? 1.45 : 1.2;
-        const [x, y] = pointAt(i, k);
+        const a = angleFor(i);
+        const cosA = Math.cos(a);
+        const sinA = Math.sin(a);
+        // 标签锚点距离圆心 1.25 r；左右标签再加一点水平偏移，避免文字与五维图边线重合
+        const baseK = 1.25;
+        const [x, y] = pointAt(i, baseK);
+        // 水平 anchor：靠右的轴文字 start、靠左的轴 end、近垂直 middle
+        const eps = 0.2;
         const anchor: "start" | "middle" | "end" =
-          isSideRight ? "start" : isSideLeft ? "end" : "middle";
+          cosA > eps ? "start" : cosA < -eps ? "end" : "middle";
+        // 垂直 baseline：靠上 auto（让文字底部贴合 y）、靠下 hanging、近水平 middle
+        const baseline: "auto" | "middle" | "hanging" =
+          sinA < -eps ? "auto" : sinA > eps ? "hanging" : "middle";
+        // 给左右标签再向外推 4px，给水平方向更多呼吸空间
+        const dx = cosA > eps ? 4 : cosA < -eps ? -4 : 0;
         return (
           <text
             key={label}
-            x={x}
+            x={x + dx}
             y={y}
             fontSize={12}
             fontFamily={FONT}
             fill={C.textSecondary}
             textAnchor={anchor}
-            dominantBaseline="middle"
+            dominantBaseline={baseline}
           >
             {label}
           </text>
