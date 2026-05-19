@@ -500,14 +500,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
                   lineHeight: "30px", color: C.textPrimary, marginTop: 2,
                 }}>{expert.shortTitle}</div>
               </div>
-              <span style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                height: 28, padding: "0 10px", borderRadius: 14,
-                background: C.brandLight, color: C.brand,
-                fontFamily: "'Geom', 'GeomBold', var(--font-geist-sans), 'PingFang SC', sans-serif",
-                fontSize: 13, fontWeight: 700,
-                fontStyle: "italic",
-              }}>Lv. 12</span>
+              <LevelBadge level={12} />
             </div>
 
             {/* 成长值进度条 */}
@@ -693,6 +686,59 @@ function TabBtn({ active, onClick, children }: { active?: boolean; onClick?: () 
     >
       {children}
     </button>
+  );
+}
+
+// ── 等级徽章 ──────────────────────────────────────────────────
+// 1-30 级、31-80 级、81+ 级分别对应三套背景图与文字渐变色
+const LEVEL_TIERS = [
+  {
+    max: 30,
+    bg: "/agents/level/lv-1-30.png",
+    gradient: "linear-gradient(180deg, #446A8C 0%, #365D72 73.12%)",
+  },
+  {
+    max: 80,
+    bg: "/agents/level/lv-31-80.png",
+    gradient: "linear-gradient(180deg, #926444 0%, #664331 73.12%)",
+  },
+  {
+    max: Infinity,
+    bg: "/agents/level/lv-81.png",
+    gradient: "linear-gradient(180deg, #6A53A4 0%, #4F4077 73.12%)",
+  },
+] as const;
+
+function getLevelTier(level: number) {
+  return LEVEL_TIERS.find((t) => level <= t.max) ?? LEVEL_TIERS[LEVEL_TIERS.length - 1];
+}
+
+function LevelBadge({ level }: { level: number }) {
+  const tier = getLevelTier(level);
+  // 切图尺寸 129×48，按 2× DPR 缩到 ~64×24（与原 Lv 标签高度接近）
+  const W = 64;
+  const H = 24;
+  return (
+    <div style={{
+      width: W, height: H, flexShrink: 0,
+      backgroundImage: `url(${tier.bg})`,
+      backgroundSize: "100% 100%",
+      backgroundRepeat: "no-repeat",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      position: "relative",
+    }}>
+      <span style={{
+        fontFamily: "'Geom', 'GeomBold', var(--font-geist-sans), 'PingFang SC', sans-serif",
+        fontSize: 13, fontWeight: 700, fontStyle: "italic",
+        lineHeight: 1, letterSpacing: 0.2,
+        background: tier.gradient,
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        backgroundClip: "text",
+        // 兼容性兜底（不支持 background-clip:text 的环境会显示渐变起点色）
+        color: "#365D72",
+      }}>Lv. {level}</span>
+    </div>
   );
 }
 
