@@ -392,9 +392,11 @@ function Heatmap() {
     cells.push(col);
   }
 
-  // ── 宽度自适应：根据容器宽度精确分摊到每列，整体撑满 ─────────
-  // cell 用浮点像素，避免取整后右侧累积空白
+  // ── 宽度自适应（仅放大，不缩小）─────────────────────────────
+  // 首次/最大可用宽度决定 cell 尺寸；后续窗口变窄时 cell 保持锁定值，
+  // 由外层 overflow-x:auto 让网格在卡片内横向滚动。
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const maxWidthRef = React.useRef<number>(0);
   const LABEL_W = 28;      // 周几标签列宽
   const LABEL_GAP = 6;     // 标签列与网格列的间距
   const GAP = 3;           // 单元格 row/column gap
@@ -407,13 +409,14 @@ function Heatmap() {
     const el = containerRef.current;
     const compute = () => {
       const w = el.clientWidth;
-      // 可用绘制宽度 = 总宽 - 标签列 - 标签-网格间距
-      const drawable = w - LABEL_W - LABEL_GAP;
-      // 52 列单元格 + 51 个 GAP：drawable = 52*CELL + 51*GAP
-      // 用浮点除法精确分摊，不再 floor
-      const next = (drawable - 51 * GAP) / HEATMAP_WEEKS;
-      const clamped = Math.max(CELL_MIN, Math.min(CELL_MAX, next));
-      setCell(clamped);
+      // 只在容器变得更宽时，才放大 cell；窗口变窄保持锁定值
+      if (w > maxWidthRef.current) {
+        maxWidthRef.current = w;
+        const drawable = w - LABEL_W - LABEL_GAP;
+        const next = (drawable - 51 * GAP) / HEATMAP_WEEKS;
+        const clamped = Math.max(CELL_MIN, Math.min(CELL_MAX, next));
+        setCell(clamped);
+      }
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -422,63 +425,73 @@ function Heatmap() {
   }, []);
 
   const CELL = cell;
+  // 内部网格区域的最小宽度：保证大屏锁定后即便容器变窄也撑得开（触发滚动）
+  const gridInnerWidth = LABEL_W + LABEL_GAP + HEATMAP_WEEKS * CELL + (HEATMAP_WEEKS - 1) * GAP;
 
   return (
     <div ref={containerRef} style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
-      {/* 月份标签 */}
+      {/* 横向滚动容器：仅包裹月份标签 + 7×52 网格，图例固定在外 */}
       <div style={{
-        display: "grid",
-        gridTemplateColumns: `${LABEL_W}px repeat(${HEATMAP_WEEKS}, ${CELL + GAP}px)`,
-        fontFamily: FONT, fontSize: 11, color: C.textTertiary, lineHeight: "16px",
+        overflowX: "auto",
+        // 隐藏滚动条视觉上更干净，但保留滚动能力
+        scrollbarWidth: "thin",
       }}>
-        <div />
-        {Array.from({ length: HEATMAP_WEEKS }, (_, w) => {
-          // 大约每 4-5 周显示一个月份
-          const monthIdx = Math.floor((w / HEATMAP_WEEKS) * MONTH_LABELS.length);
-          const showLabel = w % 4 === 2 && monthIdx < MONTH_LABELS.length;
-          return (
-            <div key={w} style={{
-              width: CELL + GAP,
-              whiteSpace: "nowrap",
-              overflow: "visible",
-            }}>
-              {showLabel ? MONTH_LABELS[monthIdx] : ""}
+        <div style={{ minWidth: gridInnerWidth, display: "flex", flexDirection: "column", gap: 6 }}>
+          {/* 月份标签 */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: `${LABEL_W}px repeat(${HEATMAP_WEEKS}, ${CELL + GAP}px)`,
+            fontFamily: FONT, fontSize: 11, color: C.textTertiary, lineHeight: "16px",
+          }}>
+            <div />
+            {Array.from({ length: HEATMAP_WEEKS }, (_, w) => {
+              const monthIdx = Math.floor((w / HEATMAP_WEEKS) * MONTH_LABELS.length);
+              const showLabel = w % 4 === 2 && monthIdx < MONTH_LABELS.length;
+              return (
+                <div key={w} style={{
+                  width: CELL + GAP,
+                  whiteSpace: "nowrap",
+                  overflow: "visible",
+                }}>
+                  {showLabel ? MONTH_LABELS[monthIdx] : ""}
+                </div>
+              );
+            })}
+          </div>
+          {/* 7 行 × 52 列网格 */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: `${LABEL_W}px 1fr`,
+            gap: LABEL_GAP,
+          }}>
+            {/* 周几标签列 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: GAP }}>
+              {DAY_LABELS.map((d, i) => (
+                <div key={i} style={{
+                  height: CELL, fontFamily: FONT, fontSize: 11,
+                  lineHeight: `${CELL}px`, color: C.textTertiary,
+                }}>{d}</div>
+              ))}
             </div>
-          );
-        })}
-      </div>
-      {/* 7 行 × 52 列网格 */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: `${LABEL_W}px 1fr`,
-        gap: LABEL_GAP,
-      }}>
-        {/* 周几标签列 */}
-        <div style={{ display: "flex", flexDirection: "column", gap: GAP }}>
-          {DAY_LABELS.map((d, i) => (
-            <div key={i} style={{
-              height: CELL, fontFamily: FONT, fontSize: 11,
-              lineHeight: `${CELL}px`, color: C.textTertiary,
-            }}>{d}</div>
-          ))}
-        </div>
-        {/* 网格 */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${HEATMAP_WEEKS}, ${CELL}px)`,
-          gridTemplateRows: `repeat(${HEATMAP_DAYS}, ${CELL}px)`,
-          gridAutoFlow: "column",
-          columnGap: GAP, rowGap: GAP,
-        }}>
-          {cells.flat().map((c, idx) => (
-            <div
-              key={idx}
-              style={{
-                width: CELL, height: CELL, borderRadius: 2,
-                background: c.alert ? C.orange : HEATMAP_LEVELS[c.level],
-              }}
-            />
-          ))}
+            {/* 网格 */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${HEATMAP_WEEKS}, ${CELL}px)`,
+              gridTemplateRows: `repeat(${HEATMAP_DAYS}, ${CELL}px)`,
+              gridAutoFlow: "column",
+              columnGap: GAP, rowGap: GAP,
+            }}>
+              {cells.flat().map((c, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    width: CELL, height: CELL, borderRadius: 2,
+                    background: c.alert ? C.orange : HEATMAP_LEVELS[c.level],
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       {/* Legend */}
