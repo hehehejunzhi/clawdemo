@@ -823,8 +823,8 @@ function KPIItem({ value, label }: { value: string; label: string }) {
   return (
     <div style={{ textAlign: "right" }}>
       <div style={{
-        fontFamily: "'Geom', 'GeomRegular', var(--font-geist-sans), 'PingFang SC', sans-serif",
-        fontSize: 14, fontWeight: 400, lineHeight: "22px",
+        fontFamily: "'Geom', 'GeomMedium', var(--font-geist-sans), 'PingFang SC', sans-serif",
+        fontSize: 16, fontWeight: 500, lineHeight: "24px",
         color: C.textPrimary, fontFeatureSettings: '"tnum"',
       }}>{value}</div>
       <div style={{
