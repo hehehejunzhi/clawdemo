@@ -392,14 +392,14 @@ function Heatmap() {
     cells.push(col);
   }
 
-  // ── 宽度自适应：根据容器宽度反推 CELL / GAP ─────────────────
-  // 网格撑满卡片宽度；cell 为正方形，行高随之增大
+  // ── 宽度自适应：根据容器宽度精确分摊到每列，整体撑满 ─────────
+  // cell 用浮点像素，避免取整后右侧累积空白
   const containerRef = React.useRef<HTMLDivElement>(null);
   const LABEL_W = 28;      // 周几标签列宽
   const LABEL_GAP = 6;     // 标签列与网格列的间距
   const GAP = 3;           // 单元格 row/column gap
   const CELL_MIN = 10;
-  const CELL_MAX = 40;     // 撑满卡片宽度；行高随之增大
+  const CELL_MAX = 40;     // 上限兜底
   const [cell, setCell] = React.useState<number>(16);
 
   React.useEffect(() => {
@@ -410,7 +410,8 @@ function Heatmap() {
       // 可用绘制宽度 = 总宽 - 标签列 - 标签-网格间距
       const drawable = w - LABEL_W - LABEL_GAP;
       // 52 列单元格 + 51 个 GAP：drawable = 52*CELL + 51*GAP
-      const next = Math.floor((drawable - 51 * GAP) / HEATMAP_WEEKS);
+      // 用浮点除法精确分摊，不再 floor
+      const next = (drawable - 51 * GAP) / HEATMAP_WEEKS;
       const clamped = Math.max(CELL_MIN, Math.min(CELL_MAX, next));
       setCell(clamped);
     };
