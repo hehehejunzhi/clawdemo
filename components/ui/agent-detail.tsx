@@ -132,10 +132,11 @@ function Radar({ values, size = 220, color = C.brand, gradient }: { values: numb
           strokeWidth={1}
         />
       ))}
-      {/* 轴线 */}
+      {/* 轴线（径向）：从最外圈连到第二圈（即跳过最内圈五边形以内的部分） */}
       {Array.from({ length: n }, (_, i) => {
-        const [x, y] = pointAt(i, 1);
-        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(0,0,0,0.06)" strokeWidth={1} />;
+        const [x1, y1] = pointAt(i, 1);
+        const [x2, y2] = pointAt(i, 0.25);
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(0,0,0,0.06)" strokeWidth={1} />;
       })}
       {/* 数据多边形 */}
       <polygon
@@ -145,14 +146,16 @@ function Radar({ values, size = 220, color = C.brand, gradient }: { values: numb
         stroke={gradient ? `url(#${gradientId})` : color}
         strokeWidth={1.5}
       />
-      {/* 数据点 */}
-      {values.map((v, i) => {
-        const [x, y] = pointAt(i, Math.max(0, Math.min(1, v / 100)));
-        return <circle key={i} cx={x} cy={y} r={3} fill={color} />;
-      })}
-      {/* 轴标签 */}
+      {/* 顶点不再渲染圆点 */}
+      {/* 轴标签：左右两侧（i=1 智能分析、i=4 决策支持）外移更多，避免文字遮挡五维图 */}
       {RADAR_AXES.map((label, i) => {
-        const [x, y] = pointAt(i, 1.18);
+        // 顶部 i=0 / 右上 i=1 / 右下 i=2 / 左下 i=3 / 左上 i=4
+        const isSideRight = i === 1 || i === 2;
+        const isSideLeft = i === 3 || i === 4;
+        const k = isSideRight || isSideLeft ? 1.45 : 1.2;
+        const [x, y] = pointAt(i, k);
+        const anchor: "start" | "middle" | "end" =
+          isSideRight ? "start" : isSideLeft ? "end" : "middle";
         return (
           <text
             key={label}
@@ -161,7 +164,7 @@ function Radar({ values, size = 220, color = C.brand, gradient }: { values: numb
             fontSize={12}
             fontFamily={FONT}
             fill={C.textSecondary}
-            textAnchor="middle"
+            textAnchor={anchor}
             dominantBaseline="middle"
           >
             {label}
