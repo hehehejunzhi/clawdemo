@@ -66,7 +66,7 @@ function Chip({ children, tone = "neutral" }: { children: React.ReactNode; tone?
   const color = tone === "warm" ? "#B86A00"
     : tone === "green" ? "#0E8A4A"
     : tone === "blue" ? "#2873FF"
-    : C.textSecondary;
+    : C.textTertiary;
   return (
     <span style={{
       display: "inline-flex", alignItems: "center",
@@ -533,9 +533,10 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
             </div>
 
             {/* 描述 */}
+            {/* 描述 */}
             <p style={{
               margin: 0, fontFamily: FONT, fontSize: 13, fontWeight: 400,
-              lineHeight: "20px", color: C.textSecondary,
+              lineHeight: "20px", color: C.textPrimary,
             }}>
               {expert.desc}
             </p>
