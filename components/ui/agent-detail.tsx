@@ -633,7 +633,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
       {/* ── 主体：左右分栏 ── */}
       <div style={{
         flex: 1, minHeight: 0, overflowY: "auto",
-        padding: "0 32px 20px",
+        padding: "16px 32px 20px",
         display: "flex", gap: 28,
       }}>
         {/* ── 左列：单卡片，内部用分割线分区 ── */}
