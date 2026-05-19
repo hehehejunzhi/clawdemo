@@ -475,7 +475,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
         display: "flex", gap: 28,
       }}>
         {/* ── 左列：单卡片，内部用分割线分区 ── */}
-        <aside style={{ width: 360, flexShrink: 0 }}>
+        <aside style={{ width: 320, flexShrink: 0 }}>
           <div style={{
             background: "transparent",
             padding: 0,
