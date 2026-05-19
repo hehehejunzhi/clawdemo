@@ -490,9 +490,10 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{
-                  fontFamily: FONT, fontSize: 14, fontWeight: 500,
+                  fontFamily: "var(--font-pixelify-sans), 'Pixelify Sans', 'PingFang SC', sans-serif",
+                  fontSize: 14, fontWeight: 500,
                   lineHeight: "20px", color: expert.nameColor,
-                  fontStyle: "italic", letterSpacing: 0.5,
+                  letterSpacing: 0.5,
                 }}>{expert.codeName}</div>
                 <div style={{
                   fontFamily: FONT, fontSize: 22, fontWeight: 600,
@@ -503,7 +504,8 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 height: 28, padding: "0 10px", borderRadius: 14,
                 background: C.brandLight, color: C.brand,
-                fontFamily: FONT, fontSize: 13, fontWeight: 600,
+                fontFamily: "'Geom', 'GeomBold', var(--font-geist-sans), 'PingFang SC', sans-serif",
+                fontSize: 13, fontWeight: 700,
                 fontStyle: "italic",
               }}>Lv. 12</span>
             </div>
