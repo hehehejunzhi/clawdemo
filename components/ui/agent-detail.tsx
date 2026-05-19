@@ -531,6 +531,95 @@ function EvolutionTimeline({ items = EVOLUTION_DATA }: { items?: EvolutionItem[]
   );
 }
 
+// ── 记忆沉淀列表（参考产物卡片样式 ardot 2419:11267） ─────────
+interface MemoryItem {
+  title: string;        // 文件名，例如 Soul.md
+  source: string;       // 副标题：用户沉淀 / AI 自动沉淀 ...
+  ext: "md" | "data";   // 文件类型，决定左侧图标
+}
+
+const MEMORY_DATA: MemoryItem[] = [
+  { title: "Soul.md", source: "用户沉淀", ext: "md" },
+  { title: "Mermoy.md", source: "AI 自动沉淀", ext: "md" },
+  { title: "User.md", source: "用户沉淀", ext: "md" },
+];
+
+function MemoryCard({ item, onClick }: { item: MemoryItem; onClick?: () => void }) {
+  const [hover, setHover] = React.useState(false);
+  const iconSrc = item.ext === "md" ? "/agents/file-icon-markdown.png" : "/agents/file-icon-data.png";
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: "relative",
+        height: 64,
+        background: "#F7F8FB",
+        border: "1px solid #E6E9EF",
+        borderRadius: 16,
+        cursor: onClick ? "pointer" : "default",
+        overflow: "hidden",
+        boxShadow: hover ? "0 2px 6px rgba(0,0,0,0.04)" : "none",
+        transition: "box-shadow 150ms",
+      }}
+    >
+      {/* 左侧 56×56 类型图标 */}
+      <div style={{
+        position: "absolute", left: 16, top: 3,
+        width: 58, height: 58,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        transform: hover ? "scale(1.06)" : "scale(1)",
+        transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}>
+        <img
+          src={iconSrc}
+          alt=""
+          style={{ width: 56, height: 56, objectFit: "contain", display: "block" }}
+        />
+      </div>
+
+      {/* 文本区 —— 从 left:88 起始 */}
+      <div style={{
+        position: "absolute", left: 88, top: 10, right: 40,
+        display: "flex", flexDirection: "column", gap: 2,
+      }}>
+        <span style={{
+          fontFamily: FONT, fontSize: 14, fontWeight: 500,
+          lineHeight: "22px", color: C.textPrimary,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>{item.title}</span>
+        <span style={{
+          fontFamily: FONT, fontSize: 12, fontWeight: 400,
+          lineHeight: "20px", color: C.textTertiary,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>{item.source}</span>
+      </div>
+
+      {/* arrow-right-up icon */}
+      <div style={{
+        position: "absolute", right: 16, top: 24,
+        transform: hover ? "translate(2px, -2px)" : "translate(0, 0)",
+        transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3.99219 11.0645L9.45378 5.60286L5.21114 5.60286L5.21114 4.26953L11.7299 4.26953V10.7883L10.3966 10.7883V6.54567L4.935 12.0073L3.99219 11.0645Z" fill="rgba(0,0,0,0.7)" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function MemoryList({ items = MEMORY_DATA }: { items?: MemoryItem[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {items.map((it, i) => (
+        <MemoryCard key={i} item={it} />
+      ))}
+    </div>
+  );
+}
+
 // ── 技能列表 ──────────────────────────────────────────────────
 interface SkillItem {
   name: string;
@@ -864,10 +953,7 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
                 {tab === "evolve" ? (
                   <EvolutionTimeline />
                 ) : (
-                  <div style={{
-                    padding: "40px 20px", textAlign: "center",
-                    fontFamily: FONT, fontSize: 13, color: C.textTertiary,
-                  }}>暂无记忆沉淀数据</div>
+                  <MemoryList />
                 )}
               </Card>
             </div>
