@@ -34,9 +34,10 @@ const C = {
 
 function Card({ title, extra, children, style }: { title?: string; extra?: React.ReactNode; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       {(title || extra) && (
         <header style={{
+          height: 32,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 4px",
         }}>
