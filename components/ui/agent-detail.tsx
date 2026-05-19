@@ -514,10 +514,28 @@ function EvolutionTimeline({ items = EVOLUTION_DATA }: { items?: EvolutionItem[]
             )}
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{
-              fontFamily: FONT, fontSize: 13, fontWeight: 500,
-              lineHeight: "20px", color: it.level === "Lv.1" ? C.textQuaternary : C.brand,
-            }}>{it.level}</div>
+            {(() => {
+              // 解析等级数值；映射到 B/A/S 阶级配色（与 LevelBadge / 进度条同一色系）
+              const m = /Lv\.\s*(\d+)/.exec(it.level);
+              const lv = m ? parseInt(m[1], 10) : 1;
+              const t = getLevelTier(lv);
+              return (
+                <div style={{
+                  fontFamily: "'Geom', 'GeomBold', var(--font-geist-sans), 'PingFang SC', sans-serif",
+                  fontSize: 14, fontWeight: 700, fontStyle: "italic",
+                  lineHeight: "22px", letterSpacing: 0.2,
+                  background: t.gradient,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  // 兼容性兜底
+                  color: t.mainSolid,
+                  // italic 视觉重心略偏左，向右补偿
+                  paddingRight: 2,
+                  display: "inline-block",
+                }}>{it.level}</div>
+              );
+            })()}
             {it.exp && (
               <div style={{
                 fontFamily: FONT, fontSize: 12, fontWeight: 400,
