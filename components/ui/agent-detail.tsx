@@ -490,7 +490,9 @@ function EvolutionTimeline({ items = EVOLUTION_DATA }: { items?: EvolutionItem[]
       {items.map((it, i) => (
         <li key={i} style={{ display: "flex", gap: 12, position: "relative" }}>
           <div style={{
-            width: 6, height: 6, borderRadius: 3, background: i === items.length - 1 ? C.textQuaternary : C.brand,
+            width: 6, height: 6, borderRadius: 3,
+            // 最新（i === 0）用深色 #242424；其余历史节点用浅灰 #DCDCDC
+            background: i === 0 ? "#242424" : "#DCDCDC",
             marginTop: 9, flexShrink: 0, position: "relative", zIndex: 1,
           }} />
           {i < items.length - 1 && (
