@@ -399,7 +399,7 @@ function Heatmap() {
   const LABEL_GAP = 6;     // 标签列与网格列的间距
   const GAP = 3;           // 单元格 row/column gap
   const CELL_MIN = 10;
-  const CELL_MAX = 28;     // 放宽上限，1920 下约 21px，撑满卡片
+  const CELL_MAX = 40;     // 撑满卡片宽度；行高随之增大
   const [cell, setCell] = React.useState<number>(16);
 
   React.useEffect(() => {
