@@ -2,7 +2,7 @@
 
 import React from "react";
 import { AnimatePresence } from "framer-motion";
-import { SkillDetailModal, type SkillDetail } from "@/components/ui/skill-plaza";
+import { SkillDetailModal, PillTabs, type SkillDetail } from "@/components/ui/skill-plaza";
 import type { BuiltinExpert } from "@/lib/agent-registry";
 
 // ── Design tokens ──────────────────────────────────────────────
@@ -847,9 +847,16 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <Card title="Agent 自进化" style={{ height: 320, overflowY: "auto" }}>
-                <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-                  <TabBtn active={tab === "evolve"} onClick={() => setTab("evolve")}>自进化概览</TabBtn>
-                  <TabBtn active={tab === "memory"} onClick={() => setTab("memory")}>记忆沉淀</TabBtn>
+                <div style={{ marginBottom: 16 }}>
+                  <PillTabs
+                    tabs={[
+                      { id: "evolve", label: "自进化概览" },
+                      { id: "memory", label: "记忆沉淀" },
+                    ] as const}
+                    activeId={tab}
+                    onChange={(id) => setTab(id as "evolve" | "memory")}
+                    layoutId="agent-evolve-tab-indicator"
+                  />
                 </div>
                 {tab === "evolve" ? (
                   <EvolutionTimeline />
@@ -889,24 +896,6 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
 }
 
 // ── 子组件 ────────────────────────────────────────────────────
-function TabBtn({ active, onClick, children }: { active?: boolean; onClick?: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        height: 32, padding: "0 14px", borderRadius: 16,
-        border: "none", cursor: "pointer",
-        background: active ? C.brandLight : "transparent",
-        color: active ? C.brand : C.textSecondary,
-        fontFamily: FONT, fontSize: 14,
-        fontWeight: active ? 600 : 400,
-        transition: "background 100ms",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 // ── 等级阶级（B / A / S） ────────────────────────────────────
 // 1-30 → B 阶 / 31-80 → A 阶 / 81+ → S 阶

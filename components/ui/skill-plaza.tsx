@@ -147,6 +147,94 @@ export function SkillDetailModal({ detail, onClose }: { detail: SkillDetail; onC
   );
 }
 
+// ── 胶囊 Tab 组件（Figma 767_17327）─────────────────────────
+// 白色指示器跨 tab 滑动 + 双层文字（normal / semibold）交叉淡入。
+// 默认 layoutId 为 `pill-tabs-indicator`，多实例并存时通过 layoutId prop 区分。
+export interface PillTabItem<Id extends string = string> {
+  id: Id;
+  label: string;
+}
+
+export function PillTabs<Id extends string = string>({
+  tabs,
+  activeId,
+  onChange,
+  layoutId = "pill-tabs-indicator",
+}: {
+  tabs: ReadonlyArray<PillTabItem<Id>>;
+  activeId: Id;
+  onChange: (id: Id) => void;
+  /** 多实例并存时显式区分，避免 framer-motion layoutId 冲突 */
+  layoutId?: string;
+}) {
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center",
+      height: 44, padding: 2,
+      borderRadius: 100,
+      background: "#F2F4F8",
+      boxShadow: "inset 0 2px 2px rgba(0,0,0,0.03)",
+      position: "relative",
+    }}>
+      {tabs.map((tab) => {
+        const selected = activeId === tab.id;
+        return (
+          <div
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            style={{
+              position: "relative",
+              height: 40, padding: "0 16px",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              borderRadius: 100,
+              cursor: "pointer",
+              zIndex: 1,
+            }}
+          >
+            {selected && (
+              <motion.div
+                layoutId={layoutId}
+                style={{
+                  position: "absolute", inset: 0,
+                  borderRadius: 100,
+                  background: "rgba(255,255,255,0.90)",
+                  boxShadow: "0 6px 12px -6px rgba(0,0,0,0.04), 0 3px 6px -3px rgba(0,0,0,0.08)",
+                  zIndex: 0,
+                }}
+                transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.9 }}
+              />
+            )}
+            <span style={{
+              position: "relative", zIndex: 1,
+              display: "inline-grid",
+              gridTemplateAreas: "\"stack\"",
+              placeItems: "center",
+              whiteSpace: "nowrap",
+            }}>
+              <span style={{
+                gridArea: "stack",
+                fontFamily: FONT, fontSize: 14, fontWeight: 400,
+                color: "rgba(0,0,0,0.70)",
+                opacity: selected ? 0 : 1,
+                textAlign: "center",
+                transition: "opacity 180ms ease",
+              }}>{tab.label}</span>
+              <span style={{
+                gridArea: "stack",
+                fontFamily: FONT, fontSize: 14, fontWeight: 600,
+                color: "#000000",
+                opacity: selected ? 1 : 0,
+                textAlign: "center",
+                transition: "opacity 180ms ease",
+              }}>{tab.label}</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Category item ─────────────────────────────────────────────
 function CatItem({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
   const [hovered, setHovered] = useState(false);
@@ -902,76 +990,15 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                   })() : (<>
                   {/* ── 可安装区域：Tab（内置 Skill / SkillHub）+ 查看更多链接 ── */}
                   <div style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    {/* 胶囊 Tab（Figma 767_17327），切换时白色指示器滑动 + 字重交叉淡入 */}
-                    <div style={{
-                      display: "inline-flex", alignItems: "center",
-                      height: 44, padding: 2,
-                      borderRadius: 100,
-                      background: "#F2F4F8",
-                      boxShadow: "inset 0 2px 2px rgba(0,0,0,0.03)",
-                      position: "relative",
-                    }}>
-                      {[
-                        { id: "preset" as const, label: "内置 Skill" },
-                        { id: "hub" as const, label: "SkillHub" },
-                      ].map((tab) => {
-                        const selected = activeTab === tab.id;
-                        return (
-                          <div
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            style={{
-                              position: "relative",
-                              height: 40, padding: "0 16px",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              borderRadius: 100,
-                              cursor: "pointer",
-                              zIndex: 1,
-                            }}
-                          >
-                            {/* 白色指示器胶囊（只在选中 tab 里渲染，由 layoutId 跨 DOM 自动做位移动画） */}
-                            {selected && (
-                              <motion.div
-                                layoutId="skill-tab-indicator"
-                                style={{
-                                  position: "absolute", inset: 0,
-                                  borderRadius: 100,
-                                  background: "rgba(255,255,255,0.90)",
-                                  boxShadow: "0 6px 12px -6px rgba(0,0,0,0.04), 0 3px 6px -3px rgba(0,0,0,0.08)",
-                                  zIndex: 0,
-                                }}
-                                transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.9 }}
-                              />
-                            )}
-                            {/* 双层文字叠加：normal（400） 与 semibold（600） 交叉淡入，避免字重跳变 */}
-                            <span style={{
-                              position: "relative", zIndex: 1,
-                              display: "inline-grid",
-                              gridTemplateAreas: "\"stack\"",
-                              placeItems: "center",
-                              whiteSpace: "nowrap",
-                            }}>
-                              <span style={{
-                                gridArea: "stack",
-                                fontFamily: FONT, fontSize: 14, fontWeight: 400,
-                                color: "rgba(0,0,0,0.70)",
-                                opacity: selected ? 0 : 1,
-                                textAlign: "center",
-                                transition: "opacity 180ms ease",
-                              }}>{tab.label}</span>
-                              <span style={{
-                                gridArea: "stack",
-                                fontFamily: FONT, fontSize: 14, fontWeight: 600,
-                                color: "#000000",
-                                opacity: selected ? 1 : 0,
-                                textAlign: "center",
-                                transition: "opacity 180ms ease",
-                              }}>{tab.label}</span>
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <PillTabs
+                      tabs={[
+                        { id: "preset", label: "内置 Skill" },
+                        { id: "hub", label: "SkillHub" },
+                      ] as const}
+                      activeId={activeTab}
+                      onChange={(id) => setActiveTab(id as "preset" | "hub")}
+                      layoutId="skill-tab-indicator"
+                    />
                     {activeTab === "hub" && (
                       <a
                         href="https://skillhub.cn"
