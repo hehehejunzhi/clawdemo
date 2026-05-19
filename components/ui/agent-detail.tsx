@@ -834,17 +834,31 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
                   <button
                     onClick={onConfigSkill}
                     style={{
-                      height: 28, padding: "0 12px", borderRadius: 14,
-                      border: `1px solid ${C.borderLight}`, background: "#FFFFFF",
+                      height: 22, padding: "0 4px", borderRadius: 4,
+                      border: "none", background: "transparent",
                       cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
-                      fontFamily: FONT, fontSize: 13, color: C.textSecondary,
+                      fontFamily: FONT, fontSize: 12, fontWeight: 500,
+                      lineHeight: "22px", color: C.textPrimary,
+                      transition: "background 100ms",
                     }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = C.hoverBg; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                   >
-                    <span style={{ width: 14, height: 14, display: "inline-flex" }}>
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M7 1L8.5 5.5L13 5.5L9.25 8.3L10.75 13L7 10.2L3.25 13L4.75 8.3L1 5.5L5.5 5.5L7 1Z" stroke="rgba(0,0,0,0.6)" strokeWidth="1.2" fill="none" strokeLinejoin="round"/>
-                      </svg>
-                    </span>
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 16, height: 16, display: "inline-block", flexShrink: 0,
+                        backgroundColor: C.textPrimary,
+                        WebkitMaskImage: "url(/icons/detail/settings.svg)",
+                        maskImage: "url(/icons/detail/settings.svg)",
+                        WebkitMaskRepeat: "no-repeat",
+                        maskRepeat: "no-repeat",
+                        WebkitMaskPosition: "center",
+                        maskPosition: "center",
+                        WebkitMaskSize: "contain",
+                        maskSize: "contain",
+                      }}
+                    />
                     配置 Skill
                   </button>
                 }
