@@ -815,7 +815,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
             <div style={{ flex: 1, minWidth: 0 }}>
               <Card
                 title={`Agent 技能 (${expert.skills.length})`}
-                style={{ height: 320, overflowY: "auto", padding: "0 20px 20px" }}
+                style={{ height: 320, overflowY: "auto", padding: "8px 20px 20px" }}
                 extra={
                   <button
                     onClick={onConfigSkill}
