@@ -42,8 +42,8 @@ function Card({ title, extra, children, style }: { title?: string; extra?: React
           padding: "0 4px",
         }}>
           {title && <h3 style={{
-            margin: 0, fontFamily: FONT, fontSize: 16, fontWeight: 600,
-            lineHeight: "24px", color: C.textPrimary,
+            margin: 0, fontFamily: FONT, fontSize: 14, fontWeight: 600,
+            lineHeight: "22px", color: C.textPrimary,
           }}>{title}</h3>}
           {extra}
         </header>
