@@ -612,7 +612,7 @@ function MemoryCard({ item, onClick }: { item: MemoryItem; onClick?: () => void 
 
 function MemoryList({ items = MEMORY_DATA }: { items?: MemoryItem[] }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {items.map((it, i) => (
         <MemoryCard key={i} item={it} />
       ))}
