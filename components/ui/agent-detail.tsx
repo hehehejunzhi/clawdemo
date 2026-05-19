@@ -372,10 +372,15 @@ const MONTH_LABELS = ["8月", "9月", "10月", "11月", "12月", "1月", "2月",
 const DAY_LABELS = ["", "周二", "", "周四", "", "周六", ""];
 
 function Heatmap() {
-  // 用确定性伪随机生成数据
-  const cells: { level: number; alert?: boolean }[][] = [];
+  // 活跃度档位文案（与 HEATMAP_LEVELS 索引对齐）
+  const LEVEL_DESC = ["不活跃", "轻度活跃", "活跃", "高度活跃", "极度活跃"] as const;
+
+  // 用确定性伪随机生成数据；同时算出每个 cell 对应的日期 & 活动数
+  // 起点：今天往前 (HEATMAP_WEEKS * 7 - 1) 天；逐日填入
+  const today = React.useMemo(() => new Date(2026, 4, 19), []); // 与项目当前时间一致，避免每次重算
+  const cells: { level: number; alert?: boolean; date: Date; events: number }[][] = [];
   for (let w = 0; w < HEATMAP_WEEKS; w++) {
-    const col: { level: number; alert?: boolean }[] = [];
+    const col: { level: number; alert?: boolean; date: Date; events: number }[] = [];
     for (let d = 0; d < HEATMAP_DAYS; d++) {
       const seed = (w * 7 + d) * 9301 + 49297;
       const rnd = ((seed % 233280) / 233280);
@@ -385,9 +390,13 @@ function Heatmap() {
       else if (rnd < 0.7) level = 2;
       else if (rnd < 0.92) level = 3;
       else level = 4;
-      // 偶发橙色告警点
       const alert = (rnd > 0.985);
-      col.push({ level, alert });
+      // 大致活动数：level 0 → 0；其他按等级 + 随机
+      const events = level === 0 ? 0 : Math.floor(level * 3 + rnd * 8);
+      const daysAgo = (HEATMAP_WEEKS - 1 - w) * 7 + (HEATMAP_DAYS - 1 - d);
+      const date = new Date(today);
+      date.setDate(date.getDate() - daysAgo);
+      col.push({ level, alert, date, events });
     }
     cells.push(col);
   }
@@ -427,6 +436,15 @@ function Heatmap() {
   const CELL = cell;
   // 内部网格区域的最小宽度：保证大屏锁定后即便容器变窄也撑得开（触发滚动）
   const gridInnerWidth = LABEL_W + LABEL_GAP + HEATMAP_WEEKS * CELL + (HEATMAP_WEEKS - 1) * GAP;
+
+  // ── Tooltip 状态 ────────────────────────────────────────────
+  const [hover, setHover] = React.useState<
+    | { x: number; y: number; date: Date; events: number; level: number; alert?: boolean }
+    | null
+  >(null);
+
+  const fmtDate = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
   return (
     <div ref={containerRef} style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
@@ -484,9 +502,24 @@ function Heatmap() {
               {cells.flat().map((c, idx) => (
                 <div
                   key={idx}
+                  onMouseEnter={(e) => {
+                    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                    setHover({
+                      x: rect.left + rect.width / 2,
+                      y: rect.top,
+                      date: c.date,
+                      events: c.events,
+                      level: c.level,
+                      alert: c.alert,
+                    });
+                  }}
+                  onMouseLeave={() => setHover(null)}
                   style={{
                     width: CELL, height: CELL, borderRadius: 2,
                     background: c.alert ? C.orange : HEATMAP_LEVELS[c.level],
+                    cursor: "pointer",
+                    outline: "1px solid transparent",
+                    transition: "outline-color 100ms",
                   }}
                 />
               ))}
@@ -508,6 +541,46 @@ function Heatmap() {
         <div style={{ width: 12, height: 12, borderRadius: 2, background: C.orange, marginLeft: 8 }} />
         <span>自进化</span>
       </div>
+
+      {/* Hover tooltip — fixed 定位，不参与 flex 布局 */}
+      {hover && (
+        <div
+          style={{
+            position: "fixed",
+            left: hover.x,
+            top: hover.y - 8,
+            transform: "translate(-50%, -100%)",
+            pointerEvents: "none",
+            zIndex: 9000,
+            background: "rgba(0,0,0,0.85)",
+            color: "#FFFFFF",
+            borderRadius: 6,
+            padding: "6px 10px",
+            fontFamily: FONT, fontSize: 12, fontWeight: 400,
+            lineHeight: "18px",
+            whiteSpace: "nowrap",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+          }}
+        >
+          <div style={{ fontWeight: 500 }}>{fmtDate(hover.date)}</div>
+          <div style={{ opacity: 0.85 }}>
+            {hover.alert
+              ? "自进化触发"
+              : hover.level === 0
+                ? "无活跃记录"
+                : `${LEVEL_DESC[hover.level]} · ${hover.events} 条会话`}
+          </div>
+          {/* 小箭头 */}
+          <div style={{
+            position: "absolute",
+            left: "50%",
+            bottom: -4,
+            transform: "translateX(-50%) rotate(45deg)",
+            width: 8, height: 8,
+            background: "rgba(0,0,0,0.85)",
+          }} />
+        </div>
+      )}
     </div>
   );
 }
