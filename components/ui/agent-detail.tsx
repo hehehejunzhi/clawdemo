@@ -521,21 +521,39 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
               />
             </div>
 
-            {/* Name + Lv */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{
-                  fontFamily: "var(--font-pixelify-sans), 'Pixelify Sans', 'PingFang SC', sans-serif",
-                  fontSize: 14, fontWeight: 500,
-                  lineHeight: "20px", color: expert.nameColor,
-                  letterSpacing: 0.5,
-                }}>{expert.codeName}</div>
-                <div style={{
-                  fontFamily: FONT, fontSize: 22, fontWeight: 600,
-                  lineHeight: "30px", color: C.textPrimary, marginTop: 2,
-                }}>{expert.shortTitle}</div>
+            {/* Name + Lv —— 徽章与第二行「数据开发专家」垂直居中对齐 */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              gridTemplateRows: "auto auto",
+              columnGap: 8,
+              rowGap: 2,
+              alignItems: "center",
+            }}>
+              <div style={{
+                gridColumn: "1",
+                gridRow: "1",
+                fontFamily: "var(--font-pixelify-sans), 'Pixelify Sans', 'PingFang SC', sans-serif",
+                fontSize: 14, fontWeight: 500,
+                lineHeight: "20px", color: expert.nameColor,
+                letterSpacing: 0.5,
+                minWidth: 0,
+              }}>{expert.codeName}</div>
+              <div style={{
+                gridColumn: "1",
+                gridRow: "2",
+                fontFamily: FONT, fontSize: 22, fontWeight: 600,
+                lineHeight: "30px", color: C.textPrimary,
+                minWidth: 0,
+              }}>{expert.shortTitle}</div>
+              <div style={{
+                gridColumn: "2",
+                gridRow: "2",
+                alignSelf: "center",
+                justifySelf: "end",
+              }}>
+                <LevelBadge level={level} />
               </div>
-              <LevelBadge level={level} />
             </div>
 
             {/* 成长值进度条 */}
