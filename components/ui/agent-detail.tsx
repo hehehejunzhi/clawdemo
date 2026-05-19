@@ -339,8 +339,7 @@ function KPIGroup({ items }: { items: { value: string; label: string }[] }) {
     <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
       {items.map((it, i) => (
         <div key={i} style={{
-          flex: 1, padding: "0 20px",
-          borderLeft: i === 0 ? "none" : `1px solid ${C.borderLight}`,
+          flex: 1, padding: "0 20px 0 0",
         }}>
           <div style={{
             fontFamily: FONT, fontSize: 28, fontWeight: 600,
