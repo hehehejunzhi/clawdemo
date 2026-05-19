@@ -544,9 +544,7 @@ const MEMORY_DATA: MemoryItem[] = [
     title: "Soul.md",
     source: "用户沉淀",
     ext: "md",
-    content: `# Soul.md — Agent 人格与边界
-
-## 基本信息
+    content: `## 基本信息
 - **名称**：Andy
 - **身份**：数据运维专家 / 自定义 Agent
 - **简介**：偏向集群健康管理，保障数据平台可用性。负责集群监控、性能调优、故障排查与容量规划，确保数据平台高可用。
@@ -566,9 +564,7 @@ const MEMORY_DATA: MemoryItem[] = [
     title: "Mermoy.md",
     source: "AI 自动沉淀",
     ext: "md",
-    content: `# Mermoy.md — 自动沉淀的记忆
-
-## 最近一次沉淀
+    content: `## 最近一次沉淀
 **5 天前**：发现 PPD（Predicate Push Down）未启用时使用 \`CLUSTER BY\` 可显著降低 shuffle 数据量。
 
 \`\`\`sql
@@ -590,9 +586,7 @@ CLUSTER BY user_id;
     title: "User.md",
     source: "用户沉淀",
     ext: "md",
-    content: `# User.md — 用户偏好与历史决策
-
-## 工作习惯
+    content: `## 工作习惯
 - 优先看 **执行计划** 而非火焰图
 - 报告倾向 Markdown，便于直接贴飞书
 - 大促前 1 周开始预热，要求每天巡检集群
