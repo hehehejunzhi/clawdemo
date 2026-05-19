@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { SkillDetailModal, PillTabs, type SkillDetail } from "@/components/ui/skill-plaza";
 import type { BuiltinExpert } from "@/lib/agent-registry";
 
@@ -536,12 +536,77 @@ interface MemoryItem {
   title: string;        // 文件名，例如 Soul.md
   source: string;       // 副标题：用户沉淀 / AI 自动沉淀 ...
   ext: "md" | "data";   // 文件类型，决定左侧图标
+  content: string;      // Markdown 内容，点击卡片后在弹窗内渲染
 }
 
 const MEMORY_DATA: MemoryItem[] = [
-  { title: "Soul.md", source: "用户沉淀", ext: "md" },
-  { title: "Mermoy.md", source: "AI 自动沉淀", ext: "md" },
-  { title: "User.md", source: "用户沉淀", ext: "md" },
+  {
+    title: "Soul.md",
+    source: "用户沉淀",
+    ext: "md",
+    content: `# Soul.md — Agent 人格与边界
+
+## 基本信息
+- **名称**：Andy
+- **身份**：数据运维专家 / 自定义 Agent
+- **简介**：偏向集群健康管理，保障数据平台可用性。负责集群监控、性能调优、故障排查与容量规划，确保数据平台高可用。
+- **标签**：集群监控、故障排查、容量规划、性能调优
+
+## 我的边界
+- 生产写操作必须人类审批（**强制**）
+- 跨业务线数据访问需要主管授权
+- 不处理与运维无关的产品咨询，会转交给对应专家
+
+## 协作偏好
+- 默认输出 **结构化结论 + 可复用 Skill / runbook**
+- 对低置信度判断会明确标注 *推测*，附取证 SQL 或日志关键字
+- 重要变更建议以 [需求转模型](#) 流程提交，保留可追溯记录`,
+  },
+  {
+    title: "Mermoy.md",
+    source: "AI 自动沉淀",
+    ext: "md",
+    content: `# Mermoy.md — 自动沉淀的记忆
+
+## 最近一次沉淀
+**5 天前**：发现 PPD（Predicate Push Down）未启用时使用 \`CLUSTER BY\` 可显著降低 shuffle 数据量。
+
+\`\`\`sql
+-- 推荐写法
+SELECT user_id, COUNT(*) cnt
+FROM dwd_order_detail
+WHERE dt = '2026-03-01'
+CLUSTER BY user_id;
+\`\`\`
+
+## 历史相似场景
+1. **2026-02-14** EMR-ccrnhw11 慢 SQL 调优，类似手法降耗 38%
+2. **2026-02-03** 大促链路扩容前，预测查询热点 cluster key
+3. **2026-01-22** 离线报表卡死，定位为 hash join 倾斜
+
+> 引用次数：**6 次** · 平均收益：耗时 ↓ 32%`,
+  },
+  {
+    title: "User.md",
+    source: "用户沉淀",
+    ext: "md",
+    content: `# User.md — 用户偏好与历史决策
+
+## 工作习惯
+- 优先看 **执行计划** 而非火焰图
+- 报告倾向 Markdown，便于直接贴飞书
+- 大促前 1 周开始预热，要求每天巡检集群
+
+## 高频指标
+- DAU 与 WAU 同步关注，DAU/WAU 比阈值 30%
+- Spark Shuffle Read 单分区 > 200MB 即标注风险
+- HDFS 容量水位 > 75% 进入预警
+
+## 决策记录
+1. **2026-03-01** 拒绝引入第三方 Hive Metastore 缓存，理由：稳定性优先
+2. **2026-02-12** 同意把 ODS 保留期从 60 天延长到 90 天
+3. **2026-01-30** 选定 Presto Native Executor 作为加速方案`,
+  },
 ];
 
 function MemoryCard({ item, onClick }: { item: MemoryItem; onClick?: () => void }) {
@@ -610,13 +675,93 @@ function MemoryCard({ item, onClick }: { item: MemoryItem; onClick?: () => void 
   );
 }
 
-function MemoryList({ items = MEMORY_DATA }: { items?: MemoryItem[] }) {
+function MemoryList({ items = MEMORY_DATA, onItemClick }: { items?: MemoryItem[]; onItemClick?: (item: MemoryItem) => void }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {items.map((it, i) => (
-        <MemoryCard key={i} item={it} />
+        <MemoryCard key={i} item={it} onClick={() => onItemClick?.(it)} />
       ))}
     </div>
+  );
+}
+
+// ── 记忆详情弹窗（ardot 2735:4453） ───────────────────────────
+function MemoryDetailModal({ item, onClose }: { item: MemoryItem; onClose: () => void }) {
+  // ESC 关闭
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 8800,
+        background: "rgba(0,0,0,0.35)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 900, maxWidth: "100%", height: 640, maxHeight: "calc(100vh - 48px)",
+          background: C.cardBg, borderRadius: 16,
+          boxShadow: "0 8px 24px -4px rgba(0,0,0,0.10), 0 8px 12px -8px rgba(0,0,0,0.05)",
+          position: "relative",
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+          padding: 24,
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          height: 24, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+        }}>
+          <span style={{
+            fontFamily: FONT, fontSize: 16, fontWeight: 500,
+            lineHeight: "24px", color: C.textPrimary,
+          }}>{item.title}</span>
+          <div
+            onClick={onClose}
+            aria-label="关闭"
+            style={{
+              flexShrink: 0,
+              width: 24, height: 24, borderRadius: 6,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", background: "transparent",
+              transition: "background 100ms",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="rgba(0,0,0,0.9)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Content：留 20px 上间距与设计稿 itemSpacing=20 对齐；可滚动 */}
+        <div style={{
+          flex: 1, minHeight: 0, marginTop: 20,
+          overflowY: "auto",
+          paddingRight: 4, /* 避免滚动条贴边 */
+        }}>
+          <SimpleMarkdown source={item.content} />
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -694,6 +839,8 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
   const [tab, setTab] = React.useState<"evolve" | "memory">("evolve");
   // 点击技能列表项后展示的弹窗
   const [skillDetail, setSkillDetail] = React.useState<SkillDetail | null>(null);
+  // 点击记忆沉淀条目后展示的弹窗
+  const [memoryDetail, setMemoryDetail] = React.useState<MemoryItem | null>(null);
 
   // Mock 等级 & 阶级（决定徽章 / 进度条 / 雷达图主色）
   const level = 12;
@@ -953,7 +1100,7 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
                 {tab === "evolve" ? (
                   <EvolutionTimeline />
                 ) : (
-                  <MemoryList />
+                  <MemoryList onItemClick={(item) => setMemoryDetail(item)} />
                 )}
               </Card>
             </div>
@@ -978,6 +1125,13 @@ export default function AgentDetail({ expert, onBack, onDialog }: AgentDetailPro
       <AnimatePresence>
         {skillDetail && (
           <SkillDetailModal detail={skillDetail} onClose={() => setSkillDetail(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* 记忆沉淀详情弹窗 */}
+      <AnimatePresence>
+        {memoryDetail && (
+          <MemoryDetailModal item={memoryDetail} onClose={() => setMemoryDetail(null)} />
         )}
       </AnimatePresence>
     </div>
