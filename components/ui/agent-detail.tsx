@@ -582,7 +582,7 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
 
             {/* 标签 */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {expert.skills.slice(0, 4).map((s) => (
+              {["集群监控", "故障排查", "容量规划", "性能调优"].map((s) => (
                 <Chip key={s}>{s}</Chip>
               ))}
             </div>
