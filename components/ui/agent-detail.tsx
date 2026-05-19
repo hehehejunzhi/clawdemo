@@ -61,6 +61,145 @@ function Card({ title, extra, children, style }: { title?: string; extra?: React
   );
 }
 
+// ── 极简 Markdown 渲染器（零依赖） ───────────────────────────
+// 支持：#~### 标题、空行分段、- / *  无序列表、1. 有序列表、**粗体**、
+//      *斜体*、`行内代码`、[link](url)
+function renderInline(line: string, keyPrefix: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  // 顺序很重要：先处理 code（保护其中字符），再处理 link / bold / italic
+  const regex = /(`[^`]+`)|(\[[^\]]+\]\([^)]+\))|(\*\*[^*]+\*\*)|(\*[^*]+\*)/g;
+  let lastIdx = 0;
+  let m: RegExpExecArray | null;
+  let i = 0;
+  while ((m = regex.exec(line)) !== null) {
+    if (m.index > lastIdx) nodes.push(line.slice(lastIdx, m.index));
+    const token = m[0];
+    const k = `${keyPrefix}-${i++}`;
+    if (token.startsWith("`")) {
+      nodes.push(
+        <code key={k} style={{
+          fontFamily: "var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace",
+          fontSize: "0.92em",
+          padding: "1px 4px",
+          borderRadius: 3,
+          background: "rgba(0,0,0,0.05)",
+        }}>{token.slice(1, -1)}</code>
+      );
+    } else if (token.startsWith("[")) {
+      const lm = /\[([^\]]+)\]\(([^)]+)\)/.exec(token);
+      if (lm) {
+        nodes.push(
+          <a key={k} href={lm[2]} target="_blank" rel="noreferrer"
+            style={{ color: "#2873FF", textDecoration: "none" }}>{lm[1]}</a>
+        );
+      }
+    } else if (token.startsWith("**")) {
+      nodes.push(<strong key={k} style={{ fontWeight: 600 }}>{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith("*")) {
+      nodes.push(<em key={k}>{token.slice(1, -1)}</em>);
+    }
+    lastIdx = m.index + token.length;
+  }
+  if (lastIdx < line.length) nodes.push(line.slice(lastIdx));
+  return nodes;
+}
+
+function SimpleMarkdown({ source }: { source: string }) {
+  const lines = source.replace(/\r\n/g, "\n").split("\n");
+  const blocks: React.ReactNode[] = [];
+  let i = 0;
+  let bk = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // 跳过空行
+    if (!line.trim()) { i++; continue; }
+
+    // 标题
+    const hm = /^(#{1,3})\s+(.*)$/.exec(line);
+    if (hm) {
+      const lv = hm[1].length;
+      const size = lv === 1 ? 16 : lv === 2 ? 14 : 13;
+      const weight = 600;
+      const tag: "h1" | "h2" | "h3" = lv === 1 ? "h1" : lv === 2 ? "h2" : "h3";
+      blocks.push(
+        React.createElement(tag, {
+          key: `b${bk++}`,
+          style: {
+            margin: "12px 0 6px", fontFamily: FONT, fontSize: size,
+            fontWeight: weight, lineHeight: "22px", color: "rgba(0,0,0,0.9)",
+          },
+        }, renderInline(hm[2], `h${bk}`))
+      );
+      i++;
+      continue;
+    }
+
+    // 无序列表
+    if (/^\s*[-*]\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*]\s+/, ""));
+        i++;
+      }
+      blocks.push(
+        <ul key={`b${bk++}`} style={{
+          margin: "4px 0", paddingLeft: 18,
+          display: "flex", flexDirection: "column", gap: 4,
+        }}>
+          {items.map((it, idx) => (
+            <li key={idx} style={{
+              fontFamily: FONT, fontSize: 13, fontWeight: 400,
+              lineHeight: "22px", color: "rgba(0,0,0,0.9)",
+            }}>{renderInline(it, `ul${bk}-${idx}`)}</li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    // 有序列表
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*\d+\.\s+/, ""));
+        i++;
+      }
+      blocks.push(
+        <ol key={`b${bk++}`} style={{
+          margin: "4px 0", paddingLeft: 22,
+          display: "flex", flexDirection: "column", gap: 4,
+        }}>
+          {items.map((it, idx) => (
+            <li key={idx} style={{
+              fontFamily: FONT, fontSize: 13, fontWeight: 400,
+              lineHeight: "22px", color: "rgba(0,0,0,0.9)",
+            }}>{renderInline(it, `ol${bk}-${idx}`)}</li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    // 段落（合并相邻非空非块行）
+    const para: string[] = [line];
+    i++;
+    while (i < lines.length
+      && lines[i].trim()
+      && !/^(#{1,3}\s+|\s*[-*]\s+|\s*\d+\.\s+)/.test(lines[i])) {
+      para.push(lines[i]);
+      i++;
+    }
+    blocks.push(
+      <p key={`b${bk++}`} style={{
+        margin: "0 0 8px", fontFamily: FONT, fontSize: 13, fontWeight: 400,
+        lineHeight: "22px", color: "rgba(0,0,0,0.9)",
+      }}>{renderInline(para.join(" "), `p${bk}`)}</p>
+    );
+  }
+  return <>{blocks}</>;
+}
+
 function Chip({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "warm" | "green" | "blue" }) {
   const bg = tone === "warm" ? C.chipBgWarm
     : tone === "green" ? C.chipBgGreen
@@ -640,31 +779,29 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
 
         {/* ── 右列 ── */}
         <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Agent 设定 */}
-          <Card title="Agent 设定">
-            <p style={{
-              margin: 0, fontFamily: FONT, fontSize: 14,
-              lineHeight: "22px", color: C.textSecondary,
-              display: "flex", alignItems: "flex-start", gap: 8,
-            }}>
-              <span style={{ flexShrink: 0 }}>👋</span>
-              <span>我是{expert.codeName}·{expert.shortTitle}</span>
-            </p>
-            <p style={{
-              margin: "10px 0 0", fontFamily: FONT, fontSize: 14,
-              lineHeight: "22px", color: C.textSecondary,
-            }}>{expert.desc}</p>
-            <div style={{ marginTop: 14 }}>
-              <div style={{
-                fontFamily: FONT, fontSize: 14, fontWeight: 500,
-                lineHeight: "22px", color: C.textPrimary, marginBottom: 6,
-              }}>我擅长</div>
-              <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
-                <li style={{ fontFamily: FONT, fontSize: 13, lineHeight: "22px", color: C.textSecondary }}>集群健康巡检 — CPU / 内存 / 磁盘 / 网络指标实时监控</li>
-                <li style={{ fontFamily: FONT, fontSize: 13, lineHeight: "22px", color: C.textSecondary }}>故障应急 — SEV 等级评估、根因分析</li>
-                <li style={{ fontFamily: FONT, fontSize: 13, lineHeight: "22px", color: C.textSecondary }}>容量规划 — 基于历史数据预测扩缩容需求</li>
-              </ul>
-            </div>
+          {/* Agent 设定 —— 内容为 Markdown，固定高度 200px，内部滚动 */}
+          <Card
+            title="Agent 设定"
+            style={{ height: 200, overflowY: "auto" }}
+          >
+            <SimpleMarkdown source={`👋 我是 ${expert.codeName}·${expert.shortTitle}
+
+${expert.desc}
+
+### 我擅长
+- 集群健康巡检 — CPU / 内存 / 磁盘 / 网络指标实时监控
+- 故障应急 — SEV 等级评估、根因分析
+- 容量规划 — 基于历史数据预测扩缩容需求
+
+### 我的边界
+- 生产写操作必须人类审批（强制）
+- 不主动重启核心服务，需经值班同学确认
+- 跨业务线变更先走 SRE Review 流程
+
+### 协作偏好
+- 默认输出 **Markdown 结构化结论 + 可复用 runbook**
+- 不确定的故障定位，优先 \`SHOW PROCESSLIST\` / 链路追踪取证
+- 重大故障期间，所有沟通都同步到 [应急频道](#)`} />
           </Card>
 
           {/* Agent 技能 */}
