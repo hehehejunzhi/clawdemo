@@ -560,10 +560,11 @@ export default function AgentDetail({ expert, onBack, onDialog, onConfigSkill }:
             <div>
               <div style={{
                 display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                fontFamily: FONT, fontSize: 12, color: C.textTertiary, marginBottom: 6,
+                fontFamily: FONT, fontSize: 13, fontWeight: 400, lineHeight: "20px",
+                color: C.textPrimary, marginBottom: 6,
               }}>
                 <span>成长值</span>
-                <span style={{ color: C.textSecondary, fontWeight: 500 }}>500 / 2000</span>
+                <span>500 / 2000</span>
               </div>
               <div style={{ width: "100%", height: 6, borderRadius: 3, background: C.borderLight, overflow: "hidden" }}>
                 <div style={{ width: "25%", height: "100%", borderRadius: 3, background: tier.mainGradient }} />
@@ -833,7 +834,10 @@ function MetaRow({ icon, label }: { icon: "birth" | "creator" | "tag"; label: st
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <img src={src} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
-      <span style={{ flex: 1, fontFamily: FONT, fontSize: 13, color: C.textSecondary, lineHeight: "20px" }}>{label}</span>
+      <span style={{
+        flex: 1, fontFamily: FONT, fontSize: 13, fontWeight: 400,
+        lineHeight: "20px", color: C.textPrimary,
+      }}>{label}</span>
     </div>
   );
 }
