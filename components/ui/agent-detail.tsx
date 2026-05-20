@@ -1074,13 +1074,13 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
         background: C.titlebarBg,
         borderBottom: `1px solid ${C.borderLight}`,
       }}>
-        {/* SecondaryNav 收起时左侧露出「新建对话」+「展开面板」入口（与 SecondaryNav 顶部按钮样式一致） */}
+        {/* SecondaryNav 收起时左侧露出「展开面板」+「新建对话」入口（与 SecondaryNav 顶部按钮样式一致） */}
         {secondaryCollapsed && (
           <>
             <button
-              onClick={onNewChat}
-              aria-label="新建对话"
-              title="新建对话"
+              onClick={onExpandSecondary}
+              aria-label="展开面板"
+              title="展开面板"
               style={{
                 width: 32, height: 32, borderRadius: 8, border: "none",
                 background: "transparent", cursor: "pointer",
@@ -1090,12 +1090,12 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             >
-              <IconAiNewChat size={16} color="rgba(0,0,0,0.6)" />
+              <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
             </button>
             <button
-              onClick={onExpandSecondary}
-              aria-label="展开面板"
-              title="展开面板"
+              onClick={onNewChat}
+              aria-label="新建对话"
+              title="新建对话"
               style={{
                 width: 32, height: 32, borderRadius: 8, border: "none",
                 background: "transparent", cursor: "pointer",
@@ -1105,7 +1105,7 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             >
-              <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
+              <IconAiNewChat size={16} color="rgba(0,0,0,0.9)" />
             </button>
           </>
         )}

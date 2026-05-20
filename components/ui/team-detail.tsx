@@ -332,9 +332,9 @@ export default function TeamDetail({ team, experts, onBack, onDialog, onMemberMa
           {secondaryCollapsed && (
             <>
               <button
-                onClick={onNewChat}
-                aria-label="新建对话"
-                title="新建对话"
+                onClick={onExpandSecondary}
+                aria-label="展开面板"
+                title="展开面板"
                 style={{
                   width: 32, height: 32, borderRadius: 8, border: "none",
                   background: "transparent", cursor: "pointer",
@@ -344,12 +344,12 @@ export default function TeamDetail({ team, experts, onBack, onDialog, onMemberMa
                 onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
-                <IconAiNewChat size={16} color="rgba(0,0,0,0.6)" />
+                <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
               </button>
               <button
-                onClick={onExpandSecondary}
-                aria-label="展开面板"
-                title="展开面板"
+                onClick={onNewChat}
+                aria-label="新建对话"
+                title="新建对话"
                 style={{
                   width: 32, height: 32, borderRadius: 8, border: "none",
                   background: "transparent", cursor: "pointer",
@@ -359,7 +359,7 @@ export default function TeamDetail({ team, experts, onBack, onDialog, onMemberMa
                 onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
-                <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
+                <IconAiNewChat size={16} color="rgba(0,0,0,0.9)" />
               </button>
             </>
           )}
