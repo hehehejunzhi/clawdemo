@@ -72,7 +72,7 @@ function BannerAvatar({ item, zIndex, size = AVATAR_SIZE }: { item: ClusterAvata
 
 /**
  * 团队召唤 banner —— 左对齐版式，贴近输入框上方
- * 参考 Figma 726_8879 + 对齐数据开发专家（summonedAgent）召唤样式
+ * 参考 Figma 726_8879 + 对齐数据工程专家（summonedAgent）召唤样式
  *
  * 布局（从左到右一行）：
  *   [头像组合 48×48 ×N, 步长 37.2] [gap 8] [文字 24/600]

@@ -1079,7 +1079,7 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
   },
   {
     icon: "/agents/dev-expert.png",
-    name: "数据开发专家",
+    name: "数据工程专家",
     delay: 3500,
     lines: [
       {
@@ -1123,7 +1123,7 @@ const DEFAULT_REPLIES: ExpertReplyData[] = [
   },
   {
     icon: "/agents/dev-expert.png",
-    name: "数据开发专家",
+    name: "数据工程专家",
     delay: 15000,
     lines: [
       { text: "产出物归档完成：SQL 模板已沉淀至知识库，标签为「华东区、用户活跃、7 日趋势」。" },

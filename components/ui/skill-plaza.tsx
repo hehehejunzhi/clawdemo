@@ -21,7 +21,7 @@ const C = {
 } as const;
 
 // ── 内置专家列表（用于判断是否显示预置 Skill tab）──────────
-const BUILTIN_EXPERTS = new Set(["数据开发专家", "数据分析专家", "智能管家"]);
+const BUILTIN_EXPERTS = new Set(["数据工程专家", "数据分析专家", "智能管家"]);
 
 // ── Toast 组件（顶部展示，支持 success/error）─────────────────
 function Toast({ message, visible, type, onDone }: { message: string; visible: boolean; type?: "success" | "error"; onDone: () => void }) {
@@ -521,7 +521,7 @@ interface SkillPlazaProps {
 export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
   // ── 内置专家：固定来自 registry.experts（shortTitle） ──
   const builtinExperts = useMemo(
-    () => registry?.experts.map((e) => e.shortTitle) ?? ["数据开发专家", "数据分析专家", "智能管家"],
+    () => registry?.experts.map((e) => e.shortTitle) ?? ["数据工程专家", "数据分析专家", "智能管家"],
     [registry?.experts]
   );
   // 自定义分身：来自 registry.avatars（id + name，允许同名）
@@ -609,7 +609,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
 
   // 按分类定义不同的技能（含详情弹窗需要的 category/version/author）
   const SKILLS_BY_CAT: Record<string, { icon: string; iconBg: string; title: string; desc: string; defaultTag?: boolean; category: string; version: string; author: string }[]> = {
-    "数据开发专家": [
+    "数据工程专家": [
       { icon: "E", iconBg: "#3BAFB9", title: "ETL 流水线编排", desc: "可视化拖拽构建数据加工 DAG，自动生成调度配置。", category: "数据开发", version: "1.0.0", author: "WeData Team" },
       { icon: "S", iconBg: "#4C8DEF", title: "Schema 变更检测", desc: "实时监控上游表结构变化，自动预警并生成迁移脚本。", category: "数据开发", version: "1.1.0", author: "WeData Team" },
       { icon: "血", iconBg: "#7B68EE", title: "血缘分析引擎", desc: "自动追踪字段级血缘，输出影响面评估报告。", defaultTag: true, category: "数据治理", version: "2.0.0", author: "WeData Team" },

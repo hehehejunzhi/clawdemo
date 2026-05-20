@@ -63,7 +63,7 @@ const initialTasks: Task[] = [
   },
   {
     id: "2",
-    title: "@大数据开发专家 对检索到的慢 SQL 进行深度调优分析，生成优化方案",
+    title: "@大数据工程专家 对检索到的慢 SQL 进行深度调优分析，生成优化方案",
     description: "分析 Top 慢 SQL 的执行计划，定位性能瓶颈",
     status: "in-progress",
     elapsedLabel: "",
@@ -72,7 +72,7 @@ const initialTasks: Task[] = [
   },
   {
     id: "3",
-    title: "@大数据开发专家 执行优化方案，通过 RunJobFlow 提交到集群验证",
+    title: "@大数据工程专家 执行优化方案，通过 RunJobFlow 提交到集群验证",
     description: "将优化后的 SQL 提交到集群执行并验证性能提升",
     status: "pending",
     dependencies: ["2"],

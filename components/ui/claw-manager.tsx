@@ -285,7 +285,7 @@ const PRESET_OPS_TEAM: CustomTeam = {
   name: "运营协作团队",
   desc: "数据团队 + 运营助手协同，聚焦业务指标解读与落地",
   members: [
-    { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+    { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
     { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
     { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
@@ -301,7 +301,7 @@ const PRESET_OPS_TEAM: CustomTeam = {
 const ALL_AVAILABLE_MEMBERS: Omit<TeamMember, "role">[] = [
   { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
   { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
-  { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+  { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
   { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", statusColor: "#FF7800" },
   { id: "lh", name: "Lighthouse", abbr: "LH", abbrBg: "#FFB834", category: "外部 Claw", statusColor: "#0CBF5B" },
   { id: "cp", name: "ClawPro", abbr: "CP", abbrBg: "#4B79FF", category: "外部 Claw", statusColor: "#0CBF5B" },
@@ -1297,7 +1297,7 @@ export default function ClawManager({
 
   const handleCreate = (name: string, desc: string) => {
     const defaultMembers: TeamMember[] = [
-      { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+      { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
       { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ];
@@ -1380,7 +1380,7 @@ export default function ClawManager({
         "/agents/ops-expert.png",
       ],
       members: [
-        { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+        { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
         { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
         { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
       ],
@@ -1493,9 +1493,9 @@ export default function ClawManager({
         <div style={{ display: "flex", gap: 16, padding: "0 24px 8px", flexWrap: "wrap" }}>
           <Card
             avatar={<AvatarCircle src="/agents/dev-expert.png" />}
-            name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Rigel·数据开发专家</span>}
+            name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Rigel·数据工程专家</span>}
             desc="负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。"
-            onDialog={() => onAgentDialog?.("dev-expert", "数据开发专家")}
+            onDialog={() => onAgentDialog?.("dev-expert", "数据工程专家")}
             onCardClick={() => onAgentDetail?.("expert", "dev-expert")}
           />
           <Card

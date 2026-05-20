@@ -74,7 +74,7 @@ const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
     ],
   },
   {
-    expert: "数据开发专家过程产物",
+    expert: "数据工程专家过程产物",
     icon: "/agents/dev-expert.png",
     items: [
       { id: "5", title: "read_source_data.md", description: "数据读取脚本 · 从源表读取原始数据" },
@@ -906,7 +906,7 @@ function DagCardRowWithMerge({ phase, setSelectedArtifact, allArtifacts }: {
         </div>
         <div ref={card2Ref} style={{ flex: 1, minWidth: 0 }}>
           <ExpertCard
-            name="数据开发专家"
+            name="数据工程专家"
             tasks={[
               { label: "HDFS 完整性检查", icon: "/icons/dag/12.svg", status: phase >= 2 ? "done" : phase >= 1.5 ? "active" : "pending" },
               { label: "血缘追踪", icon: "/icons/dag/13.svg", status: phase >= 2 ? "done" : phase >= 1.5 ? "active" : "pending" },

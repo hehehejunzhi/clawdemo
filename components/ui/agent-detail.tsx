@@ -1164,7 +1164,7 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               />
             </div>
 
-            {/* Name + Lv —— 徽章与第二行「数据开发专家」垂直居中对齐 */}
+            {/* Name + Lv —— 徽章与第二行「数据工程专家」垂直居中对齐 */}
             <div style={{
               display: "grid",
               gridTemplateColumns: "1fr auto",

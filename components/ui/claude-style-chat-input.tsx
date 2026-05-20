@@ -680,7 +680,7 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                           { id: "bigdata-team", label: "大数据团队", kind: "team" as const },
                           { id: "ops-expert", label: "智能管家", kind: "expert" as const },
                           { id: "analysis-expert", label: "数据分析专家", kind: "expert" as const },
-                          { id: "dev-expert", label: "数据开发专家", kind: "expert" as const },
+                          { id: "dev-expert", label: "数据工程专家", kind: "expert" as const },
                           { id: "ops-team", label: "运营协作团队", kind: "team" as const },
                         ]).map((item) => (
                           <div

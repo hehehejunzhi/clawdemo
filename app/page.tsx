@@ -168,7 +168,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         delay: 10000,
         hideLabel: true,
         lines: [
@@ -247,7 +247,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "SQL 模板已沉淀到知识库，标签：多渠道支付、按天汇总、7日趋势。" },
           { text: "自动创建定时报表任务，每周一 09:00 自动推送到运营群。" },
@@ -261,7 +261,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调完成订单表数据源接入任务",
     replies: [
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "已通过 JDBC 探测到 MySQL 5.7 实例 db-order-prod，延迟 2.3ms。" },
           { text: "orders 表结构：38 个字段，主键 order_id (BIGINT)，日均新增约 42 万条。", tags: ["orders", "order_id", "MySQL 5.7"] },
@@ -283,7 +283,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调完成用户表数据源接入任务",
     replies: [
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "已探测到 MySQL 实例 db-user-prod，用户表 users 共 1,560 万条记录。" },
           { text: "表结构：25 个字段，包含 user_id、nickname、phone、register_time 等核心字段。", tags: ["users", "user_profile", "user_extend"] },
@@ -342,7 +342,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "资源编排：凌晨 2:00 启动，预分配 Spark 集群 16 CU，DWS 阶段动态扩容到 24 CU。" },
           { text: "SLA 兜底：若 06:00 前未完成，自动触发紧急扩容 + 告警通知值班人员。" },
@@ -452,7 +452,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "周报自动化任务已创建，每周日 20:00 自动生成并推送至管理层邮箱。" },
         ],
@@ -465,7 +465,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调元数据血缘扫描和治理任务",
     replies: [
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "全量血缘扫描启动：覆盖 Hive 347 张表、Spark SQL 作业 128 个、调度任务 89 个。" },
           { text: "表级血缘图谱已生成：平均链路深度 4.2 层，最长链路 ODS→DWD→DWS→ADS→BI 共 7 层。", tags: ["hive_metastore", "spark_sql_lineage", "workflow_dag"] },
@@ -509,7 +509,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "权限配置：运营组全员可查看，数据导出权限仅限运营负责人。" },
           { text: "看板链接已生成，已推送至运营协作群。" },
@@ -545,7 +545,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
 // ── 确认执行后的二阶段对话内容 ────────────────────────────────
 const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
   {
-    icon: "/agents/dev-expert.png", name: "数据开发专家",
+    icon: "/agents/dev-expert.png", name: "数据工程专家",
     delay: 800,
     overview: "好的，你选了 #1 — 最慢的那条 56.5 秒的 SQL。让我对它做深入调优分析。",
     lines: [
@@ -560,7 +560,7 @@ const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
     ],
   },
   {
-    icon: "/agents/dev-expert.png", name: "数据开发专家",
+    icon: "/agents/dev-expert.png", name: "数据工程专家",
     delay: 4000,
     dividerBefore: true,
     overview: "以下是报告核心结论",
@@ -850,9 +850,9 @@ export default function Home() {
         ],
       },
     ],
-    "数据开发专家": [
+    "数据工程专家": [
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         delay: 1200,
         lines: [
           { text: "正在分析数仓分层模型需求，梳理业务数据源和目标架构。" },
@@ -871,7 +871,7 @@ export default function Home() {
     if (!summonedAgent) {
       setSummonedAgent({
         name: "Rigel",
-        title: "数据开发专家",
+        title: "数据工程专家",
         avatar: "/agents/dev-expert.png",
       });
     }

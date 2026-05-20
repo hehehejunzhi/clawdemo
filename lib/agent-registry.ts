@@ -9,9 +9,9 @@ import type { ClusterAvatarItem } from "@/components/ui/secondary-nav";
 
 export interface BuiltinExpert {
   id: string;
-  /** 完整名称，用于 Agent 广场卡片标题，如 "Rigel·数据开发专家" */
+  /** 完整名称，用于 Agent 广场卡片标题，如 "Rigel·数据工程专家" */
   fullName: string;
-  /** 简短名称，用于对话下拉/左栏，如 "数据开发专家"（无前缀） */
+  /** 简短名称，用于对话下拉/左栏，如 "数据工程专家"（无前缀） */
   shortTitle: string;
   /** 英文代号，用于召唤气泡 */
   codeName: string;
@@ -99,8 +99,8 @@ export interface AgentRegistry {
 export const DEFAULT_EXPERTS: BuiltinExpert[] = [
   {
     id: "dev-expert",
-    fullName: "Rigel·数据开发专家",
-    shortTitle: "数据开发专家",
+    fullName: "Rigel·数据工程专家",
+    shortTitle: "数据工程专家",
     codeName: "Rigel",
     desc: "负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。",
     avatar: "/agents/dev-expert.png",
@@ -147,7 +147,7 @@ export const DEFAULT_TEAMS: Team[] = [
       "/agents/ops-expert.png",
     ],
     members: [
-      { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+      { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
       { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ],
@@ -163,7 +163,7 @@ export const DEFAULT_TEAMS: Team[] = [
       { letter: "运", bg: "#4B79FF" },
     ],
     members: [
-      { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+      { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
       { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
       { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
@@ -209,7 +209,7 @@ export const DEFAULT_TASKS: AgentTask[] = [
   { id: "t3", title: "展示\u201C思考中\u201D状态", status: "loading", agentId: "bigdata-team" },
   { id: "t4", title: "展示\u201C用户已取消\u201D状态", status: "check", agentId: "bigdata-team" },
   { id: "t5", title: "展示\u201C报错\u201D状态", status: "check", agentId: "bigdata-team" },
-  // Rigel·数据开发专家
+  // Rigel·数据工程专家
   { id: "t7", title: "数仓分层模型搭建", status: "loading", agentId: "dev-expert" },
   { id: "t8", title: "ODS 层数据接入验证", status: "check", agentId: "dev-expert" },
   // Vega·数据分析专家
