@@ -1155,6 +1155,13 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               <img
                 src={getHeroImage(expert.id, tier.tier)}
                 alt={expert.fullName}
+                onError={(e) => {
+                  // 新立绘资源未落盘时回退到旧默认图，避免详情页立绘空白
+                  const img = e.currentTarget as HTMLImageElement;
+                  if (!img.src.endsWith("/agents/hero/default-agent.png")) {
+                    img.src = "/agents/hero/default-agent.png";
+                  }
+                }}
                 style={{
                   width: "100%",
                   height: "100%",
