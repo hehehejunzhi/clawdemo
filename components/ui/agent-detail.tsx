@@ -1391,6 +1391,7 @@ function getAgentProfile(expertId: string): AgentProfile {
     case "ops-expert": return PROFILE_OPS;
     case "analysis-expert": return PROFILE_ANALYSIS;
     case "dev-expert":
+    case "custom-avatar": // 自定义 Agent 详情页内容与数据工程专家一致
     default: return PROFILE_DEV;
   }
 }
@@ -1777,6 +1778,7 @@ function getLevelTier(level: number) {
 function getHeroImage(expertId: string, tier: "B" | "A" | "S"): string {
   const expertSlotMap: Record<string, number> = {
     "dev-expert": 2,
+    "custom-avatar": 3,   // 自定义 Agent 详情页立绘
     "ops-expert": 4,
     "analysis-expert": 5,
   };

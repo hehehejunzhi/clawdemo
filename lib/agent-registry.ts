@@ -55,6 +55,8 @@ export interface CustomAvatar {
   /** 色块+首字的颜色 */
   bg: string;
   letter: string;
+  /** 可选：圆形头像图片，传入时优先用图片，没有再回退到 bg+letter */
+  avatar?: string;
   /** 预置分身（例如"运营助手"），区别于用户自建 */
   preset?: boolean;
 }
@@ -184,6 +186,7 @@ export const DEFAULT_AVATARS: CustomAvatar[] = [
     ],
     bg: "#4B79FF",
     letter: "运",
+    avatar: "/agents/custom-avatar.png",
     preset: true,
   },
 ];

@@ -1229,8 +1229,8 @@ export default function ClawManager({
   onRegistryChange?: (next: AgentRegistry) => void;
   /** 点击卡片「对话」按钮时触发：由 page.tsx 关闭 ClawManager 并召唤对应 agent banner */
   onAgentDialog?: (agentId: string, label: string) => void;
-  /** 点击卡片本体时触发：由 page.tsx 跳转到 Agent / Team 详情页（仅团队和内置专家有效） */
-  onAgentDetail?: (kind: "team" | "expert", id: string) => void;
+  /** 点击卡片本体时触发：由 page.tsx 跳转到 Agent / Team / 自定义 Agent 详情页 */
+  onAgentDetail?: (kind: "team" | "expert" | "avatar", id: string) => void;
 } = {}) {
   // Mount 时若有外部 registry，从它恢复内部 state（避免卸载重挂丢失）
   const initFromRegistry = () => {
@@ -1256,7 +1256,7 @@ export default function ClawManager({
       : null;
     const customAvatars = registry.avatars
       .filter((a) => !a.preset)
-      .map((a, idx) => ({ id: a.id, name: a.name, desc: a.desc, tags: a.tags, skills: a.skills.map((s) => ({ name: s.name, enabled: s.enabled })), bg: a.bg || pickAvatarBg(idx) }));
+      .map((a, idx) => ({ id: a.id, name: a.name, desc: a.desc, tags: a.tags, skills: a.skills.map((s) => ({ name: s.name, enabled: s.enabled })), bg: a.bg || pickAvatarBg(idx), avatar: a.avatar }));
     const lh2 = registry.externals.find((e) => e.id === "lh2");
     const customClaws = registry.externals
       .filter((e) => !e.preset)
@@ -1333,7 +1333,7 @@ export default function ClawManager({
   const [showAvatarDetail, setShowAvatarDetail] = useState(false);
   const [showAvatarDelete, setShowAvatarDelete] = useState(false);
   const [showCreateAvatar, setShowCreateAvatar] = useState(false);
-  const [customAvatars, setCustomAvatars] = useState<{ id: string; name: string; desc: string; tags: string[]; skills: { name: string; enabled: boolean }[]; bg: string }[]>(initial?.customAvatars ?? []);
+  const [customAvatars, setCustomAvatars] = useState<{ id: string; name: string; desc: string; tags: string[]; skills: { name: string; enabled: boolean }[]; bg: string; avatar?: string }[]>(initial?.customAvatars ?? []);
   const [viewingAvatarId, setViewingAvatarId] = useState<string | null>(null);
   const [deletingAvatarId, setDeletingAvatarId] = useState<string | null>(null);
 
@@ -1397,6 +1397,7 @@ export default function ClawManager({
         skills: (avatarData.skills ?? []).map((s) => ({ name: s.name, enabled: s.enabled })),
         bg: "#4B79FF",
         letter: "运",
+        avatar: "/agents/custom-avatar.png",
         preset: true,
       });
     }
@@ -1409,6 +1410,7 @@ export default function ClawManager({
         skills: a.skills ?? [],
         bg: a.bg,
         letter: a.name.charAt(0),
+        avatar: a.avatar,
       });
     });
 
@@ -1530,11 +1532,12 @@ export default function ClawManager({
           {customAvatars.map((a) => (
             <Card
               key={a.id}
-              avatar={<AvatarCircle letter={a.name.charAt(0)} bg={a.bg} />}
+              avatar={<AvatarCircle src={a.avatar} letter={a.name.charAt(0)} bg={a.bg} />}
               name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>{a.name}</span>}
               desc={a.desc || "自定义 Agent"}
               badge={(hovered) => <AvatarMoreMenu visible={hovered} onDetail={() => setViewingAvatarId(a.id)} onDelete={() => setDeletingAvatarId(a.id)} />}
               onDialog={() => onAgentDialog?.(a.id, a.name)}
+              onCardClick={() => onAgentDetail?.("avatar", a.id)}
             />
           ))}
           {(1 + customAvatars.length) < 3 && (

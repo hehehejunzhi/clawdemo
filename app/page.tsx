@@ -1201,11 +1201,30 @@ export default function Home() {
               if (from === "claw-manager") setShowClawManager(true);
             };
             if (detailView.type === "agent") {
-              const expert = registry.experts.find((e) => e.id === detailView.id);
+              // 先按内置专家找；若是自定义 Agent（avatars），适配为伪 BuiltinExpert
+              let expert = registry.experts.find((e) => e.id === detailView.id);
+              if (!expert) {
+                const avatar = registry.avatars.find((a) => a.id === detailView.id);
+                if (avatar) {
+                  expert = {
+                    // 使用 sentinel id，让 AgentDetail 内部的 profile / hero 选用「自定义 Agent」分支
+                    id: "custom-avatar",
+                    fullName: avatar.name,
+                    shortTitle: avatar.name,
+                    codeName: avatar.name,
+                    desc: avatar.desc,
+                    avatar: avatar.avatar ?? "",
+                    skills: avatar.skills.map((s) => s.name),
+                    nameColor: avatar.bg,
+                    summonText: "",
+                  };
+                }
+              }
               if (!expert) { setDetailView(null); return null; }
+              const expertForCallback = expert;
               return (
                 <AgentDetail
-                  expert={expert}
+                  expert={expertForCallback}
                   onBack={goBackFromDetail}
                   secondaryCollapsed={isSecondaryCollapsed}
                   onNewChat={() => { setDetailView(null); handleNewChat(); }}
@@ -1213,12 +1232,12 @@ export default function Home() {
                   onDialog={() => {
                     setDetailView(null);
                     if (chatPhase === "conversation") {
-                      const targetInfo = AGENT_MAP[expert.id];
+                      const targetInfo = AGENT_MAP[expertForCallback.id];
                       const isSameAgent = targetInfo && summonedAgent && targetInfo.title === summonedAgent.title;
                       if (!isSameAgent) handleNewChat();
                     }
-                    chatInputRef.current?.setAgent(expert.shortTitle);
-                    handleSelectAgent(expert.id);
+                    chatInputRef.current?.setAgent(expertForCallback.shortTitle);
+                    handleSelectAgent(detailView.id);
                   }}
                 />
               );
