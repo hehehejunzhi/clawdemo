@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CreateTeamDialog from "./create-team-dialog";
 import { ClusterAvatar, type ClusterAvatarItem } from "./secondary-nav";
+import { pickRandomPresetAvatar } from "@/lib/preset-avatars";
 import {
   DEFAULT_EXPERTS,
   DEFAULT_EXTERNALS,
@@ -1260,7 +1261,7 @@ export default function ClawManager({
     const lh2 = registry.externals.find((e) => e.id === "lh2");
     const customClaws = registry.externals
       .filter((e) => !e.preset)
-      .map((e) => ({ id: e.id, name: e.name, abbr: e.abbr, bg: e.bg, platformLabel: e.platformLabel, apiUrl: e.apiUrl ?? "" }));
+      .map((e) => ({ id: e.id, name: e.name, abbr: e.abbr, bg: e.bg, platformLabel: e.platformLabel, apiUrl: e.apiUrl ?? "", avatar: e.avatar }));
     return { customTeams, avatarDeleted, avatarData, customAvatars, lh2State: lh2?.state ?? "connected", customClaws };
   };
   const initial = initFromRegistry();
@@ -1342,7 +1343,7 @@ export default function ClawManager({
 
   // 外部 Claw
   const [showCreateExternalClaw, setShowCreateExternalClaw] = useState(false);
-  const [customClaws, setCustomClaws] = useState<{ id: string; name: string; abbr: string; bg: string; platformLabel: string; apiUrl: string }[]>(initial?.customClaws ?? []);
+  const [customClaws, setCustomClaws] = useState<{ id: string; name: string; abbr: string; bg: string; platformLabel: string; apiUrl: string; avatar?: string }[]>(initial?.customClaws ?? []);
   // Lighthouse 连接状态
   const [lh2State, setLh2State] = useState<"connected" | "disconnecting" | "disconnected">(
     (initial?.lh2State === "connected" || initial?.lh2State === "disconnected" || initial?.lh2State === "disconnecting") ? initial.lh2State : "connected"
@@ -1417,7 +1418,7 @@ export default function ClawManager({
     // 外部 Agent
     const externals: RegistryExternal[] = [
       ...(lh2Hidden ? [] : [{ id: "lh2", name: "Lighthouse", abbr: "L", bg: "#BE63FF", platformLabel: "Lighthouse", state: lh2State === "disconnecting" ? "connected" : lh2State, preset: true } as RegistryExternal]),
-      ...customClaws.map((c) => ({ id: c.id, name: c.name, abbr: c.abbr, bg: c.bg, platformLabel: c.platformLabel, apiUrl: c.apiUrl, state: "disconnected" as const })),
+      ...customClaws.map((c) => ({ id: c.id, name: c.name, abbr: c.abbr, bg: c.bg, platformLabel: c.platformLabel, apiUrl: c.apiUrl, avatar: c.avatar, state: "disconnected" as const })),
     ];
 
     // 任务保持 registry 原有的（由 page.tsx 管理，ClawManager 不改任务）
@@ -1567,7 +1568,7 @@ export default function ClawManager({
           {customClaws.map((c) => (
             <ExternalClawCard
               key={c.id}
-              avatar={<AvatarCircle letter={c.abbr} bg={c.bg} />}
+              avatar={<AvatarCircle src={c.avatar} letter={c.abbr} bg={c.bg} />}
               name={c.name}
               desc={`${c.platformLabel} · ${c.apiUrl}`}
               connected={false}
@@ -1609,7 +1610,7 @@ export default function ClawManager({
         open={showCreateExternalClaw}
         onClose={() => setShowCreateExternalClaw(false)}
         onCreate={(data) => {
-          setCustomClaws((prev) => [...prev, { id: `claw-${Date.now()}`, name: data.name, abbr: data.platformAbbr, bg: data.platformBg, platformLabel: data.platformLabel, apiUrl: data.apiUrl }]);
+          setCustomClaws((prev) => [...prev, { id: `claw-${Date.now()}`, name: data.name, abbr: data.platformAbbr, bg: data.platformBg, platformLabel: data.platformLabel, apiUrl: data.apiUrl, avatar: pickRandomPresetAvatar() }]);
           setShowCreateExternalClaw(false);
           showToast("外部 Claw 创建成功", "success");
         }}
@@ -1620,7 +1621,7 @@ export default function ClawManager({
         open={showCreateAvatar}
         onClose={() => setShowCreateAvatar(false)}
         onCreate={(name, desc, tags) => {
-          setCustomAvatars((prev) => [...prev, { id: `avatar-${Date.now()}`, name, desc, tags: tags ? tags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean) : [], skills: [], bg: pickAvatarBg(prev.length) }]);
+          setCustomAvatars((prev) => [...prev, { id: `avatar-${Date.now()}`, name, desc, tags: tags ? tags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean) : [], skills: [], bg: pickAvatarBg(prev.length), avatar: pickRandomPresetAvatar() }]);
           setShowCreateAvatar(false);
           showToast("自定义 Agent 创建成功", "success");
         }}

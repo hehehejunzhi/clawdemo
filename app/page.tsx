@@ -26,6 +26,7 @@ import ClawManager from "@/components/ui/claw-manager";
 import AgentDetail from "@/components/ui/agent-detail";
 import TeamDetail from "@/components/ui/team-detail";
 import { DEFAULT_REGISTRY, type AgentRegistry } from "@/lib/agent-registry";
+import { pickRandomPresetAvatar } from "@/lib/preset-avatars";
 import TeamSummonBanner, { AgentSummonBanner } from "@/components/ui/team-summon-banner";
 
 // ── Design tokens ──────────────────────────────────────────────
@@ -2118,6 +2119,7 @@ export default function Home() {
                 skills: [],
                 bg,
                 letter: name.charAt(0),
+                avatar: pickRandomPresetAvatar(),
               },
             ],
           }));
@@ -2143,6 +2145,7 @@ export default function Home() {
                 platformLabel: meta.label,
                 apiUrl: data.apiUrl,
                 state: "disconnected" as const,
+                avatar: pickRandomPresetAvatar(),
               },
             ],
           }));

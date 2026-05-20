@@ -71,6 +71,8 @@ export interface ExternalAgent {
   platformLabel: string;
   apiUrl?: string;
   state: ExternalAgentState;
+  /** 可选：圆形头像图片，传入时优先用图片 */
+  avatar?: string;
   preset?: boolean;
 }
 
