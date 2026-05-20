@@ -1153,7 +1153,7 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               position: "relative",
             }}>
               <img
-                src="/agents/hero/default-agent.png"
+                src={getHeroImage(expert.id, tier.tier)}
                 alt={expert.fullName}
                 style={{
                   width: "100%",
@@ -1420,6 +1420,23 @@ const LEVEL_TIERS = [
 
 function getLevelTier(level: number) {
   return LEVEL_TIERS.find((t) => level <= t.max) ?? LEVEL_TIERS[LEVEL_TIERS.length - 1];
+}
+
+// ── 立绘资源映射 ───────────────────────────────────────────────
+// 共 5 个序号 × B/A/S 三档：/agents/hero/<n><tier>.png
+//   序号 1 暂不展示（仅存档）
+//   序号 2 = 数据工程专家（dev-expert / Rigel）
+//   序号 3 = 自定义 Agent（registry.avatars，详情页暂未使用，预留）
+//   序号 4 = 智能管家（ops-expert / Orion）
+//   序号 5 = 数据分析专家（analysis-expert / Vega）
+function getHeroImage(expertId: string, tier: "B" | "A" | "S"): string {
+  const expertSlotMap: Record<string, number> = {
+    "dev-expert": 2,
+    "ops-expert": 4,
+    "analysis-expert": 5,
+  };
+  const slot = expertSlotMap[expertId] ?? 2;
+  return `/agents/hero/${slot}${tier}.png`;
 }
 
 function LevelBadge({ level }: { level: number }) {
