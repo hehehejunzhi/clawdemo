@@ -1548,8 +1548,8 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
                 gridColumn: "1",
                 gridRow: "1",
                 fontFamily: "var(--font-pixelify-sans), 'Pixelify Sans', 'PingFang SC', sans-serif",
-                fontSize: 14, fontWeight: 500,
-                lineHeight: "20px", color: expert.nameColor,
+                fontSize: 20, fontWeight: 500,
+                lineHeight: "28px", color: expert.nameColor,
                 letterSpacing: 0.5,
                 minWidth: 0,
               }}>{expert.codeName}</div>
