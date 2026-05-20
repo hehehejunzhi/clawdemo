@@ -1515,6 +1515,7 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               borderRadius: 12,
               overflow: "hidden",
               position: "relative",
+              marginBottom: -16,
             }}>
               <img
                 src={getHeroImage(expert.id, tier.tier)}
