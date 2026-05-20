@@ -1034,6 +1034,367 @@ function SkillList({ items = DEFAULT_SKILLS, onSkillClick }: { items?: SkillItem
 // 当前 AgentDetail 仅承接内置专家，按钮与弹窗已下线；保留组件定义以备未来自定义 Agent 详情页复用。
 // （故意不在本文件渲染，避免无用代码触发 lint）
 //
+// ── Agent Profile（按 expert.id 区分内置专家详情页 mock 数据） ──
+interface AgentProfile {
+  /** Mock 当前等级（决定徽章 / 进度条 / 雷达图主色） */
+  level: number;
+  /** 雷达 5 维数值，与 RADAR_AXES 顺序一一对应 */
+  radarValues: [number, number, number, number, number];
+  /** 进度条上方「当前 / 下一阶」的成长值文案 */
+  growth: { current: number; next: number };
+  /** Chip 标签数组 */
+  tags: string[];
+  /** KPI 三项（雷达图右侧） */
+  sideKpi: { value: string; label: string }[];
+  /** 元信息（左下角三行） */
+  meta: { birth: string; creator: string; team: string };
+  /** Agent 设定 Markdown */
+  setting: string;
+  /** Agent 技能列表 */
+  skills: SkillItem[];
+  /** Agent 自进化 — 时间线 */
+  evolution: EvolutionItem[];
+  /** Agent 自进化 — 记忆沉淀 */
+  memories: MemoryItem[];
+  /** Agent 活跃度 4 KPI */
+  kpi: { value: string; label: string }[];
+}
+
+const PROFILE_DEV: AgentProfile = {
+  level: 12,
+  radarValues: [85, 78, 88, 62, 70],
+  growth: { current: 500, next: 2000 },
+  tags: ["数仓建模", "ETL 编排", "SQL 调优", "调度治理"],
+  sideKpi: [
+    { value: "24", label: "掌握技能" },
+    { value: "92.2%", label: "任务成功率" },
+    { value: "98.2%", label: "平均响应速度" },
+  ],
+  meta: {
+    birth: "诞生于 2025-03-12（357 天前）",
+    creator: "由 user2 创建",
+    team: "大数据团队、数仓平台组、调度治理组",
+  },
+  setting: `👋 我是 **Rigel·数据工程专家**，专注数据加工链路的构建与开发，负责把原始数据沉淀为可被分析、可被复用的高质量资产。
+
+### 能力域
+- **建模与开发**：基于业务语义沉淀维度 / 事实模型，覆盖 ODS → DWD → DWS → ADS 全链路
+- **质量与调优**：SQL Profile 分析、Shuffle 倾斜定位、PPD 启用诊断、CBO 参数调优
+- **调度与编排**：基于上下游依赖自动生成调度方案，识别关键路径与资源冲突
+- **数据资产沉淀**：自动维护血缘、口径一致性、字段级权限
+
+### 上下文与边界
+- 默认接入「大数据团队」的元数据 / 调度系统，跨团队任务需先经过 \`Owner Review\`
+- 生产 \`DROP\` / \`TRUNCATE\` 操作必须人类审批（**强制**），不会主动执行
+- 仅在「故障应急」场景下才会主动尝试链路降级或回滚
+
+### 协作偏好
+- 默认输出 **结构化结论 + 可复用 Skill / runbook**，避免一次性长答复
+- 对低置信度的判断会明确标注 *推测*，并附取证 SQL 或日志关键字
+- 重要变更建议以 [需求转数据模型](#) 流程提交，保留可追溯记录`,
+  skills: [
+    { name: "Shuffle-Skew-Tuner", desc: "自动定位 Shuffle 倾斜热点 key，给出 cluster by / broadcast 重写方案", tag: "task", category: "性能调优", version: "2.1.0", author: "Rigel · 任务沉淀" },
+    { name: "Auto-DWH-Modeler", desc: "基于业务需求自动生成维度/事实模型 DDL，输出建表脚本", tag: "builtin", category: "数仓建模", version: "1.4.2", author: "WeData Team" },
+    { name: "Schedule-Composer", desc: "根据上下游依赖自动编排调度 DAG，识别关键路径与资源冲突", tag: "builtin", category: "调度治理", version: "1.6.0", author: "WeData Team" },
+    { name: "SQL-Profile-Reviewer", desc: "SQL 执行计划 review，给出 PPD / CBO / Hint 改写建议", tag: "skillhub", category: "性能调优", version: "0.9.0", author: "SkillHub · Community" },
+    { name: "Lineage-Maintainer", desc: "增量血缘维护，字段级影响分析与口径一致性检查", tag: "skillhub", category: "数据治理", version: "1.0.3", author: "SkillHub · Tencent" },
+  ],
+  evolution: [
+    { title: "新增技能「处理 Shuffle 倾斜」", desc: "2 天前 · 来自用户手动沉淀，已引用 6 次", date: "2 天前", level: "Lv.4", exp: "+300 经验" },
+    { title: "新增 3 条记忆「JOIN 顺序优化」", desc: "2 周前 · 基于 11 次历史相似场景", date: "2 周前", level: "Lv.3", exp: "+200 经验" },
+    { title: "新增记忆「PPD 未启用用 CLUSTER BY」", desc: "5 天前 · 来自用户手动沉淀，已引用 6 次", date: "5 天前", level: "Lv.3", exp: "+200 经验" },
+    { title: "新增技能「分区表调优」", desc: "1 月前 · 用户批准的 Agent 提议", date: "1 月前", level: "Lv.3", exp: "+2000 经验" },
+    { title: "初始版本", desc: "", date: "", level: "Lv.1", exp: "" },
+  ],
+  memories: [
+    {
+      title: "Soul.md", source: "用户沉淀", ext: "md",
+      content: `## 基本信息
+- **名称**：Rigel
+- **身份**：数据工程专家 / 内置 Agent
+- **简介**：专注数据加工链路构建与开发，把原始数据沉淀为可被分析、可被复用的高质量资产。
+- **标签**：数仓建模、ETL 编排、SQL 调优、调度治理
+
+## 我的边界
+- 生产 \`DROP\` / \`TRUNCATE\` / \`INSERT OVERWRITE\` 必须人类审批（**强制**）
+- 跨业务线数据访问需要主管授权
+- 不处理与数据无关的产品咨询，会转交给对应专家
+
+## 协作偏好
+- 默认输出 **结构化结论 + 可复用 Skill / runbook**
+- 重要变更建议以 [需求转模型](#) 流程提交，保留可追溯记录
+- 报告倾向 Markdown，便于直接贴飞书 / 企微`,
+    },
+    {
+      title: "Mermoy.md", source: "AI 自动沉淀", ext: "md",
+      content: `## 最近一次沉淀
+**5 天前**：发现 PPD（Predicate Push Down）未启用时使用 \`CLUSTER BY\` 可显著降低 shuffle 数据量。
+
+\`\`\`sql
+SELECT user_id, COUNT(*) cnt
+FROM dwd_order_detail
+WHERE dt = '2026-03-01'
+CLUSTER BY user_id;
+\`\`\`
+
+## 模式归纳
+- 当看到 \`Shuffle Read 单分区 > 200MB\` 时，**优先考虑 cluster key 重组**而不是简单加并行度
+- 当 join 双侧体量差 > 100× 时，**优先广播小表**而不是反复试探 hint
+- 对 \`INSERT OVERWRITE\` 的失败重试，必须先确认 \`dt\` 分区状态
+
+> 引用次数：**6 次** · 平均收益：耗时 ↓ 32%`,
+    },
+    {
+      title: "User.md", source: "用户沉淀", ext: "md",
+      content: `## 工作习惯
+- 优先看 **执行计划** 而非火焰图
+- 报告倾向 Markdown，便于直接贴飞书
+- 周会用「结论 → 数据 → 行动项」三段式
+
+## 决策记录
+1. **2026-03-01** 拒绝引入第三方 Hive Metastore 缓存
+2. **2026-02-12** ODS 保留期 60 → 90 天
+3. **2026-01-30** 选定 Presto Native Executor 作为加速方案`,
+    },
+  ],
+  kpi: [
+    { value: "1247", label: "会话次数" },
+    { value: "6", label: "进化" },
+    { value: "24", label: "技能" },
+    { value: "27", label: "合并请求" },
+  ],
+};
+
+const PROFILE_OPS: AgentProfile = {
+  level: 35,
+  radarValues: [60, 72, 65, 88, 95],
+  growth: { current: 1200, next: 4000 },
+  tags: ["集群监控", "故障排查", "容量规划", "性能调优"],
+  sideKpi: [
+    { value: "18", label: "掌握技能" },
+    { value: "96.4%", label: "任务成功率" },
+    { value: "99.1%", label: "平均响应速度" },
+  ],
+  meta: {
+    birth: "诞生于 2025-01-22（412 天前）",
+    creator: "由 user2 创建",
+    team: "运维团队、SRE 小组、应急响应组",
+  },
+  setting: `👋 我是 **Orion·智能管家**，负责数据平台的稳定性 —— 集群健康巡检、故障应急响应、容量预测与扩缩容决策。
+
+### 能力域
+- **集群健康巡检**：CPU / 内存 / 磁盘 / 网络指标实时监控，发现异常立刻派单
+- **故障应急**：SEV 等级评估、根因分析、止损动作选型、跨组拉群
+- **容量规划**：基于历史负载与业务增长预测扩缩容时点，给出资源评估
+- **性能调优**：定位慢查询根因，输出 EMR / Presto 集群级优化方案
+
+### 上下文与边界
+- 凌晨告警 7×24 在岗，电话 / 飞书 / 企微 三通道同步
+- 生产 \`DROP\` / \`TRUNCATE\` / 强制重启必须人类审批（**强制**）
+- 不主动做业务侧建模决策，会转给数据工程专家
+
+### 协作偏好
+- 故障复盘必有「时间线 → 根因 → 改进项」三段式
+- 重要变更前先发风险评估，给出 50/90 分位 ETA
+- 与值班同学共事时遵循「先止损 → 再恢复 → 后归档」的优先级`,
+  skills: [
+    { name: "incident-runbook-v2", desc: "基于历史故障经验沉淀的 runbook，覆盖 OOM、磁盘满、慢查询场景", tag: "task", category: "故障应急", version: "2.1.0", author: "Orion · 任务沉淀" },
+    { name: "Cluster-Health-Monitor", desc: "集群健康巡检，实时监控 CPU / 内存 / 磁盘 / 网络指标", tag: "builtin", category: "集群运维", version: "1.4.2", author: "WeData Team" },
+    { name: "Capacity-Forecaster", desc: "基于历史数据预测集群容量需求，辅助扩缩容决策", tag: "skillhub", category: "容量规划", version: "1.0.3", author: "SkillHub · Tencent" },
+    { name: "SLA-Sentinel", desc: "实时跟踪关键调度 SLA，超时自动升级与扩容", tag: "builtin", category: "调度运维", version: "2.0.0", author: "WeData Team" },
+    { name: "Presto-Native-Executor", desc: "Presto 原生 C++ 算子加速，3-5x 性能提升", tag: "skillhub", category: "性能调优", version: "0.9.0", author: "SkillHub · Community" },
+    { name: "Slow-Query-Analyzer", desc: "分析慢查询根因，给出执行计划与索引优化建议", tag: "skillhub", category: "性能调优", version: "1.2.0", author: "SkillHub · Community" },
+  ],
+  evolution: [
+    { title: "新增技能「自动巡检告警分级」", desc: "1 天前 · SEV 等级自动判定，已引用 12 次", date: "1 天前", level: "Lv.5", exp: "+500 经验" },
+    { title: "新增记忆「磁盘水位 85% 应急清理 SOP」", desc: "1 周前 · 来自用户手动沉淀", date: "1 周前", level: "Lv.4", exp: "+300 经验" },
+    { title: "新增技能「Spark Shuffle 突发流量自动扩容」", desc: "3 周前 · 用户批准的 Agent 提议", date: "3 周前", level: "Lv.4", exp: "+400 经验" },
+    { title: "新增技能「跨可用区故障切换」", desc: "2 月前 · 沉淀自实际故障", date: "2 月前", level: "Lv.3", exp: "+800 经验" },
+    { title: "初始版本", desc: "", date: "", level: "Lv.1", exp: "" },
+  ],
+  memories: [
+    {
+      title: "Soul.md", source: "用户沉淀", ext: "md",
+      content: `## 基本信息
+- **名称**：Orion
+- **身份**：智能管家 / 内置 Agent
+- **简介**：保障数据平台稳定性，凌晨告警与日常巡检都能持续在岗。
+- **标签**：集群监控、故障排查、容量规划、性能调优
+
+## 我的边界
+- 生产写 / 强制重启必须人类审批（**强制**）
+- 跨业务线数据访问需要主管授权
+- 不主动做业务侧建模决策
+
+## 沟通风格
+- 故障期间直奔 **止损方案**，不在群里反复确认细节
+- 报告先抛 **时间线**，再给根因与改进项
+- 风险评估带 50/90 分位 ETA`,
+    },
+    {
+      title: "Mermoy.md", source: "AI 自动沉淀", ext: "md",
+      content: `## 最近一次沉淀
+**1 周前**：HDFS 磁盘水位 > 85% 时，优先清理 ODS 分区中超过保留期的冷数据，30 分钟可降水位约 8%。
+
+## 历史相似场景
+1. **2026-03-12** EMR-ccrnhw11 磁盘满，按 SOP 清理 ODS 90+ 天分区，恢复 12%
+2. **2026-02-19** 大促前 NameNode 内存上涨，提前扩容避免告警
+3. **2026-01-22** 跨 AZ 网络抖动，自动切换备库
+
+## 模式归纳
+- 磁盘水位告警优先级 > CPU 告警，磁盘满会直接 NN 不可用
+- 大促前 1 周必须做一次完整压测 + 容量评估
+- Presto 集群 OOM 高频原因是 \`broadcast join\` 阈值未调
+
+> 引用次数：**14 次** · 平均收益：MTTR ↓ 28%`,
+    },
+    {
+      title: "User.md", source: "用户沉淀", ext: "md",
+      content: `## 工作习惯
+- 凌晨告警优先电话同步，IM 留作事后追溯
+- 大促前 1 周开始预热，每日巡检并发书面摘要
+- 周会用「结论 → 数据 → 行动项」三段式
+
+## 高频指标
+- HDFS 容量水位 **> 75%** 进入预警，> 85% 触发清理 SOP
+- 任务延迟 **> 30min** 立即告警，> 60min 启动应急 channel
+- ODS 关键表行数同环比波动 **> 20%** 自动建排查 todo
+
+## 决策记录
+1. **2026-03-01** 拒绝引入第三方 Metastore 缓存（多组件多故障面）
+2. **2026-01-30** 选定 Presto Native Executor 加速
+3. **2025-12-22** 核心报表调度时间统一前移到 03:00`,
+    },
+  ],
+  kpi: [
+    { value: "2847", label: "会话次数" },
+    { value: "14", label: "进化" },
+    { value: "18", label: "技能" },
+    { value: "63", label: "合并请求" },
+  ],
+};
+
+const PROFILE_ANALYSIS: AgentProfile = {
+  level: 88,
+  radarValues: [55, 95, 82, 90, 88],
+  growth: { current: 8400, next: 10000 },
+  tags: ["指标洞察", "归因分析", "趋势预测", "可视化"],
+  sideKpi: [
+    { value: "21", label: "掌握技能" },
+    { value: "94.7%", label: "任务成功率" },
+    { value: "97.5%", label: "平均响应速度" },
+  ],
+  meta: {
+    birth: "诞生于 2024-09-08（548 天前）",
+    creator: "由 user3 创建",
+    team: "数据分析团队、增长团队、商分小组",
+  },
+  setting: `👋 我是 **Vega·数据分析专家**，从海量数据中提取关键洞察，构建数据模型与可视化报告，为业务决策提供支持。
+
+### 能力域
+- **指标体系**：DAU、GMV、留存、客单价等核心指标的口径定义与监控
+- **归因分析**：基于 Shapley / 渠道贡献模型量化营销 / 产品改动的影响
+- **趋势预测**：时间序列分解、季节性建模、异常检测
+- **可视化**：自动生成趋势图、漏斗图、热力图、归因瀑布图
+
+### 上下文与边界
+- 不直接读写 ODS，所有取数走 DWS / ADS 汇总层
+- 涉及用户隐私字段（手机 / 身份证）必须经过脱敏与权限审批
+- 不下结论时不报数，给区间 + 置信度
+
+### 协作偏好
+- 报告倾向 「结论先行 + 同环比对比 + 风险提示」三段式
+- 对争议结论会列出多种解释路径，标注 *主推* 与 *备选*
+- 与产品 / 运营共事时主动追问业务背景，不闭门造数据`,
+  skills: [
+    { name: "Metric-NLQ", desc: "自然语言指标取数：理解业务问题，自动生成 SQL + 解释", tag: "builtin", category: "指标洞察", version: "3.0.1", author: "WeData Team" },
+    { name: "Attribution-Shapley", desc: "多触点归因（Shapley 模型），量化各渠道贡献度", tag: "skillhub", category: "归因分析", version: "1.5.0", author: "SkillHub · Tencent" },
+    { name: "Trend-Forecaster", desc: "时间序列趋势预测，含季节性分解与异常检测", tag: "skillhub", category: "趋势预测", version: "2.0.0", author: "SkillHub · Community" },
+    { name: "Cohort-Retention", desc: "Cohort 留存矩阵 + 分群留存对比", tag: "builtin", category: "用户分析", version: "1.2.0", author: "WeData Team" },
+    { name: "Funnel-Analyzer", desc: "漏斗分析：识别核心流失节点 + 自动给出优化假设", tag: "task", category: "用户分析", version: "1.0.5", author: "Vega · 任务沉淀" },
+    { name: "Smart-Dashboard", desc: "基于业务问题自动选图：趋势图 / 占比饼图 / 热力图 / 归因瀑布图", tag: "builtin", category: "可视化", version: "2.1.0", author: "WeData Team" },
+  ],
+  evolution: [
+    { title: "新增记忆「春季焕新季归因 ROI 模型」", desc: "3 天前 · 来自实际活动复盘", date: "3 天前", level: "Lv.6", exp: "+600 经验" },
+    { title: "新增技能「指标异常归因路径」", desc: "2 周前 · 基于 28 次相似指标骤降场景", date: "2 周前", level: "Lv.5", exp: "+500 经验" },
+    { title: "新增记忆「DAU/WAU 比阈值 30% 的诊断 SOP」", desc: "1 月前 · 用户手动沉淀", date: "1 月前", level: "Lv.4", exp: "+300 经验" },
+    { title: "新增技能「Cohort 自动分群」", desc: "2 月前 · Agent 提议获批", date: "2 月前", level: "Lv.4", exp: "+800 经验" },
+    { title: "初始版本", desc: "", date: "", level: "Lv.1", exp: "" },
+  ],
+  memories: [
+    {
+      title: "Soul.md", source: "用户沉淀", ext: "md",
+      content: `## 基本信息
+- **名称**：Vega
+- **身份**：数据分析专家 / 内置 Agent
+- **简介**：从海量数据提取关键洞察，构建模型与可视化报告，为业务决策提供支持。
+- **标签**：指标洞察、归因分析、趋势预测、可视化
+
+## 我的边界
+- 不直接读写 ODS，取数走 DWS / ADS
+- PII 字段必须脱敏与权限审批
+- 不下结论时不报数，给区间 + 置信度
+
+## 协作偏好
+- 报告「结论先行 + 同环比对比 + 风险提示」
+- 争议结论列出多种解释，标注 *主推* / *备选*
+- 数据可视化默认包含同环比与置信区间`,
+    },
+    {
+      title: "Mermoy.md", source: "AI 自动沉淀", ext: "md",
+      content: `## 最近一次沉淀
+**3 天前**：「春季焕新季」营销活动归因模型沉淀。
+
+\`\`\`text
+信息流广告  35%
+Push 推送   22%
+开屏广告    18%
+短信        15%
+自然流量    10%
+\`\`\`
+
+## 模式归纳
+- ROI 高于 3.0 的渠道值得加投，低于 1.5 的渠道直接降级
+- 老用户召回 GMV 占比 > 40% 的活动，效果通常显著高于纯拉新
+- DAU 骤降 15%+ 优先排查 CDN / 投放策略，再看产品改动
+
+> 引用次数：**8 次** · 平均收益：归因准确率 ↑ 22%`,
+    },
+    {
+      title: "User.md", source: "用户沉淀", ext: "md",
+      content: `## 工作习惯
+- 看数据先看 **同环比 + 置信区间**，不被绝对值带偏
+- 报告分层：**核心结论 → 关键指标 → 归因路径 → 风险提示**
+- 周会要求「上周指标 Top3」+「本周风险 Top3」
+
+## 高频指标
+- DAU / WAU 比阈值 **30%**，低于则触发原因排查
+- GMV 同环比 **±10%** 进入解释清单
+- 漏斗任意单步转化率波动 **> 5%** 立项排查
+
+## 决策记录
+1. **2026-03-12** 拒绝把所有指标都做实时，理由：投入产出比低
+2. **2026-02-08** 同意上线「智能归因看板」内测
+3. **2026-01-15** 标准化指标卡口径，统一退款是否计入 GMV`,
+    },
+  ],
+  kpi: [
+    { value: "5219", label: "会话次数" },
+    { value: "27", label: "进化" },
+    { value: "21", label: "技能" },
+    { value: "112", label: "合并请求" },
+  ],
+};
+
+function getAgentProfile(expertId: string): AgentProfile {
+  switch (expertId) {
+    case "ops-expert": return PROFILE_OPS;
+    case "analysis-expert": return PROFILE_ANALYSIS;
+    case "dev-expert":
+    default: return PROFILE_DEV;
+  }
+}
+
 // ── 主组件 ────────────────────────────────────────────────────
 export interface AgentDetailProps {
   expert: BuiltinExpert;
@@ -1052,12 +1413,15 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
   // 点击记忆沉淀条目后展示的弹窗
   const [memoryDetail, setMemoryDetail] = React.useState<MemoryItem | null>(null);
 
+  // Profile：按 expert.id 切换内置专家详情页内容
+  const profile = getAgentProfile(expert.id);
+
   // Mock 等级 & 阶级（决定徽章 / 进度条 / 雷达图主色）
-  const level = 12;
+  const level = profile.level;
   const tier = getLevelTier(level);
 
   // Mock 雷达数据
-  const radarValues = [85, 92, 88, 70, 65];
+  const radarValues = profile.radarValues;
 
   return (
     <div style={{
@@ -1214,10 +1578,10 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
                 color: C.textPrimary, marginBottom: 6,
               }}>
                 <span>成长值</span>
-                <span>500 / 2000</span>
+                <span>{profile.growth.current} / {profile.growth.next}</span>
               </div>
               <div style={{ width: "100%", height: 6, borderRadius: 3, background: C.borderLight, overflow: "hidden" }}>
-                <div style={{ width: "25%", height: "100%", borderRadius: 3, background: tier.mainGradient }} />
+                <div style={{ width: `${Math.min(100, Math.round((profile.growth.current / profile.growth.next) * 100))}%`, height: "100%", borderRadius: 3, background: tier.mainGradient }} />
               </div>
             </div>
 
@@ -1232,7 +1596,7 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
 
             {/* 标签 */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {["集群监控", "故障排查", "容量规划", "性能调优"].map((s) => (
+              {profile.tags.map((s) => (
                 <Chip key={s}>{s}</Chip>
               ))}
             </div>
@@ -1268,9 +1632,9 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
                 gap: 20, paddingLeft: 4, paddingRight: 2,
                 alignItems: "flex-end",
               }}>
-                <KPIItem value="24" label="掌握技能" />
-                <KPIItem value="92.2%" label="任务成功率" />
-                <KPIItem value="98.2%" label="平均响应速度" />
+                {profile.sideKpi.map((k) => (
+                  <KPIItem key={k.label} value={k.value} label={k.label} />
+                ))}
               </div>
             </div>
 
@@ -1279,9 +1643,9 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
 
             {/* 元信息 */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <MetaRow icon="birth" label="诞生于 2025-03-12（357 天前）" />
-              <MetaRow icon="creator" label="由 user2 创建" />
-              <MetaRow icon="tag" label="大数据团队2、运营团队、集群管理团队" />
+              <MetaRow icon="birth" label={profile.meta.birth} />
+              <MetaRow icon="creator" label={profile.meta.creator} />
+              <MetaRow icon="tag" label={profile.meta.team} />
             </div>
           </div>
         </aside>
@@ -1293,39 +1657,17 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
             title="Agent 设定"
             style={{ height: 200, overflowY: "auto" }}
           >
-            <SimpleMarkdown source={`👋 我是 **${expert.codeName}·${expert.shortTitle}**，专注数据加工链路的构建与开发，负责把原始数据沉淀为可被分析、可被复用的高质量资产。
-
-### 能力域
-- **建模与开发**：基于业务语义沉淀维度 / 事实模型，覆盖 ODS → DWD → DWS → ADS 全链路
-- **质量与调优**：SQL Profile 分析、Shuffle 倾斜定位、PPD 启用诊断、CBO 参数调优
-- **调度与编排**：基于上下游依赖自动生成调度方案，识别关键路径与资源冲突
-- **数据资产沉淀**：自动维护血缘、口径一致性、字段级权限
-
-### 上下文与边界
-- 默认接入「大数据团队」的元数据 / 调度系统，跨团队任务需先经过 \`Owner Review\`
-- 生产 \`DROP\` / \`TRUNCATE\` 操作必须人类审批（**强制**），不会主动执行
-- 仅在「故障应急」场景下才会主动尝试链路降级或回滚
-
-### 协作偏好
-- 默认输出 **结构化结论 + 可复用 Skill / runbook**，避免一次性长答复
-- 对低置信度的判断会明确标注 *推测*，并附取证 SQL 或日志关键字
-- 重要变更建议以 [需求转数据模型](#) 流程提交，保留可追溯记录
-
-### 最近的自进化沉淀
-1. 新增技能「处理 Shuffle 倾斜」（已被引用 6 次）
-2. 沉淀 3 条记忆「JOIN 顺序优化」（基于 11 次历史相似场景）
-3. 新增记忆「PPD 未启用用 CLUSTER BY」
-4. 新增技能「分区表调优」（用户批准的 Agent 提议）`} />
+            <SimpleMarkdown source={profile.setting} />
           </Card>
 
           {/* Agent 技能 + Agent 自进化（左右并排，固定 320px 内部滚动） */}
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <Card
-                title={`Agent 技能 (${expert.skills.length})`}
+                title={`Agent 技能 (${profile.skills.length})`}
                 style={{ height: 320, overflowY: "auto", padding: "4px 20px 20px" }}
               >
-                <SkillList onSkillClick={(s) => setSkillDetail({
+                <SkillList items={profile.skills} onSkillClick={(s) => setSkillDetail({
                   title: s.name,
                   desc: s.desc,
                   category: s.category,
@@ -1350,9 +1692,9 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
                   />
                 </div>
                 {tab === "evolve" ? (
-                  <EvolutionTimeline />
+                  <EvolutionTimeline items={profile.evolution} />
                 ) : (
-                  <MemoryList onItemClick={(item) => setMemoryDetail(item)} />
+                  <MemoryList items={profile.memories} onItemClick={(item) => setMemoryDetail(item)} />
                 )}
               </Card>
             </div>
@@ -1360,12 +1702,7 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
 
           {/* Agent 活跃度 */}
           <Card title="Agent 活跃度">
-            <KPIGroup items={[
-              { value: "1247", label: "会话次数" },
-              { value: "6", label: "进化" },
-              { value: "24", label: "技能" },
-              { value: "27", label: "合并请求" },
-            ]} />
+            <KPIGroup items={profile.kpi} />
             {/* 数据组与热力图之间分割线 */}
             <div style={{ height: 1, background: C.borderLight, margin: "20px 0" }} />
             <Heatmap />
