@@ -2,6 +2,7 @@
 
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Pencil, Trash2 } from "lucide-react";
 import { SkillDetailModal, PillTabs, type SkillDetail } from "@/components/ui/skill-plaza";
 import { IconAiNewChat } from "@/components/ui/wedata-icons";
 import type { BuiltinExpert } from "@/lib/agent-registry";
@@ -107,7 +108,7 @@ function renderInline(line: string, keyPrefix: string): React.ReactNode[] {
   return nodes;
 }
 
-function SimpleMarkdown({ source }: { source: string }) {
+export function SimpleMarkdown({ source }: { source: string }) {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
   const blocks: React.ReactNode[] = [];
   let i = 0;
@@ -343,8 +344,9 @@ function KPIGroup({ items }: { items: { value: string; label: string }[] }) {
           flex: 1, padding: "0 20px 0 0",
         }}>
           <div style={{
-            fontFamily: FONT, fontSize: 28, fontWeight: 600,
-            lineHeight: "36px", color: C.textPrimary,
+            fontFamily: "'GeomMedium', 'Geom', var(--font-geist-sans), 'PingFang SC', sans-serif",
+            fontSize: 20, fontWeight: 500,
+            lineHeight: "28px", color: C.textPrimary,
             fontFeatureSettings: '"tnum"',
           }}>{it.value}</div>
           <div style={{
@@ -1396,6 +1398,18 @@ function getAgentProfile(expertId: string): AgentProfile {
   }
 }
 
+// 详情页左侧短描述（压缩到 15 字内）；找不到映射则回退到 registry 原文
+const SHORT_DESC_MAP: Record<string, string> = {
+  "dev-expert": "数据建模与调优，沉淀高质量资产",       // 15
+  "analysis-expert": "提取数据洞察，支撑业务决策",       // 13
+  "ops-expert": "监控集群与故障，保障平台高可用",       // 15
+  "custom-avatar": "个人定制运营助手，沉淀日常经验",     // 15
+};
+
+export function getShortDesc(expertId: string, fallback: string): string {
+  return SHORT_DESC_MAP[expertId] ?? fallback;
+}
+
 // ── 主组件 ────────────────────────────────────────────────────
 export interface AgentDetailProps {
   expert: BuiltinExpert;
@@ -1405,9 +1419,15 @@ export interface AgentDetailProps {
   secondaryCollapsed?: boolean;
   onNewChat?: () => void;
   onExpandSecondary?: () => void;
+  /** 仅自定义 Agent 才会传入：右上角编辑入口（弹出 AvatarDetailModal） */
+  onEdit?: () => void;
+  /** 仅自定义 Agent 才会传入：右上角删除入口（弹出二次确认） */
+  onDelete?: () => void;
+  /** 仅自定义 Agent 才会传入：「Agent 技能」右上角配置入口（打开 SkillPlaza 弹窗） */
+  onConfigSkill?: () => void;
 }
 
-export default function AgentDetail({ expert, onBack, onDialog, secondaryCollapsed, onNewChat, onExpandSecondary }: AgentDetailProps) {
+export default function AgentDetail({ expert, onBack, onDialog, secondaryCollapsed, onNewChat, onExpandSecondary, onEdit, onDelete, onConfigSkill }: AgentDetailProps) {
   const [tab, setTab] = React.useState<"evolve" | "memory">("evolve");
   // 点击技能列表项后展示的弹窗
   const [skillDetail, setSkillDetail] = React.useState<SkillDetail | null>(null);
@@ -1494,6 +1514,22 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
           fontFamily: FONT, fontSize: 18, fontWeight: 600,
           lineHeight: "26px", color: C.textPrimary,
         }}>{expert.fullName}</span>
+
+        {/* 右上角操作（自定义 Agent 专属：编辑 / 删除） */}
+        {expert.id === "custom-avatar" && (onEdit || onDelete) && (
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+            {onEdit && (
+              <HeaderActionButton label="编辑" onClick={onEdit}>
+                <Pencil size={16} strokeWidth={1.5} color="rgba(0,0,0,0.9)" />
+              </HeaderActionButton>
+            )}
+            {onDelete && (
+              <HeaderActionButton label="删除" onClick={onDelete}>
+                <Trash2 size={16} strokeWidth={1.5} color="rgba(0,0,0,0.9)" />
+              </HeaderActionButton>
+            )}
+          </div>
+        )}
       </header>
 
       {/* ── 主体：左右分栏 ── */}
@@ -1509,33 +1545,61 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
             padding: 0,
             display: "flex", flexDirection: "column", gap: 16,
           }}>
-            {/* 立绘 —— 大数据 Agent / 自定义 Agent 统一使用这张配图（按切图比例 659:579） */}
-            <div style={{
-              width: "100%",
-              aspectRatio: "659 / 579",
-              borderRadius: 12,
-              overflow: "hidden",
-              position: "relative",
-              marginBottom: -16,
-            }}>
-              <img
-                src={getHeroImage(expert.id, tier.tier)}
-                alt={expert.fullName}
-                onError={(e) => {
-                  // 新立绘资源未落盘时回退到旧默认图，避免详情页立绘空白
-                  const img = e.currentTarget as HTMLImageElement;
-                  if (!img.src.endsWith("/agents/hero/default-agent.png")) {
-                    img.src = "/agents/hero/default-agent.png";
-                  }
-                }}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "block",
-                  objectFit: "contain",
-                }}
-              />
-            </div>
+            {/* 立绘 —— 内置专家用整张配图，自定义 Agent 用圆形头像（左对齐） */}
+            {expert.id === "custom-avatar" ? (
+              <div style={{
+                width: "100%",
+                display: "flex", alignItems: "center", justifyContent: "flex-start",
+              }}>
+                <div style={{
+                  width: 100, height: 100, borderRadius: "50%",
+                  overflow: "hidden",
+                  background: "#EEEEEE",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 8px 24px -4px rgba(0,0,0,0.10), 0 2px 6px -2px rgba(0,0,0,0.06)",
+                  flexShrink: 0,
+                }}>
+                  {expert.avatar ? (
+                    <img
+                      src={expert.avatar}
+                      alt={expert.fullName}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                  ) : (
+                    <span style={{
+                      fontFamily: FONT, fontSize: 36, fontWeight: 600, color: "#FFFFFF",
+                    }}>{(expert.codeName || expert.fullName).charAt(0)}</span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                width: "100%",
+                aspectRatio: "659 / 579",
+                borderRadius: 12,
+                overflow: "hidden",
+                position: "relative",
+                marginBottom: -16,
+              }}>
+                <img
+                  src={getHeroImage(expert.id, tier.tier)}
+                  alt={expert.fullName}
+                  onError={(e) => {
+                    // 新立绘资源未落盘时回退到旧默认图，避免详情页立绘空白
+                    const img = e.currentTarget as HTMLImageElement;
+                    if (!img.src.endsWith("/agents/hero/default-agent.png")) {
+                      img.src = "/agents/hero/default-agent.png";
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "block",
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
+            )}
 
             {/* Name + Lv —— 徽章与第二行「数据工程专家」垂直居中对齐 */}
             <div style={{
@@ -1546,15 +1610,18 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               rowGap: 2,
               alignItems: "center",
             }}>
-              <div style={{
-                gridColumn: "1",
-                gridRow: "1",
-                fontFamily: "var(--font-pixelify-sans), 'Pixelify Sans', 'PingFang SC', sans-serif",
-                fontSize: 20, fontWeight: 500,
-                lineHeight: "28px", color: expert.nameColor,
-                letterSpacing: 0.5,
-                minWidth: 0,
-              }}>{expert.codeName}</div>
+              {/* 自定义 Agent 没有 code name，不渲染该行 */}
+              {expert.id !== "custom-avatar" && (
+                <div style={{
+                  gridColumn: "1",
+                  gridRow: "1",
+                  fontFamily: "var(--font-pixelify-sans), 'Pixelify Sans', 'PingFang SC', sans-serif",
+                  fontSize: 20, fontWeight: 500,
+                  lineHeight: "28px", color: expert.nameColor,
+                  letterSpacing: 0.5,
+                  minWidth: 0,
+                }}>{expert.codeName}</div>
+              )}
               <div style={{
                 gridColumn: "1",
                 gridRow: "2",
@@ -1572,6 +1639,14 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               </div>
             </div>
 
+            {/* 描述（紧贴名字下方，详情页专用短描述，控制在 15 字内） */}
+            <p style={{
+              margin: "-10px 0 0", fontFamily: FONT, fontSize: 13, fontWeight: 400,
+              lineHeight: "20px", color: C.textSecondary,
+            }}>
+              {getShortDesc(expert.id, expert.desc)}
+            </p>
+
             {/* 成长值进度条 */}
             <div>
               <div style={{
@@ -1585,22 +1660,6 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
               <div style={{ width: "100%", height: 6, borderRadius: 3, background: C.borderLight, overflow: "hidden" }}>
                 <div style={{ width: `${Math.min(100, Math.round((profile.growth.current / profile.growth.next) * 100))}%`, height: "100%", borderRadius: 3, background: tier.mainGradient }} />
               </div>
-            </div>
-
-            {/* 描述 */}
-            {/* 描述 */}
-            <p style={{
-              margin: 0, fontFamily: FONT, fontSize: 13, fontWeight: 400,
-              lineHeight: "20px", color: C.textPrimary,
-            }}>
-              {expert.desc}
-            </p>
-
-            {/* 标签 */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {profile.tags.map((s) => (
-                <Chip key={s}>{s}</Chip>
-              ))}
             </div>
 
             {/* 对话按钮（图标对齐 Agent 广场卡片） */}
@@ -1667,6 +1726,26 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
             <div style={{ flex: 1, minWidth: 0 }}>
               <Card
                 title={`Agent 技能 (${profile.skills.length})`}
+                extra={expert.id === "custom-avatar" && onConfigSkill ? (
+                  <button
+                    onClick={onConfigSkill}
+                    style={{
+                      height: 24, padding: "0 8px", borderRadius: 6, border: "none",
+                      background: "transparent", cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 4,
+                      fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                      color: C.brand,
+                      transition: "background 100ms",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                    配置 Skill
+                  </button>
+                ) : undefined}
                 style={{ height: 320, overflowY: "auto", padding: "4px 20px 20px" }}
               >
                 <SkillList items={profile.skills} onSkillClick={(s) => setSkillDetail({
@@ -1839,6 +1918,34 @@ function KPIItem({ value, label }: { value: string; label: string }) {
   );
 }
 
+// ── 顶部操作按钮（图标 + 文字，参考 ardot 2400:3868） ─────────
+function HeaderActionButton({ label, onClick, children }: {
+  label: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      style={{
+        height: 32, padding: "0 12px", borderRadius: 8, border: "none",
+        background: "transparent", cursor: "pointer",
+        display: "flex", alignItems: "center", gap: 4,
+        fontFamily: FONT, fontSize: 13, fontWeight: 400,
+        color: "rgba(0,0,0,0.9)",
+        transition: "background 100ms",
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+    >
+      {children}
+      <span>{label}</span>
+    </button>
+  );
+}
+
 function MetaRow({ icon, label }: { icon: "birth" | "creator" | "tag"; label: string }) {
   const src = icon === "birth" ? "/icons/detail/birth.svg"
     : icon === "creator" ? "/icons/detail/creator.svg"
@@ -1863,7 +1970,7 @@ function MetaRow({ icon, label }: { icon: "birth" | "creator" | "tag"; label: st
       />
       <span style={{
         flex: 1, fontFamily: FONT, fontSize: 13, fontWeight: 400,
-        lineHeight: "20px", color: C.textPrimary,
+        lineHeight: "20px", color: C.textTertiary,
       }}>{label}</span>
     </div>
   );

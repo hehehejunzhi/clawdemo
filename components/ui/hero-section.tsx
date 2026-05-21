@@ -5,7 +5,7 @@ import type { MotionTargetDef } from "@/components/ui/motion-panel";
 
 // ── Zone types ────────────────────────────────────────────────
 type ExpertId = "dev" | "ops" | "analyst";
-type TooltipId = "coming-soon" | "skill-plaza";
+type TooltipId = "coming-soon";
 type ZoneTarget = ExpertId | TooltipId | null;
 
 // ── All zones (defined in 880px design coordinate space) ──────
@@ -14,13 +14,13 @@ interface Zone { startPct: number; endPct: number; target: ExpertId | TooltipId 
 const ALL_ZONES: Zone[] = [
   { startPct: 0 / DESIGN_W, endPct: 206 / DESIGN_W, target: "coming-soon" },
   { startPct: 207 / DESIGN_W, endPct: 377 / DESIGN_W, target: "dev" },
-  { startPct: 378 / DESIGN_W, endPct: 507 / DESIGN_W, target: "skill-plaza" },
+  // 中间 378-507 是「我的 Agent」展示位，hover 提示已屏蔽，留空不响应
   { startPct: 508 / DESIGN_W, endPct: 650 / DESIGN_W, target: "ops" },
   { startPct: 651 / DESIGN_W, endPct: 820 / DESIGN_W, target: "analyst" },
 ];
 
 const EXPERT_IDS: ExpertId[] = ["dev", "ops", "analyst"];
-const TOOLTIP_IDS: TooltipId[] = ["coming-soon", "skill-plaza"];
+const TOOLTIP_IDS: TooltipId[] = ["coming-soon"];
 
 function isExpert(t: ZoneTarget): t is ExpertId {
   return t !== null && EXPERT_IDS.includes(t as ExpertId);
@@ -32,7 +32,6 @@ function isTooltip(t: ZoneTarget): t is TooltipId {
 // ── Tooltip texts ─────────────────────────────────────────────
 const TOOLTIP_TEXT: Record<TooltipId, string> = {
   "coming-soon": "更多大数据 Agent 正在训练中",
-  "skill-plaza": "前往「技能广场」，为你的专属 Agent 配置技能",
 };
 
 // ── Detail images ─────────────────────────────────────────────
@@ -264,7 +263,7 @@ export default function HeroSection({
       <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
       {/* ── Overview — always visible as base layer ── */}
       <img
-        src="/icons/hero/Frame 2147209846.png"
+        src="/icons/hero/overview.png"
         alt="专家团总览"
         style={{ ...IMG_BASE }}
       />

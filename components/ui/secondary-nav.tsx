@@ -294,12 +294,12 @@ export const getLetterTextColor = (bg?: string) => {
 
 export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; size?: number }) {
   const containerSize = size;
-  // 比例基准：size=32 时 sub=18, overlap=4, strokeW=1.2
+  // 比例基准：size=32 时 sub=18, overlap=4；中间缝隙保持固定 1.2px，不随 size 放大
   const sub = size * (18 / 32);
   const overlap = size * (4 / 32);
   const step = sub - overlap;
   const r = sub / 2;
-  const strokeW = size * (1.2 / 32);
+  const strokeW = 1.2;
   const rMask = r + strokeW;
 
   // 上排起点：让 (sub + step) 居中于 containerSize
@@ -658,13 +658,16 @@ export default function SecondaryNav({ collapsed: collapsedProp, onCollapsedChan
                     onHeaderClick={() => onAgentSelect?.(av.id, av.name)}
                     header={(expanded) => (
                       <SectionHeader
-                        avatar={
-                          <div style={{
-                            width: 32, height: 32, borderRadius: 100, flexShrink: 0,
-                            background: av.bg, display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>
-                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: getLetterTextColor(av.bg), lineHeight: 1 }}>{av.letter}</span>
-                          </div>
+                        avatar={av.avatar
+                          ? <SingleAvatar src={av.avatar} />
+                          : (
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 100, flexShrink: 0,
+                              background: av.bg, display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: getLetterTextColor(av.bg), lineHeight: 1 }}>{av.letter}</span>
+                            </div>
+                          )
                         }
                         label={av.name}
                         expanded={expanded}
@@ -693,13 +696,16 @@ export default function SecondaryNav({ collapsed: collapsedProp, onCollapsedChan
                     onHeaderClick={() => onAgentSelect?.(ex.id, ex.name)}
                     header={(expanded) => (
                       <SectionHeader
-                        avatar={
-                          <div style={{
-                            width: 32, height: 32, borderRadius: 100, flexShrink: 0,
-                            background: ex.bg, display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>
-                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: getLetterTextColor(ex.bg), lineHeight: 1 }}>{ex.abbr}</span>
-                          </div>
+                        avatar={ex.avatar
+                          ? <SingleAvatar src={ex.avatar} />
+                          : (
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 100, flexShrink: 0,
+                              background: ex.bg, display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: getLetterTextColor(ex.bg), lineHeight: 1 }}>{ex.abbr}</span>
+                            </div>
+                          )
                         }
                         label={ex.name}
                         expanded={expanded}

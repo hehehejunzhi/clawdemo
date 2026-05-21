@@ -22,7 +22,7 @@ import ExpertReplies, { DispatchText, ConfirmCard, type ConfirmCardData, type Ex
 import CreateExpertDialog from "@/components/ui/create-expert-dialog";
 import CreateTeamDialog from "@/components/ui/create-team-dialog";
 import SkillPlaza from "@/components/ui/skill-plaza";
-import ClawManager from "@/components/ui/claw-manager";
+import ClawManager, { AvatarDetailModal, AvatarDeleteConfirm, type AvatarData } from "@/components/ui/claw-manager";
 import AgentDetail from "@/components/ui/agent-detail";
 import TeamDetail from "@/components/ui/team-detail";
 import { DEFAULT_REGISTRY, type AgentRegistry } from "@/lib/agent-registry";
@@ -617,9 +617,14 @@ export default function Home() {
   const [showClawManager, setShowClawManager] = useState(false);
   // Agent / Team 详情页：null 时不显示。`from` 记录触发详情页的来源（用于返回时还原）
   const [detailView, setDetailView] = useState<
-    | { type: "agent" | "team"; id: string; from: "claw-manager" | "secondary-nav" }
+    | { type: "agent" | "team"; id: string; from: "claw-manager" | "secondary-nav"; parentTeamId?: string }
     | null
   >(null);
+  // 自定义 Agent 详情页右上角"编辑/删除"操作的弹窗 state
+  const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
+  const [deletingAvatarFromDetailId, setDeletingAvatarFromDetailId] = useState<string | null>(null);
+  // 自定义 Agent 详情页"配置 Skill"全屏弹窗 state（保留 SkillPlaza 内容，外层加 modal 容器）
+  const [showSkillPlazaModal, setShowSkillPlazaModal] = useState(false);
   // Agent Registry — Agent 广场/左侧工具栏/对话下拉共享的唯一数据源
   const [registry, setRegistry] = useState<AgentRegistry>(DEFAULT_REGISTRY);
   // 选中的团队 id（非默认"大数据团队"时在 welcome 区显示 TeamSummonBanner）
@@ -1121,17 +1126,18 @@ export default function Home() {
            展开/新建对话入口由详情页 header 提供，避免左侧出现 68px 空白带 */}
       {targetView === "dataclaw" && !(detailView && isSecondaryCollapsed) && <SecondaryNav collapsed={isSecondaryCollapsed} onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); setDetailView(null); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); setDetailView(null); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); setDetailView(null); }} onTaskClick={(task) => { setDetailView(null); handleTaskClick(task); }} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
         // 左栏点击 Section Header：
-        // - 团队 / 内置专家 → 打开详情页
-        // - 其他（分身 / 外部 Agent）→ 维持原"召唤气泡"行为
+        // - 团队 / 内置专家 / 自定义 Agent → 打开详情页
+        // - 外部 Agent → 维持原"召唤气泡"行为
         const isTeam = registry.teams.some((t) => t.id === agentId);
         const isExpert = registry.experts.some((e) => e.id === agentId);
-        if (isTeam || isExpert) {
+        const isAvatar = registry.avatars.some((a) => a.id === agentId);
+        if (isTeam || isExpert || isAvatar) {
           setShowSkillPlaza(false);
           setShowClawManager(false);
           setDetailView({ type: isTeam ? "team" : "agent", id: agentId, from: "secondary-nav" });
           return;
         }
-        // 非团队/专家：保持原召唤逻辑
+        // 非团队/专家/自定义：保持原召唤逻辑
         setShowSkillPlaza(false);
         setShowClawManager(false);
         setDetailView(null);
@@ -1198,6 +1204,11 @@ export default function Home() {
           {(() => {
             const goBackFromDetail = () => {
               const from = detailView?.from;
+              const parentTeamId = detailView?.parentTeamId;
+              if (detailView?.type === "agent" && parentTeamId) {
+                setDetailView({ type: "team", id: parentTeamId, from: from ?? "secondary-nav" });
+                return;
+              }
               setDetailView(null);
               if (from === "claw-manager") setShowClawManager(true);
             };
@@ -1223,6 +1234,7 @@ export default function Home() {
               }
               if (!expert) { setDetailView(null); return null; }
               const expertForCallback = expert;
+              const isCustomAvatar = expertForCallback.id === "custom-avatar";
               return (
                 <AgentDetail
                   expert={expertForCallback}
@@ -1240,6 +1252,9 @@ export default function Home() {
                     chatInputRef.current?.setAgent(expertForCallback.shortTitle);
                     handleSelectAgent(detailView.id);
                   }}
+                  onEdit={isCustomAvatar ? () => setEditingAvatarId(detailView.id) : undefined}
+                  onDelete={isCustomAvatar ? () => setDeletingAvatarFromDetailId(detailView.id) : undefined}
+                  onConfigSkill={isCustomAvatar ? () => setShowSkillPlazaModal(true) : undefined}
                 />
               );
             }
@@ -1260,6 +1275,9 @@ export default function Home() {
                   handleSelectAgent(team.id);
                 }}
                 onMemberManage={() => { setDetailView(null); setShowClawManager(true); }}
+                onMemberClick={(memberId) => {
+                  setDetailView({ type: "agent", id: memberId, from: detailView.from, parentTeamId: team.id });
+                }}
                 onEdit={() => { setDetailView(null); setShowClawManager(true); }}
                 onDelete={() => { setDetailView(null); }}
               />
@@ -2153,6 +2171,100 @@ export default function Home() {
         }}
       />
       <CreateTeamDialog open={createTeamOpen} onClose={() => setCreateTeamOpen(false)} />
+
+      {/* 自定义 Agent 详情页 — 编辑弹窗 */}
+      <AnimatePresence>
+        {editingAvatarId && (() => {
+          const av = registry.avatars.find((a) => a.id === editingAvatarId);
+          if (!av) return null;
+          const data: AvatarData = {
+            name: av.name,
+            desc: av.desc,
+            tags: av.tags,
+            skills: av.skills.map((s) => ({ name: s.name, enabled: s.enabled })),
+            avatar: av.avatar,
+          };
+          return (
+            <AvatarDetailModal
+              data={data}
+              onClose={() => setEditingAvatarId(null)}
+              onSave={(d) => {
+                setRegistry((prev) => ({
+                  ...prev,
+                  avatars: prev.avatars.map((a) => a.id === editingAvatarId
+                    ? { ...a, name: d.name, desc: d.desc, tags: d.tags, skills: d.skills, avatar: d.avatar ?? a.avatar }
+                    : a
+                  ),
+                }));
+                setEditingAvatarId(null);
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* 自定义 Agent 详情页 — 删除二次确认 */}
+      <AnimatePresence>
+        {deletingAvatarFromDetailId && (() => {
+          const av = registry.avatars.find((a) => a.id === deletingAvatarFromDetailId);
+          if (!av) return null;
+          return (
+            <AvatarDeleteConfirm
+              name={av.name}
+              onCancel={() => setDeletingAvatarFromDetailId(null)}
+              onConfirm={() => {
+                const idToDel = deletingAvatarFromDetailId;
+                setRegistry((prev) => ({
+                  ...prev,
+                  avatars: prev.avatars.filter((a) => a.id !== idToDel),
+                }));
+                setDeletingAvatarFromDetailId(null);
+                setDetailView(null);
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* 自定义 Agent 详情页 —「配置 Skill」全屏弹窗（复用 SkillPlaza 内容；锁定到当前 Agent 不可切换） */}
+      <AnimatePresence>
+        {showSkillPlazaModal && (() => {
+          // 从 detailView 推断当前 Agent name；若 detailView 已退出则不渲染
+          const av = detailView ? registry.avatars.find((a) => a.id === detailView.id) : undefined;
+          if (!av) return null;
+          return (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 9100,
+              background: "rgba(0,0,0,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: 24,
+            }}
+            onClick={() => setShowSkillPlazaModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.2, ease: EASE }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(1280px, 100%)", height: "min(820px, 100%)",
+                background: "#FFFFFF", borderRadius: 16, overflow: "hidden",
+                boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1)",
+                position: "relative",
+              }}
+            >
+              <SkillPlaza onBack={() => setShowSkillPlazaModal(false)} registry={registry} lockedAgentName={av.name} />
+            </motion.div>
+          </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

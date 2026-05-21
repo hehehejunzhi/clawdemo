@@ -143,7 +143,7 @@ export const DEFAULT_TEAMS: Team[] = [
   {
     id: "bigdata-team",
     name: "大数据团队",
-    desc: "包含数据开发、分析、运维专家的协作团队",
+    desc: "数据开发、分析、运维协作团队",
     preset: true,
     clusterImgs: [
       "/agents/dev-expert.png",
@@ -188,7 +188,8 @@ export const DEFAULT_AVATARS: CustomAvatar[] = [
     ],
     bg: "#4B79FF",
     letter: "运",
-    avatar: "/agents/custom-avatar.png",
+    // 预置头像合集（preset-avatars/avatar-01.png）；其它默认/新建头像统一来自该合集
+    avatar: "/agents/preset-avatars/avatar-01.png",
     preset: true,
   },
 ];
@@ -201,6 +202,7 @@ export const DEFAULT_EXTERNALS: ExternalAgent[] = [
     bg: "#BE63FF",
     platformLabel: "Lighthouse",
     state: "connected",
+    avatar: "/agents/preset-avatars/avatar-02.png",
     preset: true,
   },
 ];

@@ -516,9 +516,12 @@ interface SkillPlazaProps {
   onBack?: () => void;
   /** Agent 广场/左栏共享 registry；传入时按其动态渲染左侧分类 */
   registry?: AgentRegistry;
+  /** 锁定到指定 Agent（按 shortTitle / 自定义 Agent name 匹配）：隐藏左侧分类列、不可切换。
+   *  用于「Agent 详情页 → 配置 Skill」入口的弹窗复用场景。 */
+  lockedAgentName?: string;
 }
 
-export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
+export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillPlazaProps) {
   // ── 内置专家：固定来自 registry.experts（shortTitle） ──
   const builtinExperts = useMemo(
     () => registry?.experts.map((e) => e.shortTitle) ?? ["数据工程专家", "数据分析专家", "智能管家"],
@@ -532,7 +535,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
   // 是否为内置专家（内置专家才有预置 Skill tab）
   const isBuiltinCat = useCallback((cat: string) => builtinExperts.includes(cat), [builtinExperts]);
 
-  const [activeCat, setActiveCat] = useState(builtinExperts[0] ?? "");
+  const [activeCat, setActiveCat] = useState(lockedAgentName ?? builtinExperts[0] ?? "");
   const [activeTab, setActiveTab] = useState<"preset" | "hub">("preset");
   const [toggleState, setToggleState] = useState<Record<string, boolean>>({});
   const [installedExpanded, setInstalledExpanded] = useState(false);
@@ -595,8 +598,16 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
     setActiveTab("preset");
   };
 
-  // 当 registry 变动导致当前 activeCat 失效（例如被删除），自动回退到第一个可用分类
+  // 当 registry 变动导致当前 activeCat 失效（例如被删除），自动回退到第一个可用分类。
+  // 锁定模式下：始终保持 activeCat = lockedAgentName，不切换。
   useEffect(() => {
+    if (lockedAgentName) {
+      if (activeCat !== lockedAgentName) {
+        setActiveCat(lockedAgentName);
+        setActiveTab("preset");
+      }
+      return;
+    }
     const allCats = [...builtinExperts, ...customAgents.map((a) => a.name)];
     if (allCats.length > 0 && !allCats.includes(activeCat)) {
       const next = builtinExperts[0] ?? customAgents[0]?.name;
@@ -605,7 +616,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
         setActiveTab("preset");
       }
     }
-  }, [builtinExperts, customAgents, activeCat]);
+  }, [builtinExperts, customAgents, activeCat, lockedAgentName]);
 
   // 按分类定义不同的技能（含详情弹窗需要的 category/version/author）
   const SKILLS_BY_CAT: Record<string, { icon: string; iconBg: string; title: string; desc: string; defaultTag?: boolean; category: string; version: string; author: string }[]> = {
@@ -704,35 +715,57 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
       {/* 顶部标题栏 */}
       <div style={{
         height: 50, flexShrink: 0,
-        display: "flex", alignItems: "center",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 24px",
         borderBottom: `1px solid ${C.border}`,
         background: C.bg,
       }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>技能广场</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>
+          {lockedAgentName ? `配置 Skill · ${lockedAgentName}` : "技能广场"}
+        </span>
+        {/* 锁定模式（详情页弹窗）下显示关闭按钮 */}
+        {lockedAgentName && onBack && (
+          <div
+            onClick={onBack}
+            aria-label="关闭"
+            style={{
+              width: 28, height: 28, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", flexShrink: 0, transition: "background 100ms",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* 内容区 */}
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        {/* 左侧分类导航 */}
-        <div style={{
-          width: 180, flexShrink: 0, borderRight: `1px solid ${C.border}`,
-          padding: "0 12px", overflowY: "auto", scrollbarWidth: "none",
-        }}>
-          <SectionLabel label="大数据 Agent" />
-          {builtinExperts.map((name) => (
-            <CatItem key={name} label={name} active={activeCat === name} onClick={() => handleCatChange(name)} />
-          ))}
+        {/* 左侧分类导航 —— 锁定模式（详情页弹窗）下隐藏 */}
+        {!lockedAgentName && (
+          <div style={{
+            width: 180, flexShrink: 0, borderRight: `1px solid ${C.border}`,
+            padding: "0 12px", overflowY: "auto", scrollbarWidth: "none",
+          }}>
+            <SectionLabel label="大数据 Agent" />
+            {builtinExperts.map((name) => (
+              <CatItem key={name} label={name} active={activeCat === name} onClick={() => handleCatChange(name)} />
+            ))}
 
-          {customAgents.length > 0 && (
-            <>
-              <SectionLabel label="自定义 Agent" />
-              {customAgents.map((a) => (
-                <CatItem key={a.id} label={a.name} active={activeCat === a.name} onClick={() => handleCatChange(a.name)} />
-              ))}
-            </>
-          )}
-        </div>
+            {customAgents.length > 0 && (
+              <>
+                <SectionLabel label="自定义 Agent" />
+                {customAgents.map((a) => (
+                  <CatItem key={a.id} label={a.name} active={activeCat === a.name} onClick={() => handleCatChange(a.name)} />
+                ))}
+              </>
+            )}
+          </div>
+        )}
 
         {/* 右侧内容 */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
