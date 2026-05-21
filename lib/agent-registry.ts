@@ -209,8 +209,10 @@ export const DEFAULT_TASKS: AgentTask[] = [
   { id: "t3", title: "展示\u201C思考中\u201D状态", status: "loading", agentId: "bigdata-team" },
   { id: "t4", title: "展示\u201C用户已取消\u201D状态", status: "check", agentId: "bigdata-team" },
   { id: "t5", title: "展示\u201C报错\u201D状态", status: "check", agentId: "bigdata-team" },
+  { id: "t14", title: "展示\u201C自进化-Skill\u201D", status: "check", agentId: "bigdata-team" },
+  { id: "t15", title: "AI一键拉人", status: "check", agentId: "ops-team" },
   // Rigel·数据开发专家
-  { id: "t7", title: "数仓分层模型搭建", status: "loading", agentId: "dev-expert" },
+  { id: "t7", title: "单 Agent 手动拉人", status: "loading", agentId: "dev-expert" },
   { id: "t8", title: "ODS 层数据接入验证", status: "check", agentId: "dev-expert" },
   // Vega·数据分析专家
   { id: "t9", title: "用户留存率趋势分析", status: "pending", agentId: "analysis-expert" },

@@ -310,7 +310,12 @@ export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; 
 
   type CellPos = { left: number; top: number };
   const positions: CellPos[] =
-    count === 3
+    count === 2
+      ? [
+          { left: rowStartX, top: (containerSize - sub) / 2 },           // 左
+          { left: rowStartX + step, top: (containerSize - sub) / 2 },    // 右
+        ]
+      : count === 3
       ? [
           { left: rowStartX, top: 0 },                       // 上左
           { left: rowStartX + step, top: 0 },                // 上右
@@ -334,7 +339,9 @@ export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; 
   //   下左(2) 被 下右(3) 压 → 扣除 下右
   //   下右(3) 被 上右(1) 压 → 扣除 上右
   const pressedBy: Record<number, number> =
-    count === 3
+    count === 2
+      ? { 0: 1 }
+      : count === 3
       ? { 0: 1, 1: 2, 2: 0 }
       : { 0: 2, 1: 0, 2: 3, 3: 1 };
 
@@ -585,14 +592,14 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
             <>
               {/* 团队 */}
               {registry.teams.map((team, idx) => {
-                const imgs = (team.members.length >= 3
-                  ? team.members.slice(0, team.members.length >= 4 ? 4 : 3).map((m) => (m.avatar ? m.avatar : { letter: m.abbr, bg: m.abbrBg }))
+                const imgs = (team.members.length >= 2
+                  ? team.members.slice(0, team.members.length >= 4 ? 4 : team.members.length).map((m) => (m.avatar ? m.avatar : { letter: m.abbr, bg: m.abbrBg }))
                   : null);
                 const teamTasks = registry.tasks.filter((t) => t.agentId === team.id);
                 return (
                   <CollapsibleSection
                     key={team.id}
-                    defaultOpen={idx === 0}
+                    defaultOpen={idx === 0 || teamTasks.some(t => t.id === activeTaskId)}
                     onHeaderClick={() => onAgentSelect?.(team.id, team.name)}
                     header={(expanded) => (
                       <SectionHeader

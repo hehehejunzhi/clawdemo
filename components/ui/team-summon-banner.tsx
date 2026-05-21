@@ -81,9 +81,9 @@ function BannerAvatar({ item, zIndex, size = AVATAR_SIZE }: { item: ClusterAvata
  */
 export default function TeamSummonBanner({ team }: TeamSummonBannerProps) {
   const imgs: ClusterAvatarItem[] =
-    team.members.length >= 3
+    team.members.length >= 2
       ? team.members
-          .slice(0, team.members.length >= 4 ? 4 : 3)
+          .slice(0, team.members.length >= 4 ? 4 : team.members.length)
           .map<ClusterAvatarItem>((m) =>
             m.avatar ? m.avatar : { letter: m.abbr, bg: m.abbrBg }
           )

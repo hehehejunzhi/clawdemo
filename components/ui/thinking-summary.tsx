@@ -2,7 +2,6 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
 
 // ── Design tokens (from design-dna.json) ─────────────────────────
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -74,14 +73,6 @@ export default function ThinkingSummary({
         >
           {text}
         </span>
-        <ChevronRight
-          style={{
-            width: 16,
-            height: 16,
-            color: T.tertiary,
-            flexShrink: 0,
-          }}
-        />
       </div>
     </motion.div>
   );

@@ -21,6 +21,7 @@ import ArtifactsPanel from "@/components/ui/artifacts-panel";
 import ExpertReplies, { DispatchText, ConfirmCard, type ConfirmCardData, type ExpertReplyDataType } from "@/components/ui/expert-replies";
 import CreateExpertDialog from "@/components/ui/create-expert-dialog";
 import CreateTeamDialog from "@/components/ui/create-team-dialog";
+import AddMemberDialog from "@/components/ui/add-member-dialog";
 import SkillPlaza from "@/components/ui/skill-plaza";
 import ClawManager from "@/components/ui/claw-manager";
 import { DEFAULT_REGISTRY, type AgentRegistry } from "@/lib/agent-registry";
@@ -356,7 +357,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     ],
   },
   t7: {
-    title: "数仓分层模型搭建",
+    title: "单 Agent 手动拉人",
     userMsg: "帮我搭建数仓的分层模型体系",
     thinkingText: "",
     singleExpert: true,
@@ -538,6 +539,102 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
       },
     ],
   },
+  t14: {
+    title: "展示\u201C自进化-Skill\u201D",
+    userMsg: "我想给集群配置自动扩缩容策略，根据负载动态调整资源",
+    thinkingText: "收到需求。我发现当前技能库中尚未具备「弹性伸缩策略」相关能力，我将自主学习并进化出新 Skill",
+    replies: [
+      {
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        lines: [
+          { text: "分析任务需求：用户需要基于集群负载动态调整 Spark 计算资源，涉及弹性伸缩（Auto Scaling）能力。" },
+          { text: "能力扫描：当前已有 Skill 覆盖集群监控、慢 SQL 优化、数据质量检测，但不具备弹性伸缩策略配置能力。", tags: ["skill-gap-detected", "auto-scaling", "resource-management"] },
+          {
+            text: "触发自进化流程：从知识库 & API 文档中提取「EMR Auto Scaling」规则体系，开始生成新 Skill。",
+            skillCalls: ["Self-Evolution"],
+          },
+        ],
+      },
+      {
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        delay: 4000,
+        dividerBefore: true,
+        overview: "新 Skill 学习完成，已自动注册到技能库",
+        lines: [
+          { text: "", boldText: "✅ 新技能已进化：Auto-Scaling-Skill" },
+          { text: "技能描述：基于集群 CPU/内存/队列等负载指标，自动生成并执行弹性伸缩策略（扩容 / 缩容 / 预热）。" },
+          {
+            text: "技能能力清单：",
+            skillCalls: ["Auto-Scaling-Skill"],
+          },
+          { text: "• 负载阈值检测（CPU > 80% 持续 5min → 触发扩容）" },
+          { text: "• 时段预热（工作日 08:00 提前扩容 +50%）" },
+          { text: "• 低峰缩容（空闲 CU > 60% 持续 15min → 释放资源）" },
+          { text: "• 费用优化约束（日预算上限 ¥2000，超限不再扩容）" },
+        ],
+      },
+      {
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        delay: 6000,
+        dividerBefore: true,
+        overview: "现在用新 Skill 为您执行弹性伸缩配置",
+        lines: [
+          { text: "正在调用 Auto-Scaling-Skill，为集群 emr-ccrnhw11 生成伸缩策略。" },
+          {
+            text: "策略生成完成，以下为推荐配置：",
+            toolCalls: [{ title: "调用 Auto-Scaling-Skill 生成弹性伸缩策略", command: "auto-scaling configure \\\n  --cluster emr-ccrnhw11 \\\n  --scale-up-cpu 80 \\\n  --scale-down-idle 60 \\\n  --preheat \"08:00+50%\" \\\n  --budget-limit 2000", result: "✓ 策略已生成\n扩容规则: CPU>80% 持续5min → +4CU\n缩容规则: 空闲>60% 持续15min → -2CU\n预热规则: 工作日08:00 → 24CU→36CU\n预算上限: ¥2000/天" }],
+          },
+          {
+            text: "",
+            table: {
+              headers: ["规则类型", "触发条件", "动作", "冷却期"],
+              rows: [
+                ["扩容", "CPU > 80% 持续 5min", "+4 CU", "10min"],
+                ["缩容", "空闲 CU > 60% 持续 15min", "-2 CU", "15min"],
+                ["预热", "工作日 08:00", "扩至 36 CU", "-"],
+                ["兜底", "日费用达 ¥2000", "停止扩容", "-"],
+              ],
+            },
+          },
+          { text: "策略已生效。新 Skill「Auto-Scaling-Skill」已持久化到技能广场，后续同类任务将自动复用此能力。" },
+        ],
+      },
+    ],
+  },
+  t15: {
+    title: "AI一键拉人",
+    userMsg: "帮我分析最近一周华东区用户流失原因，并给出召回策略和执行方案",
+    thinkingText: "收到任务，我来拆解用户流失分析与召回策略任务并分派给团队",
+    replies: [
+      {
+        icon: "/agents/analysis-expert.png", name: "数据分析专家",
+        lines: [
+          { text: "正在拉取华东区近 7 天用户活跃和流失数据，数据源为 dws_user_churn_di。" },
+          { text: "流失用户画像初步完成：7 日内流失 23,450 人，其中高价值用户占比 18.7%。", tags: ["dws_user_churn_di", "dim_user_value", "fact_user_active"] },
+          { text: "流失原因 Top3：产品功能不满足(34%)、竞品替代(28%)、活跃度自然衰减(22%)。" },
+        ],
+      },
+      {
+        icon: "chief", name: "首席专家",
+        delay: 4000,
+        dividerBefore: true,
+        overview: "分析发现：本次流失与近期营销活动效果不佳高度相关，需要运营策略专家参与制定召回方案",
+        lines: [
+          { text: "当前团队具备数据分析能力，但召回策略的制定需要「运营策略」领域的专业知识。" },
+          { text: "我检测到团队中尚无运营策略相关专家。建议拉入「运营助手」协作完成召回方案设计。" },
+          {
+            text: "",
+            confirmCard: {
+              title: "是否允许 Agent 加入到当前团队？",
+              description: "运营助手 · 个人定制的运营分析助手，具备用户召回策略、Push 文案生成、活动 ROI 预估等技能。",
+              buttonText: "加入团队",
+              tag: "任务匹配度 94%",
+            },
+          },
+        ],
+      },
+    ],
+  },
 };
 
 // ── 确认执行后的二阶段对话内容 ────────────────────────────────
@@ -592,6 +689,60 @@ const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
   },
 ];
 
+// ── t15 确认拉入后：新 Agent 读取上下文并开始工作 ──────────────
+const T15_PHASE2_REPLIES: ExpertReplyDataType[] = [
+  {
+    icon: "/agents/ops-expert.png", name: "运营助手",
+    delay: 800,
+    overview: "「运营助手」已加入团队，正在读取对话上下文…",
+    lines: [
+      { text: "运营助手已成功加入当前协作会话，正在同步上下文信息。" },
+      {
+        text: "上下文同步完成，已了解：华东区近 7 天流失 23,450 人，流失原因 Top3 已明确。",
+        toolCalls: [{ title: "同步对话上下文至运营助手", command: "context_sync --session current --target ops-assistant", result: "✓ 已同步 3 轮对话记录\n✓ 已同步流失分析结论\n✓ 已同步用户画像数据" }],
+      },
+    ],
+  },
+  {
+    icon: "/agents/ops-expert.png", name: "运营助手",
+    delay: 4000,
+    dividerBefore: true,
+    overview: "已读取上下文，下面开始制定召回策略",
+    lines: [
+      { text: "", boldText: "用户召回策略方案" },
+      { text: "基于流失原因分析，我将针对三类用户群制定差异化召回方案：" },
+      {
+        text: "",
+        table: {
+          headers: ["用户群", "流失原因", "召回策略", "预估召回率"],
+          rows: [
+            ["高价值-功能不满足", "产品功能缺失", "1v1 专属客服 + 功能内测邀请", "35%"],
+            ["中价值-竞品替代", "被竞品吸引", "限时优惠券 + 差异化功能推送", "22%"],
+            ["活跃衰减用户", "自然流失", "Push 唤醒 + 个性化内容推荐", "15%"],
+          ],
+        },
+      },
+      { text: "Push 文案已生成 3 套 A/B 测试版本，预计覆盖 18,200 名目标用户。" },
+      { text: "预估整体召回 ROI 2.8x，7 日内可召回约 4,500 名用户。执行方案已同步至运营看板。" },
+    ],
+  },
+];
+
+// ── t15 暂不加入：现有团队继续执行任务 ──────────────────────────
+const T15_DECLINE_REPLIES: ExpertReplyDataType[] = [
+  {
+    icon: "/agents/analysis-expert.png", name: "数据分析专家",
+    delay: 800,
+    overview: "好的，运营助手暂不加入。我将基于现有团队能力继续推进召回方案。",
+    lines: [
+      { text: "基于已有的流失分析结论，我尝试生成基础版召回策略方案。" },
+      { text: "针对高价值流失用户（占比 18.7%）建议：优先通过 1v1 Push 触达，文案聚焦产品新功能亮点。" },
+      { text: "针对竞品流失用户（占比 28%）建议：限时优惠券 + 差异化功能对比推送。" },
+      { text: "基础召回方案已生成，但缺少运营精细化策略支持，预估召回率可能低于最优方案。如需更精准的策略，可随时将运营助手加入团队。" },
+    ],
+  },
+];
+
 export default function Home() {
   const [targetView, setTargetView] = useState("dataclaw");
   const [viewState, setViewState] = useState<"dataclaw" | "shrinking" | "studio">("dataclaw");
@@ -610,6 +761,8 @@ export default function Home() {
   const [isSecondaryCollapsed, setIsSecondaryCollapsed] = useState(false);
   const [createExpertOpen, setCreateExpertOpen] = useState(false);
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<string[]>(["dev", "analysis", "ops"]);
   const [showSkillPlaza, setShowSkillPlaza] = useState(false);
   const [showClawManager, setShowClawManager] = useState(false);
   // Agent Registry — Agent 广场/左侧工具栏/对话下拉共享的唯一数据源
@@ -634,6 +787,12 @@ export default function Home() {
   const [confirmPhase, setConfirmPhase] = useState(false);
   const [phase2Replies, setPhase2Replies] = useState<ExpertReplyDataType[] | undefined>(undefined);
   const [phase2Complete, setPhase2Complete] = useState(false);
+  // t15 暂不加入标记
+  const [t15Declined, setT15Declined] = useState(false);
+  // t15 不再推荐 Agent 标记
+  const [t15DismissRecommend, setT15DismissRecommend] = useState(false);
+  // 手动拉人后的"加入任务"提示（按 taskId 持久化）
+  const [joinTaskMessages, setJoinTaskMessages] = useState<Record<string, { text: string; avatars: string[] }>>({}); 
   // 活跃的确认卡（从对话流提取，固定在输入框上方）
   const [activeConfirmCard, setActiveConfirmCard] = useState<{ title: string; description: string; buttonText: string; tag?: string } | null>(null);
   const [isSingleExpert, setIsSingleExpert] = useState(false);
@@ -945,6 +1104,8 @@ export default function Home() {
     setConfirmPhase(false);
     setPhase2Replies(undefined);
     setPhase2Complete(false);
+    setT15Declined(false);
+    setT15DismissRecommend(false);
     setIsGenerating(false);
     setSelectedTeamId(null);
     setSelectedAgentId(null);
@@ -961,9 +1122,9 @@ export default function Home() {
 
   const handleConfirm = useCallback(() => {
     setConfirmPhase(true);
-    setPhase2Replies(CONFIRM_PHASE2_REPLIES);
+    setPhase2Replies(activeTaskId === "t15" ? T15_PHASE2_REPLIES : CONFIRM_PHASE2_REPLIES);
     setActiveConfirmCard(null);
-  }, []);
+  }, [activeTaskId]);
 
   const handleStop = useCallback(() => {
     setIsGenerating(false);
@@ -1010,6 +1171,8 @@ export default function Home() {
       setConfirmPhase(false);
       setPhase2Replies(undefined);
       setPhase2Complete(false);
+      setT15Declined(false);
+      setT15DismissRecommend(false);
       setActiveConfirmCard(null);
       setArtifactsPanelOpen(false);
       // 三选一：常驻展示
@@ -1045,6 +1208,8 @@ export default function Home() {
     setConfirmPhase(false);
     setPhase2Replies(undefined);
     setPhase2Complete(false);
+    setT15Declined(false);
+    setT15DismissRecommend(false);
     setIsGenerating(false);
     setIsCancelled(false);
     setIsThinking(false);
@@ -1054,8 +1219,8 @@ export default function Home() {
       thinkingTimerRef.current = null;
     }
     setActiveConfirmCard(null);
-    // 即时模式：自动打开产物面板
-    setArtifactsPanelOpen(true);
+    // 即时模式：自动打开产物面板（t14/t15 除外）
+    setArtifactsPanelOpen(task.id !== "t14" && task.id !== "t15");
     // 滚动到顶部
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ top: 0 });
@@ -1293,7 +1458,9 @@ export default function Home() {
                 showNewChat={isSecondaryCollapsed}
                 onNewChat={handleNewChat}
                 onArtifacts={() => setArtifactsPanelOpen(v => !v)}
-                hideTeamBadge={isSingleExpert}
+                onAddMember={() => setAddMemberOpen(true)}
+                hideTeamBadge={!activeTaskId || !registry.teams.some(t => registry.tasks.find(task => task.id === activeTaskId)?.agentId === t.id)}
+                teamMembers={teamMembers}
               />
             </div>
           </motion.div>
@@ -1600,7 +1767,9 @@ export default function Home() {
                       transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.8 }}
                     >
                       <ExpertReplies instant={isInstantMode} replies={taskReplies} onComplete={() => {
-                        setArtifactsPanelOpen(true);
+                        if (activeTaskId !== "t14" && activeTaskId !== "t15") {
+                          setArtifactsPanelOpen(true);
+                        }
                         setIsGenerating(false);
                         // 提取 confirmCard 数据
                         const allReplies = taskReplies ?? [];
@@ -1619,13 +1788,79 @@ export default function Home() {
                   {/* Phase 2: 确认后的继续对话 */}
                   {confirmPhase && phase2Replies && (
                     <>
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, ease: EASE }}
-                      >
-                        <UserMessageBubble content="针对慢 SQL #1 进行深度诊断，并直接向集群提交优化" />
-                      </motion.div>
+                      {activeTaskId === "t15" && !t15Declined ? (
+                        /* t15: 首席专家确认文案 + 系统提示 */
+                        <>
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35, ease: EASE }}
+                            style={{ display: "flex", alignItems: "center", gap: 4, marginTop: -28 }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                              <path d="M13.3137 4.943L6.24264 12.014L2 7.771L2.943 6.828L6.243 10.128L12.371 4L13.3137 4.943Z" fill="rgba(0,0,0,0.5)"/>
+                            </svg>
+                            <span style={{
+                              fontFamily: FONT, fontSize: 16, fontWeight: 400,
+                              lineHeight: "28px", color: "rgba(0,0,0,0.9)",
+                            }}>
+                              你已允许&ldquo;运营助手&rdquo;加入团队
+                            </span>
+                          </motion.div>
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35, ease: EASE, delay: 0.2 }}
+                            style={{ display: "flex", justifyContent: "center" }}
+                          >
+                            <span style={{
+                              fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                              lineHeight: "20px", color: "rgba(0,0,0,0.4)",
+                            }}>
+                              运营助手 加入了任务
+                            </span>
+                          </motion.div>
+                        </>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.35, ease: EASE }}
+                        >
+                          {activeTaskId === "t15" && t15Declined ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: -28 }}>
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                                <path d="M13.3137 4.943L6.24264 12.014L2 7.771L2.943 6.828L6.243 10.128L12.371 4L13.3137 4.943Z" fill="rgba(0,0,0,0.5)"/>
+                              </svg>
+                              <span style={{
+                                fontFamily: FONT, fontSize: 16, fontWeight: 400,
+                                lineHeight: "28px", color: "rgba(0,0,0,0.9)",
+                              }}>
+                                不允许 Agent 加入
+                              </span>
+                            </div>
+                          ) : (
+                            <UserMessageBubble content="针对慢 SQL #1 进行深度诊断，并直接向集群提交优化" />
+                          )}
+                        </motion.div>
+                      )}
+                      {/* t15: 不再推荐 Agent 提示（出现在回复之前） */}
+                      {t15DismissRecommend && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, ease: EASE, delay: 0.15 }}
+                          style={{ display: "flex", justifyContent: "center" }}
+                        >
+                          <span style={{
+                            fontFamily: FONT, fontSize: 13, fontWeight: 400,
+                            lineHeight: "20px", color: "rgba(0,0,0,0.4)",
+                            textAlign: "center",
+                          }}>
+                            已关闭 Agent 自动推荐，可在团队设置中重新开启
+                          </span>
+                        </motion.div>
+                      )}
                       <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1645,6 +1880,24 @@ export default function Home() {
                         }} hideDispatch cancelled={isCancelled} />
                       </motion.div>
                     </>
+                  )}
+
+                  {/* 手动拉人后的"加入任务"提示 */}
+                  {activeTaskId && joinTaskMessages[activeTaskId] && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: EASE }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                    >
+                      <span style={{
+                        fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                        lineHeight: "20px", color: "rgba(0,0,0,0.4)",
+                        textAlign: "center",
+                      }}>
+                        {joinTaskMessages[activeTaskId].text}
+                      </span>
+                    </motion.div>
                   )}
 
                   {/* 用户取消对话 */}
@@ -1868,6 +2121,127 @@ export default function Home() {
                       borderRadius: "24px 24px 0 0",
                       padding: "16px 24px 40px",
                     }}>
+                      {activeTaskId === "t15" ? (
+                        /* ── t15 专属：Agent 推荐卡布局 ── */
+                        <>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{
+                              fontFamily: FONT, fontSize: 18, fontWeight: 600,
+                              lineHeight: "32px", color: "rgba(0,0,0,0.9)",
+                            }}>
+                              {activeConfirmCard.title}
+                            </span>
+                            <span
+                              onClick={() => { setActiveConfirmCard(null); setT15DismissRecommend(true); setConfirmPhase(true); setPhase2Replies(T15_DECLINE_REPLIES); setT15Declined(true); }}
+                              style={{
+                              fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                              color: "rgba(0,0,0,0.5)", cursor: "pointer",
+                              whiteSpace: "nowrap",
+                            }}>
+                              不再推荐 Agent
+                            </span>
+                          </div>
+                          {/* Agent 信息卡片 */}
+                          <div style={{
+                            marginTop: 16,
+                            width: 463,
+                            background: "#FFFFFF",
+                            border: "1px solid #E6E9F0",
+                            borderRadius: 16,
+                            padding: "20px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 16,
+                          }}>
+                            {/* 左侧：头像 + 信息 */}
+                            <img
+                              src="/agents/ops-expert.png"
+                              alt=""
+                              style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0, objectFit: "cover" }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <span style={{
+                                  fontFamily: FONT, fontSize: 16, fontWeight: 500,
+                                  color: "rgba(0,0,0,0.9)", lineHeight: "24px",
+                                }}>
+                                  运营助手
+                                </span>
+                                {/* Lv 标签 - 金色渐变背景 */}
+                                <span style={{
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  height: 20, padding: "0 6px", borderRadius: 3.75,
+                                  background: "linear-gradient(135deg, #FFF9F4 0%, #FFDB9C 100%)",
+                                  fontFamily: "'Geom', sans-serif", fontSize: 12.5, fontWeight: 600,
+                                  fontStyle: "italic",
+                                  color: "#664320", lineHeight: "16px",
+                                }}>
+                                  Lv. 50
+                                </span>
+                              </div>
+                              <span style={{
+                                fontFamily: FONT, fontSize: 14, fontWeight: 400,
+                                color: "rgba(0,0,0,0.5)", lineHeight: "24px",
+                                marginTop: 4, display: "block",
+                              }}>
+                                擅长用户召回策略｜自定义 Agent
+                              </span>
+                            </div>
+                            {/* 右侧：匹配度标签 */}
+                            <span style={{
+                              display: "inline-flex", alignItems: "center",
+                              height: 20, padding: "0 8px", borderRadius: 9999,
+                              background: "#F2F4F8", flexShrink: 0,
+                              fontFamily: FONT, fontSize: 12, fontWeight: 400,
+                              color: "rgba(0,0,0,0.7)", lineHeight: "20px",
+                              whiteSpace: "nowrap",
+                            }}>
+                              任务匹配度 94%
+                            </span>
+                          </div>
+                          {/* 操作按钮 */}
+                          <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
+                            <button
+                              onClick={() => { handleConfirm(); }}
+                              style={{
+                                height: 44,
+                                padding: "0 20px",
+                                background: "rgba(0,0,0,0.75)",
+                                borderRadius: 100,
+                                border: "none",
+                                boxShadow: "0px 2px 4px -2px rgba(0,0,0,0.20)",
+                                cursor: "pointer",
+                                fontFamily: FONT,
+                                fontSize: 14,
+                                fontWeight: 500,
+                                color: "#FFFFFF",
+                              }}
+                            >
+                              允许加入
+                            </button>
+                            <button
+                              onClick={() => { setActiveConfirmCard(null); setConfirmPhase(true); setPhase2Replies(T15_DECLINE_REPLIES); setT15Declined(true); }}
+                              style={{
+                                height: 44,
+                                padding: "0 20px",
+                                background: "linear-gradient(180deg, #FAFBFC 0%, #F5F6F8 100%)",
+                                borderRadius: 100,
+                                border: "1px solid #DDE0E6",
+                                boxShadow: "0px 2px 4px -2px rgba(0,0,0,0.12)",
+                                cursor: "pointer",
+                                fontFamily: FONT,
+                                fontSize: 14,
+                                fontWeight: 500,
+                                color: "rgba(0,0,0,0.9)",
+                              }}
+                            >
+                              暂不加入
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        /* ── 默认确认卡布局 ── */
+                        <>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                           <span style={{
@@ -1904,7 +2278,7 @@ export default function Home() {
                           {activeConfirmCard.description}
                         </span>
                       </div>
-                      <div style={{ marginTop: 16 }}>
+                      <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
                         <button
                           onClick={() => { handleConfirm(); }}
                           style={{
@@ -1924,6 +2298,8 @@ export default function Home() {
                           {activeConfirmCard.buttonText}
                         </button>
                       </div>
+                        </>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -2054,6 +2430,57 @@ export default function Home() {
         }}
       />
       <CreateTeamDialog open={createTeamOpen} onClose={() => setCreateTeamOpen(false)} />
+      <AddMemberDialog open={addMemberOpen} onClose={() => setAddMemberOpen(false)} isTeamChat={!!activeTaskId && registry.teams.some(t => registry.tasks.find(task => task.id === activeTaskId)?.agentId === t.id)} currentMembers={(() => {
+        const isTeam = !!activeTaskId && registry.teams.some(t => registry.tasks.find(task => task.id === activeTaskId)?.agentId === t.id);
+        if (isTeam) return teamMembers;
+        const agentIdToMemberId: Record<string, string> = { "dev-expert": "dev", "analysis-expert": "analysis", "ops-expert": "ops" };
+        const currentTask = registry.tasks.find(t => t.id === activeTaskId);
+        const id = currentTask?.agentId ? agentIdToMemberId[currentTask.agentId] : undefined;
+        return id ? [id] : ["dev"];
+      })()} onConfirm={(ids) => {
+        const isTeam = !!activeTaskId && registry.teams.some(t => registry.tasks.find(task => task.id === activeTaskId)?.agentId === t.id);
+        if (isTeam) {
+          setTeamMembers(ids);
+        } else {
+          // 单 agent 模式：创建新团队，以选中 agent 名称拼接为团队名
+          const MEMBER_NAMES: Record<string, string> = { dev: "Rigel·数据开发专家", analysis: "Vega·数据分析专家", ops: "Orion·数据运维专家", "my-ops": "运营助手", coze: "Coze" };
+          const SHORT_NAMES: Record<string, string> = { dev: "Rigel", analysis: "Vega", ops: "Orion", "my-ops": "运营助手", coze: "Coze" };
+          const teamName = ids.map(id => SHORT_NAMES[id] || id).join("+");
+          const newTeamId = `team-${Date.now()}`;
+          const members = ids.map(id => {
+            const nameMap: Record<string, { name: string; abbr: string; abbrBg: string; avatar?: string }> = {
+              dev: { name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", avatar: "/agents/dev-expert.png" },
+              analysis: { name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", avatar: "/agents/analysis-expert.png" },
+              ops: { name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", avatar: "/agents/ops-expert.png" },
+              "my-ops": { name: "运营助手", abbr: "营", abbrBg: "#4B79FF" },
+              coze: { name: "Coze", abbr: "C", abbrBg: "#BE63FF" },
+            };
+            const m = nameMap[id] ?? { name: id, abbr: id.charAt(0), abbrBg: "#999" };
+            return { id, name: m.name, abbr: m.abbr, abbrBg: m.abbrBg, category: "内置专家", role: "执行者" as const, statusColor: "#0CBF5B", avatar: m.avatar };
+          });
+          setRegistry(prev => ({
+            ...prev,
+            teams: [{
+              id: newTeamId,
+              name: teamName,
+              desc: `由 ${teamName} 组成的协作团队`,
+              members,
+            }, ...prev.teams],
+            // 将当前任务移到新团队
+            tasks: prev.tasks.map(task => task.id === activeTaskId ? { ...task, agentId: newTeamId } : task),
+          }));
+          setTeamMembers(ids);
+          // 显示"加入任务"提示（新增的成员）
+          const agentIdToMemberId2: Record<string, string> = { "dev-expert": "dev", "analysis-expert": "analysis", "ops-expert": "ops" };
+          const currentTask2 = registry.tasks.find(t => t.id === activeTaskId);
+          const currentId = currentTask2?.agentId ? agentIdToMemberId2[currentTask2.agentId] : undefined;
+          const newMembers = ids.filter(id => id !== currentId);
+          const joinNames = newMembers.map(id => MEMBER_NAMES[id] || id).join("、");
+          const AVATAR_MAP: Record<string, string> = { dev: "/agents/dev-expert.png", analysis: "/agents/analysis-expert.png", ops: "/agents/ops-expert.png" };
+          const avatars = newMembers.map(id => AVATAR_MAP[id] || "").filter(Boolean);
+          if (joinNames && activeTaskId) setJoinTaskMessages(prev => ({ ...prev, [activeTaskId]: { text: `${joinNames} 加入任务`, avatars } }));
+        }
+      }} />
     </div>
   );
 }

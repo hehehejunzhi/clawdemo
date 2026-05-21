@@ -869,7 +869,20 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
       {!hideLabel && (
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <img src={icon} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
+          {icon === "chief" ? (
+            <div style={{
+              width: 16, height: 16, borderRadius: 8,
+              background: "radial-gradient(ellipse 83% 83% at 19% 23%, #5252FF 0%, #7E7EFF 100%)",
+              overflow: "hidden",
+              position: "relative",
+              flexShrink: 0,
+            }}>
+              <img src="/icons/expert/1.svg" alt="" style={{ position: "absolute", left: 0, top: 0, width: 16, height: 16 }} />
+              <img src="/icons/expert/2.svg" alt="" style={{ position: "absolute", left: 3.2, top: 3.2, width: 9.6, height: 9.6 }} />
+            </div>
+          ) : (
+            <img src={icon} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
+          )}
           <span style={{
             fontFamily: FONT, fontSize: 12, fontWeight: 400,
             color: T.tertiary, whiteSpace: "nowrap",
