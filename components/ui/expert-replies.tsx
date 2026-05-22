@@ -100,6 +100,63 @@ function SkillCallTag({ label }: { label: string }) {
   );
 }
 
+// ── Skill Search Block (搜索中 → 找到并启用 → 安装完成 动效) ─────────────
+function SkillSearchBlock({ searching, found, skillName, duration, instant }: { searching: string; found: string; skillName: string; duration: number; instant: boolean }) {
+  const [phase, setPhase] = useState<"searching" | "found" | "installed">(instant ? "installed" : "searching");
+
+  useEffect(() => {
+    if (instant) { setPhase("installed"); return; }
+    const t1 = setTimeout(() => setPhase("found"), duration);
+    const t2 = setTimeout(() => setPhase("installed"), duration + 1500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [instant, duration]);
+
+  // 安装完成状态：显示 skill 图标 + 技能名
+  if (phase === "installed") {
+    return (
+      <div style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+      }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+          <path d="M9.14404 1.77954C10.3702 0.553359 12.3592 0.553393 13.5854 1.77954C14.8116 3.00574 14.8116 4.99475 13.5854 6.22095L6.27295 13.5325C5.94873 13.8567 5.71264 14.0991 5.42725 14.2737C5.18997 14.4188 4.93104 14.5259 4.66064 14.5911C4.33525 14.6694 3.99644 14.6653 3.5376 14.6653H0.699707V11.8274C0.699707 11.3685 0.695579 11.0298 0.773926 10.7043C0.839087 10.4339 0.946177 10.175 1.09131 9.93774C1.26592 9.65235 1.50829 9.41626 1.83252 9.09204L9.14404 1.77954ZM12.8589 8.99438C12.9414 9.00224 13.0051 9.09803 13.1323 9.28931C13.4113 9.70893 13.5514 9.91888 13.729 10.0833C13.8535 10.1985 13.9914 10.2973 14.1411 10.3772C14.3546 10.4911 14.5988 10.5539 15.0864 10.6799C15.3091 10.7375 15.4211 10.7666 15.4556 10.842C15.4789 10.8933 15.4808 10.9573 15.4614 11.0217C15.4328 11.1166 15.3258 11.2132 15.1118 11.4055C14.643 11.8267 14.4087 12.0377 14.2075 12.2795C14.0665 12.4492 13.9377 12.6297 13.8237 12.8186C13.6612 13.0879 13.5387 13.3783 13.2944 13.9592C13.183 14.2243 13.1276 14.3571 13.0474 14.4153C12.9926 14.4549 12.9308 14.4744 12.8745 14.469C12.792 14.4611 12.7284 14.3645 12.6011 14.1731C12.3222 13.7536 12.183 13.5435 12.0054 13.3792C11.8808 13.2638 11.7421 13.1661 11.5923 13.0862C11.3788 12.9723 11.1348 12.9095 10.647 12.7834C10.4244 12.726 10.3134 12.6967 10.2788 12.6213C10.2553 12.5699 10.2525 12.5054 10.272 12.4407C10.3006 12.3459 10.4078 12.2499 10.6216 12.0579C11.0905 11.6366 11.3257 11.4257 11.5269 11.1838C11.6678 11.0143 11.7957 10.8335 11.9097 10.6448C12.0722 10.3754 12.1947 10.0843 12.439 9.50317C12.5504 9.23813 12.6068 9.10618 12.687 9.0481C12.7416 9.00857 12.8027 8.98913 12.8589 8.99438ZM2.77295 10.0325C2.40397 10.4015 2.29917 10.5126 2.22607 10.6321C2.15342 10.7509 2.09953 10.8805 2.06689 11.0159C2.03412 11.1521 2.02979 11.3052 2.02979 11.8274V13.3352H3.5376C4.05973 13.3352 4.21294 13.3309 4.34912 13.2981C4.4845 13.2655 4.6141 13.2116 4.73291 13.1389C4.85239 13.0658 4.96353 12.961 5.33252 12.592L6.42334 11.5002L3.86377 8.94067L2.77295 10.0325ZM12.644 2.72095C11.9372 2.01419 10.7922 2.01416 10.0854 2.72095L4.80518 7.99927L7.36475 10.5588L12.644 5.27954C13.3508 4.57274 13.3508 3.42775 12.644 2.72095ZM4.17725 1.13013C4.2377 1.13588 4.28428 1.20582 4.37744 1.34595C4.58192 1.6535 4.68477 1.80751 4.81494 1.92798C4.90611 2.01233 5.00714 2.08431 5.1167 2.14282C5.27318 2.22632 5.45248 2.27309 5.81006 2.36548C5.97293 2.40756 6.0542 2.42855 6.07959 2.48364C6.09682 2.52133 6.09875 2.56905 6.08447 2.61646C6.06332 2.68581 5.98497 2.75626 5.82861 2.89673C5.48494 3.20547 5.31296 3.36009 5.16553 3.53735C5.06212 3.66169 4.96785 3.79441 4.88428 3.93286C4.76523 4.13016 4.67553 4.34315 4.49658 4.7688C4.4149 4.96308 4.37376 5.06021 4.31494 5.10278C4.27496 5.13167 4.23009 5.14568 4.18896 5.14185C4.12846 5.13609 4.08112 5.06541 3.98779 4.92505C3.7836 4.61793 3.68131 4.46438 3.55127 4.34399C3.45996 4.25949 3.3583 4.18675 3.24854 4.12817C3.09218 4.04484 2.91334 3.99878 2.55615 3.90649C2.39313 3.86438 2.31101 3.84348 2.28564 3.78833C2.26841 3.75065 2.26746 3.70292 2.28174 3.65552C2.30277 3.58609 2.3811 3.51584 2.5376 3.37524C2.88121 3.06656 3.05327 2.91184 3.20068 2.73462C3.30411 2.61027 3.39835 2.47758 3.48193 2.33911C3.60103 2.14178 3.69065 1.92889 3.86963 1.50317C3.95135 1.3088 3.99244 1.21177 4.05127 1.16919C4.09132 1.14023 4.13605 1.12624 4.17725 1.13013Z" fill="rgba(0,0,0,0.9)" />
+        </svg>
+        <span style={{
+          fontFamily: FONT, fontSize: 14, fontWeight: 500,
+          lineHeight: "22px", color: T.primary,
+        }}>
+          {skillName}
+        </span>
+      </div>
+    );
+  }
+
+  // 搜索中 / 发现状态
+  const label = phase === "searching" ? searching : found;
+
+  return (
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+    }}>
+      {/* search-global icon */}
+      <img src="/icons/search-global.svg" alt="" width={16} height={16} style={{ flexShrink: 0 }} />
+      <span style={{
+        fontFamily: FONT, fontSize: 16, fontWeight: 400,
+        lineHeight: "28px", color: "rgba(0,0,0,0.5)",
+        textAlign: "justify",
+      }}>
+        {label}
+      </span>
+      {phase === "searching" && (
+        <span style={{ fontSize: 14, color: "rgba(0,0,0,0.4)" }}>...</span>
+      )}
+    </div>
+  );
+}
+
 // ── Tool Call Card (折叠式工具调用) ──────────────────────────
 interface ToolCallCardProps {
   title: string;
@@ -451,6 +508,93 @@ function DataTable({ data }: { data: TableData }) {
   );
 }
 
+// ── Memory Confirm Card (记忆确认卡片：两阶段) ──────────────────
+export interface MemoryCardData {
+  /** 记忆标题（如 "EMR 3.2 且 PPD 未开启时，避免优先使用 PARTITION BY"） */
+  title: string;
+  /** 详情字段列表（如 场景/条件/建议/来源） */
+  details: { label: string; value: string }[];
+}
+
+function MemoryConfirmCard({ data }: { data: MemoryCardData }) {
+  const [phase, setPhase] = useState<"asking" | "saved" | "cancelled">("asking");
+
+  if (phase === "cancelled") {
+    return (
+      <span style={{
+        fontFamily: FONT, fontSize: 16, fontWeight: 400,
+        lineHeight: "28px", color: "rgba(0,0,0,0.5)",
+        textAlign: "justify",
+      }}>
+        已取消，不保留此次记忆
+      </span>
+    );
+  }
+
+  if (phase === "saved") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <span style={{ fontFamily: FONT, fontSize: 16, fontWeight: 400, lineHeight: "28px", color: "rgba(0,0,0,0.5)", textAlign: "justify" }}>
+          好的，我将把这个信息记下来
+        </span>
+        <div style={{
+          display: "flex", alignItems: "center",
+          padding: "12px 16px", borderRadius: 16,
+          border: "1.5px solid #E9ECF1", gap: 8,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+            <path d="M13.3 4.3L6.5 11.1L2.7 7.3L3.4 6.6L6.5 9.7L12.6 3.6L13.3 4.3Z" fill="#0CBF5B" />
+          </svg>
+          <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 400, lineHeight: "22px", color: T.primary, flex: 1 }}>
+            已保存记忆 &ldquo;{data.title}&rdquo;
+          </span>
+          <span
+            onClick={() => setPhase("asking")}
+            style={{ fontFamily: FONT, fontSize: 13, fontWeight: 500, color: "rgba(0,0,0,0.7)", cursor: "pointer", lineHeight: "21px", display: "flex", alignItems: "center", gap: 4, padding: "0 6px", flexShrink: 0 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+              <path d="M2.333 5.25L5.25 2.333V4.667H8.167C10.1 4.667 11.667 6.233 11.667 8.167C11.667 10.1 10.1 11.667 8.167 11.667H5.833V10.5H8.167C9.456 10.5 10.5 9.456 10.5 8.167C10.5 6.877 9.456 5.833 8.167 5.833H5.25V8.167L2.333 5.25Z" fill="rgba(0,0,0,0.7)" />
+            </svg>
+            撤销
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // asking 状态
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <span style={{ fontFamily: FONT, fontSize: 16, fontWeight: 400, lineHeight: "28px", color: "rgba(0,0,0,0.5)", textAlign: "justify" }}>
+        好的，我将把这个信息记下来
+      </span>
+      <div style={{ borderRadius: 16, border: "1.5px solid #E9ECF1", overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", background: "#F7F8FB", gap: 8 }}>
+          <img src="/icons/Group.svg" alt="" width={16} height={16} style={{ flexShrink: 0 }} />
+          <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 400, lineHeight: "22px", color: T.primary, flex: 1 }}>
+            保存记忆 &ldquo;{data.title}&rdquo;吗？
+          </span>
+          <span onClick={() => setPhase("saved")} style={{ fontFamily: FONT, fontSize: 13, fontWeight: 500, color: "rgba(0,0,0,0.7)", cursor: "pointer", lineHeight: "21px", display: "flex", alignItems: "center", gap: 4, padding: "0 6px", flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11.5 4L5.5 10L2.5 7L3.2 6.3L5.5 8.6L10.8 3.3L11.5 4Z" fill="rgba(0,0,0,0.7)" /></svg>
+            保存
+          </span>
+          <span onClick={() => setPhase("cancelled")} style={{ fontFamily: FONT, fontSize: 13, fontWeight: 500, color: "rgba(0,0,0,0.7)", cursor: "pointer", lineHeight: "21px", display: "flex", alignItems: "center", gap: 4, padding: "0 6px", flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 4.2L9.8 3.5L7 6.3L4.2 3.5L3.5 4.2L6.3 7L3.5 9.8L4.2 10.5L7 7.7L9.8 10.5L10.5 9.8L7.7 7L10.5 4.2Z" fill="rgba(0,0,0,0.7)" /></svg>
+            取消
+          </span>
+        </div>
+        <div style={{ padding: "12px 16px 16px", background: "#FFFFFF", display: "flex", flexDirection: "column", gap: 4 }}>
+          {data.details.map((d, i) => (
+            <div key={i} style={{ fontFamily: FONT, fontSize: 14, fontWeight: 400, lineHeight: "22px", color: T.primary }}>
+              {d.label}：{d.value}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Confirm Card (暖色底确认卡) ──────────────────────────────
 export interface ConfirmCardData {
   title: string;
@@ -766,14 +910,22 @@ export interface ExpertLine {
   inlineTags?: string[];
   /** Skill 调用标签 — icon + 文字，换行展示 */
   skillCalls?: string[];
+  /** Skill 搜索动效：先显示 searching 文案（持续 duration ms），然后刷新为 found 文案，最后显示 skillName 安装完成 */
+  skillSearch?: { searching: string; found: string; skillName: string; duration: number };
   // Rich content blocks (rendered after text)
   toolCalls?: (string | { title: string; command?: string; result?: string })[];
   sqlBlock?: { title: string; code: string };
   table?: TableData;
   confirmCard?: ConfirmCardData;
+  /** 记忆确认卡片（两阶段：询问保存→已保存） */
+  memoryCard?: MemoryCardData;
   artifacts?: ArtifactsSectionData;
   numberedHeading?: { num: number; text: string };
   boldText?: string;
+  /** 加粗当前行文字 */
+  bold?: boolean;
+  /** 灰色 tertiary 颜色 */
+  muted?: boolean;
   divider?: boolean;
 }
 
@@ -841,8 +993,10 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
     const currentLine = lines[visibleLines - 1];
     if (!currentLine) return;
     // If line has no text to stream, auto-advance after a short delay
+    // But if it has skillSearch, wait for the search duration before advancing
     if (!currentLine.text) {
-      const t = setTimeout(handleLineDone, 80);
+      const advanceDelay = currentLine.skillSearch ? currentLine.skillSearch.duration + 1500 + 500 : 80;
+      const t = setTimeout(handleLineDone, advanceDelay);
       return () => clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -941,8 +1095,8 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
                     gap: 4,
                   }}>
                     <span style={{
-                      fontFamily: FONT, fontSize: 16, fontWeight: 400,
-                      lineHeight: "28px", color: T.primary,
+                      fontFamily: FONT, fontSize: 16, fontWeight: line.bold ? 600 : 400,
+                      lineHeight: "28px", color: line.muted ? "rgba(0,0,0,0.5)" : T.primary,
                       textAlign: "justify",
                       }}>
                         {instant ? line.text : (
@@ -969,6 +1123,11 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
                 </div>
               )}
 
+              {/* Skill search — 搜索中 → 搜索完成 → 安装完成 动效 */}
+              {line.skillSearch && (
+                <SkillSearchBlock searching={line.skillSearch.searching} found={line.skillSearch.found} skillName={line.skillSearch.skillName} duration={line.skillSearch.duration} instant={!!instant} />
+              )}
+
               {/* Tags — icon + 文字样式 */}
               {line.tags && line.tags.length > 0 && (
                 <div style={{
@@ -984,6 +1143,9 @@ function ExpertReply({ icon, name, lines, delay = 0, instant = false, onAllLines
                 const content = typeof tc === "string" ? undefined : { command: tc.command, result: tc.result };
                 return <ToolCallCard key={ti} title={title} content={content} />;
               })}
+
+              {/* Memory confirm card */}
+              {line.memoryCard && <MemoryConfirmCard data={line.memoryCard} />}
 
               {/* SQL code block */}
               {line.sqlBlock && (

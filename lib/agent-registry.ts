@@ -210,6 +210,7 @@ export const DEFAULT_TASKS: AgentTask[] = [
   { id: "t4", title: "展示\u201C用户已取消\u201D状态", status: "check", agentId: "bigdata-team" },
   { id: "t5", title: "展示\u201C报错\u201D状态", status: "check", agentId: "bigdata-team" },
   { id: "t14", title: "展示\u201C自进化-Skill\u201D", status: "check", agentId: "bigdata-team" },
+  { id: "t16", title: "记忆功能", status: "check", agentId: "bigdata-team" },
   { id: "t15", title: "AI一键拉人", status: "check", agentId: "ops-team" },
   // Rigel·数据开发专家
   { id: "t7", title: "单 Agent 手动拉人", status: "loading", agentId: "dev-expert" },

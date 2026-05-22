@@ -541,62 +541,47 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
   },
   t14: {
     title: "展示\u201C自进化-Skill\u201D",
-    userMsg: "我想给集群配置自动扩缩容策略，根据负载动态调整资源",
-    thinkingText: "收到需求。我发现当前技能库中尚未具备「弹性伸缩策略」相关能力，我将自主学习并进化出新 Skill",
+    userMsg: "把 MySQL 里的双 11 活动名单，和 S3 存储桶里 10TB 的用户行为日志关联一下，找出那批领取了优惠券但最终没下单的用户，看看他们最后都流失到哪个页面了",
+    thinkingText: "收到需求。正在构建联合查询拓扑，检测到涉及 TB 级跨源计算",
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "自定义专家",
         lines: [
-          { text: "分析任务需求：用户需要基于集群负载动态调整 Spark 计算资源，涉及弹性伸缩（Auto Scaling）能力。" },
-          { text: "能力扫描：当前已有 Skill 覆盖集群监控、慢 SQL 优化、数据质量检测，但不具备弹性伸缩策略配置能力。", tags: ["skill-gap-detected", "auto-scaling", "resource-management"] },
+          { text: "正在构建联合查询拓扑。检测到涉及 TB 级跨源计算，正在获取\u201C混合引擎\u201D处理能力。", muted: true },
+          { text: "本地执行引擎无法承载 10TB 数据的 Join 操作。我正在尝试连接 SkillHub，获取分布式计算组件以支持跨源关联。" },
           {
-            text: "触发自进化流程：从知识库 & API 文档中提取「EMR Auto Scaling」规则体系，开始生成新 Skill。",
-            skillCalls: ["Self-Evolution"],
+            text: "",
+            skillSearch: { searching: "搜索 SkillHub 相关技能", found: "发现 Presto-Native-Executor 并启用", skillName: "Presto-Native-Executor", duration: 2000 },
+          },
+          { text: "获取完成。我已习得分布式关联算法，正在下推查询请求至高性能算力集群。" },
+          {
+            text: "",
+            toolCalls: [{ title: "查看 DescribeSparkQueries 接口文档", command: "skill install presto-native-executor --from skillhub", result: "✓ Skill 已安装\n名称: Presto-Native-Executor\n能力: 跨源分布式 Join（MySQL/S3/HDFS）\n引擎: Spark SQL + Presto" }],
           },
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
-        delay: 4000,
-        dividerBefore: true,
-        overview: "新 Skill 学习完成，已自动注册到技能库",
-        lines: [
-          { text: "", boldText: "✅ 新技能已进化：Auto-Scaling-Skill" },
-          { text: "技能描述：基于集群 CPU/内存/队列等负载指标，自动生成并执行弹性伸缩策略（扩容 / 缩容 / 预热）。" },
-          {
-            text: "技能能力清单：",
-            skillCalls: ["Auto-Scaling-Skill"],
-          },
-          { text: "• 负载阈值检测（CPU > 80% 持续 5min → 触发扩容）" },
-          { text: "• 时段预热（工作日 08:00 提前扩容 +50%）" },
-          { text: "• 低峰缩容（空闲 CU > 60% 持续 15min → 释放资源）" },
-          { text: "• 费用优化约束（日预算上限 ¥2000，超限不再扩容）" },
-        ],
-      },
-      {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "自定义专家",
         delay: 6000,
         dividerBefore: true,
-        overview: "现在用新 Skill 为您执行弹性伸缩配置",
         lines: [
-          { text: "正在调用 Auto-Scaling-Skill，为集群 emr-ccrnhw11 生成伸缩策略。" },
-          {
-            text: "策略生成完成，以下为推荐配置：",
-            toolCalls: [{ title: "调用 Auto-Scaling-Skill 生成弹性伸缩策略", command: "auto-scaling configure \\\n  --cluster emr-ccrnhw11 \\\n  --scale-up-cpu 80 \\\n  --scale-down-idle 60 \\\n  --preheat \"08:00+50%\" \\\n  --budget-limit 2000", result: "✓ 策略已生成\n扩容规则: CPU>80% 持续5min → +4CU\n缩容规则: 空闲>60% 持续15min → -2CU\n预热规则: 工作日08:00 → 24CU→36CU\n预算上限: ¥2000/天" }],
-          },
+          { text: "已完成跨源数据撞库，成功提取 4.2 万名\u201C领券未下单\u201D目标用户的流失路径。" },
+          { text: "以下是：" },
+          { text: "流失查询一览（按耗时降序）", bold: true },
           {
             text: "",
             table: {
-              headers: ["规则类型", "触发条件", "动作", "冷却期"],
+              headers: ["流失页面", "用户数", "占比", "平均停留", "跳出率"],
               rows: [
-                ["扩容", "CPU > 80% 持续 5min", "+4 CU", "10min"],
-                ["缩容", "空闲 CU > 60% 持续 15min", "-2 CU", "15min"],
-                ["预热", "工作日 08:00", "扩至 36 CU", "-"],
-                ["兜底", "日费用达 ¥2000", "停止扩容", "-"],
+                ["商品详情页", "15,820", "37.6%", "45s", "62%"],
+                ["购物车页", "11,340", "27.0%", "22s", "78%"],
+                ["支付确认页", "8,960", "21.3%", "12s", "85%"],
+                ["收银台页", "3,780", "9.0%", "8s", "91%"],
+                ["其他页面", "2,100", "5.0%", "5s", "95%"],
               ],
             },
           },
-          { text: "策略已生效。新 Skill「Auto-Scaling-Skill」已持久化到技能广场，后续同类任务将自动复用此能力。" },
+          { text: "新 Skill「Presto-Native-Executor」已持久化到技能广场，后续同类跨源大数据关联任务将自动复用此能力。" },
         ],
       },
     ],
@@ -621,16 +606,38 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         overview: "分析发现：本次流失与近期营销活动效果不佳高度相关，需要运营策略专家参与制定召回方案",
         lines: [
           { text: "当前团队具备数据分析能力，但召回策略的制定需要「运营策略」领域的专业知识。" },
-          { text: "我检测到团队中尚无运营策略相关专家。建议拉入「运营助手」协作完成召回方案设计。" },
+          { text: "我检测到团队中尚无运营策略相关专家。建议拉入「营销助手」协作完成召回方案设计。" },
           {
             text: "",
             confirmCard: {
               title: "是否允许 Agent 加入到当前团队？",
-              description: "运营助手 · 个人定制的运营分析助手，具备用户召回策略、Push 文案生成、活动 ROI 预估等技能。",
+              description: "营销助手 · 个人定制的运营分析助手，具备用户召回策略、Push 文案生成、活动 ROI 预估等技能。",
               buttonText: "加入团队",
               tag: "任务匹配度 94%",
             },
           },
+        ],
+      },
+    ],
+  },
+  t16: {
+    title: "记忆功能",
+    userMsg: "帮我配置华东区数仓的自动扩缩容策略，之前我们约定过用 EMR 集群 emr-ccrnhw11，预算上限 2000 元/天",
+    thinkingText: "收到需求。正在检索相关记忆，匹配历史约定信息",
+    replies: [
+      {
+        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        lines: [
+          { text: "已检索到相关记忆：", muted: true },
+          { text: "• 目标集群：emr-ccrnhw11（华东区）" },
+          { text: "• 日预算上限：\u00a52,000" },
+          { text: "• 扩缩容策略偏好：保守型（优先保证稳定性）" },
+          { text: "基于以上记忆，我直接为您生成对应的弹性伸缩策略，无需重复确认参数。" },
+          {
+            text: "",
+            toolCalls: [{ title: "应用记忆配置并生成扩缩容策略", command: "auto-scaling configure \\\n  --cluster emr-ccrnhw11 \\\n  --budget-limit 2000 \\\n  --strategy conservative \\\n  --apply-memory", result: "\u2713 已应用历史记忆配置\n\u2713 策略生成完成\n扩容: CPU>80% 持续10min \u2192 +2CU\n缩容: 空闲>70% 持续20min \u2192 -1CU\n预算上限: \u00a52000/天" }],
+          },
+          { text: "策略已生效。以上配置已基于您之前沉淀的记忆自动填充，如需调整可随时告诉我。" },
         ],
       },
     ],
@@ -692,19 +699,19 @@ const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
 // ── t15 确认拉入后：新 Agent 读取上下文并开始工作 ──────────────
 const T15_PHASE2_REPLIES: ExpertReplyDataType[] = [
   {
-    icon: "/agents/ops-expert.png", name: "运营助手",
+    icon: "/agents/ops-expert.png", name: "营销助手",
     delay: 800,
-    overview: "「运营助手」已加入团队，正在读取对话上下文…",
+    overview: "「营销助手」已加入团队，正在读取对话上下文…",
     lines: [
-      { text: "运营助手已成功加入当前协作会话，正在同步上下文信息。" },
+      { text: "营销助手已成功加入当前协作会话，正在同步上下文信息。" },
       {
         text: "上下文同步完成，已了解：华东区近 7 天流失 23,450 人，流失原因 Top3 已明确。",
-        toolCalls: [{ title: "同步对话上下文至运营助手", command: "context_sync --session current --target ops-assistant", result: "✓ 已同步 3 轮对话记录\n✓ 已同步流失分析结论\n✓ 已同步用户画像数据" }],
+        toolCalls: [{ title: "同步对话上下文至营销助手", command: "context_sync --session current --target ops-assistant", result: "✓ 已同步 3 轮对话记录\n✓ 已同步流失分析结论\n✓ 已同步用户画像数据" }],
       },
     ],
   },
   {
-    icon: "/agents/ops-expert.png", name: "运营助手",
+    icon: "/agents/ops-expert.png", name: "营销助手",
     delay: 4000,
     dividerBefore: true,
     overview: "已读取上下文，下面开始制定召回策略",
@@ -733,13 +740,70 @@ const T15_DECLINE_REPLIES: ExpertReplyDataType[] = [
   {
     icon: "/agents/analysis-expert.png", name: "数据分析专家",
     delay: 800,
-    overview: "好的，运营助手暂不加入。我将基于现有团队能力继续推进召回方案。",
+    overview: "好的，营销助手暂不加入。我将基于现有团队能力继续推进召回方案。",
     lines: [
       { text: "基于已有的流失分析结论，我尝试生成基础版召回策略方案。" },
       { text: "针对高价值流失用户（占比 18.7%）建议：优先通过 1v1 Push 触达，文案聚焦产品新功能亮点。" },
       { text: "针对竞品流失用户（占比 28%）建议：限时优惠券 + 差异化功能对比推送。" },
-      { text: "基础召回方案已生成，但缺少运营精细化策略支持，预估召回率可能低于最优方案。如需更精准的策略，可随时将运营助手加入团队。" },
+      { text: "基础召回方案已生成，但缺少运营精细化策略支持，预估召回率可能低于最优方案。如需更精准的策略，可随时将营销助手加入团队。" },
     ],
+  },
+];
+
+// ── t16 记忆功能：三阶段数据（用户手动触发） ──────────────────
+const T16_MEMORY_PHASES: { prompt: string; replies: ExpertReplyDataType[] }[] = [
+  {
+    prompt: "展示「用户主动沉淀记忆」，记住：这个集群写 SQL 时优先用 CLUSTER BY",
+    replies: [{
+      icon: "/agents/dev-expert.png", name: "数据开发专家",
+      lines: [
+        { text: "好的，我将记录这条信息", muted: true },
+        { text: "已写入 MEMORY.md。以后在该集群写 SQL 时我会注意优先用 CLUSTER BY。" },
+        {
+          text: "",
+          toolCalls: [{ title: "已编辑 MEMORY.md", command: "echo '- 集群 emr-ccrnhw11 写 SQL 时优先使用 CLUSTER BY' >> MEMORY.md", result: "✓ 已追加写入 MEMORY.md" }],
+        },
+      ],
+    }],
+  },
+  {
+    prompt: "展示「AI 自动沉淀记忆」",
+    replies: [{
+      icon: "/agents/ops-expert.png", name: "数据运维专家",
+      lines: [
+        { text: "我已自动将以下信息沉淀为记忆：", muted: true },
+        { text: "\u2022 用户常用集群为 emr-ccrnhw11（华东区）" },
+        { text: "\u2022 扩缩容任务默认使用保守策略" },
+        { text: "\u2022 数仓分层：ODS \u2192 DWD \u2192 DWS \u2192 ADS" },
+        { text: "这些信息将在后续相关任务中自动引用，帮助我更准确地理解您的需求。如有不准确的地方，您可以随时修改或删除。" },
+      ],
+    }],
+  },
+  {
+    prompt: "展示「AI 沉淀记忆，用户手动确认」",
+    replies: [{
+      icon: "/agents/dev-expert.png", name: "数据开发专家",
+      lines: [
+        {
+          text: "",
+          memoryCard: {
+            title: "EMR 3.2 且 PPD 未开启时，避免优先使用 PARTITION BY",
+            details: [
+              { label: "场景", value: "Hive 慢 SQL 优化" },
+              { label: "条件", value: "腾讯云 EMR 3.2，且PPD 关闭" },
+              { label: "建议", value: "优先尝试 CLUSTER BY user_id" },
+              { label: "来源", value: "本次对话修正" },
+            ],
+          },
+        },
+        { text: "以后在该集群写 SQL 时我会注意优先用 CLUSTER BY。" },
+        { text: "现在我将执行新优化方案", bold: true },
+        {
+          text: "",
+          toolCalls: [{ title: "基于 CLUSTER BY user_id 重写 dwd_order_detail SQL", command: "SELECT user_id, order_id, amount\nFROM dwd_order_detail\nCLUSTER BY user_id", result: "\u2713 SQL 重写完成\n执行时间: 12.3s (优化前: 56.5s)\n提升: 78%" }],
+        },
+      ],
+    }],
   },
 ];
 
@@ -791,6 +855,10 @@ export default function Home() {
   const [t15Declined, setT15Declined] = useState(false);
   // t15 不再推荐 Agent 标记
   const [t15DismissRecommend, setT15DismissRecommend] = useState(false);
+  // t16 记忆功能：当前阶段（0=初始完成后预填第一个prompt, 1/2/3=已展示对应阶段）
+  const [t16MemoryPhase, setT16MemoryPhase] = useState(0);
+  // t16 额外的回复块（用户手动触发后追加的）
+  const [t16ExtraReplies, setT16ExtraReplies] = useState<ExpertReplyDataType[]>([]);
   // 手动拉人后的"加入任务"提示（按 taskId 持久化）
   const [joinTaskMessages, setJoinTaskMessages] = useState<Record<string, { text: string; avatars: string[] }>>({}); 
   // 活跃的确认卡（从对话流提取，固定在输入框上方）
@@ -872,6 +940,15 @@ export default function Home() {
     }, 100);
     return () => clearTimeout(timer);
   }, [activeConfirmCard, phase2Complete]);
+
+  // t16 记忆功能：内容变化时自动滚动到底部
+  useEffect(() => {
+    if (activeTaskId !== "t16" || t16ExtraReplies.length === 0 || !scrollRef.current) return;
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollTo({ top: scrollRef.current?.scrollHeight ?? 0, behavior: "smooth" });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [activeTaskId, t16ExtraReplies.length]);
 
   // 思考结束后（且非取消 / 失败 / 即时模式），自动推进到 Step 1
   useEffect(() => {
@@ -1018,6 +1095,30 @@ export default function Home() {
 
   const handleSendMessage = useCallback(({ message }: { message: string; files: unknown[] }) => {
     if (!message.trim()) return;
+
+    // t16 记忆功能：拦截用户输入触发下一阶段
+    if (activeTaskId === "t16" && t16MemoryPhase < T16_MEMORY_PHASES.length) {
+      const phase = T16_MEMORY_PHASES[t16MemoryPhase];
+      // 记录用户消息 + Agent 回复
+      setT16ExtraReplies(prev => [...prev, { _userMsg: message.trim() } as unknown as ExpertReplyDataType, ...phase.replies]);
+      const nextPhase = t16MemoryPhase + 1;
+      setT16MemoryPhase(nextPhase);
+      // 滚动到底部
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      });
+      // 预填下一个 prompt（如果还有）
+      if (nextPhase < T16_MEMORY_PHASES.length) {
+        setTimeout(() => {
+          chatInputRef.current?.prefill(T16_MEMORY_PHASES[nextPhase].prompt);
+          requestAnimationFrame(() => {
+            scrollRef.current?.scrollTo({ top: scrollRef.current?.scrollHeight ?? 0, behavior: "smooth" });
+          });
+        }, 2000);
+      }
+      return;
+    }
+
     setUserMessage(message.trim());
     // 如果没有召唤 agent，默认使用 Rigel
     if (!summonedAgent) {
@@ -1061,7 +1162,7 @@ export default function Home() {
       }
     }, 4000);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [summonedAgent]);
+  }, [summonedAgent, activeTaskId, t16MemoryPhase]);
 
   // ── Motion 选择模式 handlers ──────────────────────────────────
   const handleMotionButtonClick = useCallback(() => {
@@ -1106,6 +1207,8 @@ export default function Home() {
     setPhase2Complete(false);
     setT15Declined(false);
     setT15DismissRecommend(false);
+    setT16MemoryPhase(0);
+    setT16ExtraReplies([]);
     setIsGenerating(false);
     setSelectedTeamId(null);
     setSelectedAgentId(null);
@@ -1124,6 +1227,30 @@ export default function Home() {
     setConfirmPhase(true);
     setPhase2Replies(activeTaskId === "t15" ? T15_PHASE2_REPLIES : CONFIRM_PHASE2_REPLIES);
     setActiveConfirmCard(null);
+    // t15: 营销助手加入团队 → 同步 teamMembers + registry
+    if (activeTaskId === "t15") {
+      setTeamMembers(prev => prev.includes("marketing") ? prev : [...prev, "marketing"]);
+      setRegistry(prev => ({
+        ...prev,
+        teams: prev.teams.map(t => {
+          if (t.id !== "ops-team") return t;
+          if (t.members.some(m => m.id === "marketing")) return t;
+          return {
+            ...t,
+            members: [...t.members, {
+              id: "marketing",
+              name: "营销助手",
+              abbr: "销",
+              abbrBg: "#FF7800",
+              category: "数字分身",
+              role: "执行者" as const,
+              statusColor: "#FF7800",
+              avatar: "/agents/ops-expert.png",
+            }],
+          };
+        }),
+      }));
+    }
   }, [activeTaskId]);
 
   const handleStop = useCallback(() => {
@@ -1173,6 +1300,8 @@ export default function Home() {
       setPhase2Complete(false);
       setT15Declined(false);
       setT15DismissRecommend(false);
+      setT16MemoryPhase(0);
+      setT16ExtraReplies([]);
       setActiveConfirmCard(null);
       setArtifactsPanelOpen(false);
       // 三选一：常驻展示
@@ -1190,7 +1319,8 @@ export default function Home() {
     setActiveTaskId(task.id);
     setShowSkillPlaza(false);
     setShowClawManager(false);
-    setIsInstantMode(true);
+    const useStream = task.id === "t14" || task.id === "t16";
+    setIsInstantMode(!useStream);
     setUserMessage(conv?.userMsg ?? task.title);
     setSummonedAgent({
       name: "Rigel",
@@ -1200,8 +1330,8 @@ export default function Home() {
     setChatPhase("conversation");
     setConversationTitle(conv?.title ?? task.title);
     setActiveSkills([]);
-    // 即时模式：直接全部展示
-    setRevealStep(2);
+    // 即时模式：直接全部展示；流式模式：逐步揭示
+    setRevealStep(useStream ? 0 : 2);
     setTaskReplies(conv?.replies);
     setTaskThinkingText(conv?.thinkingText);
     setIsSingleExpert(conv?.singleExpert ?? false);
@@ -1210,17 +1340,26 @@ export default function Home() {
     setPhase2Complete(false);
     setT15Declined(false);
     setT15DismissRecommend(false);
-    setIsGenerating(false);
+    setT16MemoryPhase(0);
+    setT16ExtraReplies([]);
+    setIsGenerating(useStream);
     setIsCancelled(false);
-    setIsThinking(false);
+    setIsThinking(useStream);
     setIsFailed(false);
     if (thinkingTimerRef.current) {
       clearTimeout(thinkingTimerRef.current);
       thinkingTimerRef.current = null;
     }
+    // 流式模式：启动思考定时器，4s 后进入回复阶段
+    if (useStream) {
+      thinkingTimerRef.current = setTimeout(() => {
+        setIsThinking(false);
+        thinkingTimerRef.current = null;
+      }, 4000);
+    }
     setActiveConfirmCard(null);
-    // 即时模式：自动打开产物面板（t14/t15 除外）
-    setArtifactsPanelOpen(task.id !== "t14" && task.id !== "t15");
+    // 即时模式：自动打开产物面板（t7/t14/t15/t16 除外）
+    setArtifactsPanelOpen(task.id !== "t7" && task.id !== "t14" && task.id !== "t15" && task.id !== "t16");
     // 滚动到顶部
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ top: 0 });
@@ -1460,7 +1599,14 @@ export default function Home() {
                 onArtifacts={() => setArtifactsPanelOpen(v => !v)}
                 onAddMember={() => setAddMemberOpen(true)}
                 hideTeamBadge={!activeTaskId || !registry.teams.some(t => registry.tasks.find(task => task.id === activeTaskId)?.agentId === t.id)}
-                teamMembers={teamMembers}
+                teamMembers={(() => {
+                  if (!activeTaskId) return teamMembers;
+                  const currentTask = registry.tasks.find(t => t.id === activeTaskId);
+                  if (!currentTask) return teamMembers;
+                  const team = registry.teams.find(t => t.id === currentTask.agentId);
+                  if (!team) return teamMembers;
+                  return team.members.map(m => m.id);
+                })()}
               />
             </div>
           </motion.div>
@@ -1767,10 +1913,17 @@ export default function Home() {
                       transition={{ duration: isInstantMode ? 0 : 0.35, ease: EASE, delay: isInstantMode ? 0 : 0.8 }}
                     >
                       <ExpertReplies instant={isInstantMode} replies={taskReplies} onComplete={() => {
-                        if (activeTaskId !== "t14" && activeTaskId !== "t15") {
+                        if (activeTaskId !== "t14" && activeTaskId !== "t15" && activeTaskId !== "t16") {
                           setArtifactsPanelOpen(true);
                         }
                         setIsGenerating(false);
+                        // t16: 回复完成后预填下一个记忆场景 prompt
+                        if (activeTaskId === "t16" && t16MemoryPhase < T16_MEMORY_PHASES.length) {
+                          chatInputRef.current?.prefill(T16_MEMORY_PHASES[t16MemoryPhase].prompt);
+                          requestAnimationFrame(() => {
+                            scrollRef.current?.scrollTo({ top: scrollRef.current?.scrollHeight ?? 0, behavior: "smooth" });
+                          });
+                        }
                         // 提取 confirmCard 数据
                         const allReplies = taskReplies ?? [];
                         for (const reply of allReplies) {
@@ -1784,6 +1937,48 @@ export default function Home() {
                       }} onArtifactClick={() => setArtifactsPanelOpen(true)} onConfirm={handleConfirm} hideDispatch cancelled={isCancelled} />
                     </motion.div>
                   )}
+
+                  {/* t16 记忆功能：用户手动触发的额外回复（含用户气泡），按组渲染 */}
+                  {activeTaskId === "t16" && t16ExtraReplies.length > 0 && (() => {
+                    // 按组分割：每遇到一个 _userMsg 标记开始新的一组
+                    const groups: { userMsg?: string; replies: ExpertReplyDataType[] }[] = [];
+                    for (const item of t16ExtraReplies) {
+                      if ((item as unknown as { _userMsg?: string })._userMsg) {
+                        groups.push({ userMsg: (item as unknown as { _userMsg: string })._userMsg, replies: [] });
+                      } else if (groups.length > 0) {
+                        groups[groups.length - 1].replies.push(item);
+                      }
+                    }
+                    const lastGroupIdx = groups.length - 1;
+                    return groups.map((group, gi) => (
+                      <React.Fragment key={`t16-group-${gi}`}>
+                        {group.userMsg && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, ease: EASE }}
+                          >
+                            <UserMessageBubble content={group.userMsg} />
+                          </motion.div>
+                        )}
+                        {group.replies.length > 0 && (
+                          <ExpertReplies
+                            instant={gi < lastGroupIdx}
+                            replies={group.replies}
+                            onComplete={gi === lastGroupIdx ? () => {
+                              if (t16MemoryPhase < T16_MEMORY_PHASES.length) {
+                                chatInputRef.current?.prefill(T16_MEMORY_PHASES[t16MemoryPhase].prompt);
+                              }
+                            } : undefined}
+                            onArtifactClick={() => setArtifactsPanelOpen(true)}
+                            onConfirm={handleConfirm}
+                            hideDispatch
+                            cancelled={isCancelled}
+                          />
+                        )}
+                      </React.Fragment>
+                    ));
+                  })()}
 
                   {/* Phase 2: 确认后的继续对话 */}
                   {confirmPhase && phase2Replies && (
@@ -1804,7 +1999,7 @@ export default function Home() {
                               fontFamily: FONT, fontSize: 16, fontWeight: 400,
                               lineHeight: "28px", color: "rgba(0,0,0,0.9)",
                             }}>
-                              你已允许&ldquo;运营助手&rdquo;加入团队
+                              你已允许&ldquo;营销助手&rdquo;加入团队
                             </span>
                           </motion.div>
                           <motion.div
@@ -1817,7 +2012,7 @@ export default function Home() {
                               fontFamily: FONT, fontSize: 12, fontWeight: 400,
                               lineHeight: "20px", color: "rgba(0,0,0,0.4)",
                             }}>
-                              运营助手 加入了任务
+                              营销助手 加入了任务
                             </span>
                           </motion.div>
                         </>
@@ -2165,7 +2360,7 @@ export default function Home() {
                                   fontFamily: FONT, fontSize: 16, fontWeight: 500,
                                   color: "rgba(0,0,0,0.9)", lineHeight: "24px",
                                 }}>
-                                  运营助手
+                                  营销助手
                                 </span>
                                 {/* Lv 标签 - 金色渐变背景 */}
                                 <span style={{
@@ -2470,6 +2665,8 @@ export default function Home() {
             tasks: prev.tasks.map(task => task.id === activeTaskId ? { ...task, agentId: newTeamId } : task),
           }));
           setTeamMembers(ids);
+          // 更新输入框 agent 选择器为新团队名
+          chatInputRef.current?.setAgent(teamName);
           // 显示"加入任务"提示（新增的成员）
           const agentIdToMemberId2: Record<string, string> = { "dev-expert": "dev", "analysis-expert": "analysis", "ops-expert": "ops" };
           const currentTask2 = registry.tasks.find(t => t.id === activeTaskId);

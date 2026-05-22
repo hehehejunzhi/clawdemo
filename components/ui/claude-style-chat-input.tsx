@@ -198,6 +198,8 @@ export interface ChatInputHandle {
   resetAgent: () => void;
   /** 外部强制设置选中的 agent 标签（例如左栏点击 Section） */
   setAgent: (label: string) => void;
+  /** 预填输入框文案 */
+  prefill: (text: string) => void;
 }
 
 export type ChatInputPreviewState = "default" | "active";
@@ -293,6 +295,7 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
     focus: () => textareaRef.current?.focus(),
     resetAgent: () => setSelectedAgent(defaultLabel),
     setAgent: (label: string) => setSelectedAgent(label),
+    prefill: (text: string) => { setMessage(text); requestAnimationFrame(() => textareaRef.current?.focus()); },
   }), [defaultLabel]);
 
   // Auto-resize textarea
