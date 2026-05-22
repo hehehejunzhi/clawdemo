@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -17,14 +17,13 @@ const C = {
   error: "#F64041",
 } as const;
 
-type ExpertMode = "digital" | "external";
+// 名称校验：仅支持中文、英文、数字、下划线
+const NAME_REG = /^[\u4e00-\u9fa5a-zA-Z0-9_·]+$/;
 
 interface CreateExpertDialogProps {
   open: boolean;
   onClose: () => void;
-  /** 创建自定义 Agent 的回调 */
   onCreate?: (name: string, desc: string, tags: string) => void;
-  /** 创建外部 Agent 的回调（可选） */
   onCreateExternal?: (data: {
     name: string;
     platform: string;
@@ -37,73 +36,75 @@ interface CreateExpertDialogProps {
   }) => void;
 }
 
-const PLATFORMS = [
-  { id: "lighthouse", label: "Lighthouse", abbr: "LH", bg: "#E59858" },
-  { id: "clawpro", label: "ClawPro", abbr: "CP", bg: "#1664FF" },
-  { id: "chatgpt", label: "ChatGPT Plugin", abbr: "GP", bg: "#00B96B" },
-];
-
-/**
- * 首页输入框中的「创建 Agent」弹窗
- * - 对齐 Agent 广场的弹窗视觉规范（640 宽 / 16px 标题 / 12px label/input / 32 高输入 / 圆 32 按钮）
- * - 第一栏双模式选择：创建自定义 Agent / 连接外部 Agent
- */
 export default function CreateExpertDialog({ open, onClose, onCreate, onCreateExternal }: CreateExpertDialogProps) {
-  const [mode, setMode] = useState<ExpertMode>("digital");
-  // digital 字段
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [tags, setTags] = useState("");
-  // external 字段
-  const [extName, setExtName] = useState("");
-  const [platform, setPlatform] = useState("");
-  const [apiUrl, setApiUrl] = useState("");
-  const [ip, setIp] = useState("");
-  const [port, setPort] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [extTags, setExtTags] = useState("");
-  const [extDesc, setExtDesc] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const resetAll = () => {
-    setMode("digital");
-    setName(""); setDesc(""); setTags("");
-    setExtName(""); setPlatform(""); setApiUrl(""); setIp(""); setPort(""); setApiKey(""); setExtTags(""); setExtDesc("");
+    setName(""); setDesc(""); setTags(""); setNameError(""); setLoading(false); setProgress(0);
   };
 
-  const isValid = mode === "digital"
-    ? name.trim().length > 0
-    : extName.trim().length > 0 && platform.length > 0 && apiUrl.trim().length > 0 && apiKey.trim().length > 0;
+  // 名称校验
+  const validateName = (v: string) => {
+    if (v.length > 0 && !NAME_REG.test(v)) {
+      setNameError("名称仅支持中文、英文、数字、下划线");
+    } else {
+      setNameError("");
+    }
+  };
+
+  const isValid = name.trim().length > 0 && !nameError;
 
   const handleCreate = () => {
     if (!isValid) return;
-    if (mode === "digital") {
-      onCreate?.(name.trim(), desc.trim(), tags.trim());
-    } else {
-      onCreateExternal?.({
-        name: extName.trim(),
-        platform,
-        apiUrl: apiUrl.trim(),
-        ip: ip.trim(),
-        port: port.trim(),
-        apiKey: apiKey.trim(),
-        tags: extTags.trim(),
-        desc: extDesc.trim(),
-      });
-    }
-    resetAll();
-    onClose();
+    setLoading(true);
+    setProgress(0);
   };
-  const handleClose = () => { resetAll(); onClose(); };
 
-  // 通用样式（与 Agent 广场 CreateAvatarDialog 对齐）
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 72, paddingTop: 7 };
+  // loading 进度动画
+  useEffect(() => {
+    if (!loading) return;
+    let frame: number;
+    let start: number | null = null;
+    const duration = 2000; // 2s
+    const animate = (ts: number) => {
+      if (!start) start = ts;
+      const elapsed = ts - start;
+      const p = Math.min(elapsed / duration, 1);
+      setProgress(p);
+      if (p < 1) {
+        frame = requestAnimationFrame(animate);
+      } else {
+        // 完成
+        setTimeout(() => {
+          onCreate?.(name.trim(), desc.trim(), tags.trim());
+          resetAll();
+          onClose();
+        }, 300);
+      }
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const handleClose = () => { if (!loading) { resetAll(); onClose(); } };
+
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 90, paddingTop: 7 };
   const fieldInputStyle: React.CSSProperties = {
     flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgWhite,
     fontFamily: FONT, fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box",
   };
-  const focusOn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.currentTarget.style.borderColor = C.brandCyan; };
-  const focusOff = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.currentTarget.style.borderColor = C.border; };
+  const focusOn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.currentTarget.style.borderColor = nameError && e.currentTarget === document.querySelector('[data-name-input]') ? C.error : C.brandCyan; };
+  const focusOff = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.currentTarget.style.borderColor = nameError && e.currentTarget === document.querySelector('[data-name-input]') ? C.error : C.border; };
+
+  // 忽略未使用的 onCreateExternal（保持接口兼容）
+  void onCreateExternal;
 
   return (
     <AnimatePresence>
@@ -119,47 +120,62 @@ export default function CreateExpertDialog({ open, onClose, onCreate, onCreateEx
             transition={{ duration: 0.2, ease: EASE }}
             style={{ width: 640, maxHeight: "85vh", background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
           >
-            {/* Header */}
-            <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建 Agent</span>
-              <div onClick={handleClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-              ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
-            </div>
-
-            {/* Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16, scrollbarWidth: "none" }}>
-              {/* Mode 选择 */}
-              <div style={{ display: "flex", alignItems: "flex-start" }}>
-                <div style={labelStyle}>类型</div>
-                <div style={{ flex: 1, display: "flex", gap: 12 }}>
-                  <ModeCard
-                    active={mode === "digital"}
-                    title="创建自定义 Agent"
-                    desc="定义专属的 AI 数字分身，沉淀个人知识"
-                    onClick={() => setMode("digital")}
-                  />
-                  <ModeCard
-                    active={mode === "external"}
-                    title="连接外部 Agent"
-                    desc="接入外部平台部署的 Agent（Lighthouse / ClawPro 等）"
-                    onClick={() => setMode("external")}
-                  />
+            {loading ? (
+              /* Loading 状态 */
+              <div style={{ padding: "80px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+                {/* 纸飞机 SVG */}
+                <svg width="120" height="100" viewBox="0 0 120 100" fill="none">
+                  <path d="M60 20L90 50L60 40L30 50L60 20Z" fill="#D4D8E0" />
+                  <path d="M60 20L60 40L90 50L60 20Z" fill="#B8BEC8" />
+                  <path d="M60 40L60 60L90 50L60 40Z" fill="#C8CDD6" />
+                  <ellipse cx="60" cy="78" rx="30" ry="6" fill="rgba(0,0,0,0.06)" />
+                </svg>
+                <span style={{ fontSize: 16, fontWeight: 400, color: C.textPrimary }}>
+                  你自定义 Agent 正在创建，请稍等...
+                </span>
+                {/* 进度条 */}
+                <div style={{ width: "60%", height: 12, borderRadius: 6, background: "#E6E9EF", overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%", borderRadius: 6, background: C.textPrimary,
+                    width: `${progress * 100}%`, transition: "width 50ms linear",
+                  }} />
                 </div>
               </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                  <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建自定义 Agent</span>
+                  <div onClick={handleClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                  ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
+                </div>
 
-              {mode === "digital" ? (
-                <>
+                {/* Body */}
+                <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16, scrollbarWidth: "none" }}>
                   {/* 名称 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
                     <div style={labelStyle}><span>名称 </span><span style={{ color: C.error }}>*</span></div>
-                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：我的监控助手" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
+                    <div style={{ flex: 1 }}>
+                      <input
+                        data-name-input=""
+                        value={name}
+                        onChange={(e) => { setName(e.target.value); validateName(e.target.value); }}
+                        placeholder="例如：大数据"
+                        style={{ ...fieldInputStyle, borderColor: nameError ? C.error : C.border, width: "100%" }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = nameError ? C.error : C.brandCyan; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = nameError ? C.error : C.border; }}
+                      />
+                      {nameError && (
+                        <div style={{ fontSize: 12, color: C.error, marginTop: 4, lineHeight: "18px" }}>{nameError}</div>
+                      )}
+                    </div>
                   </div>
                   {/* 描述 */}
                   <div style={{ display: "flex", alignItems: "flex-start" }}>
                     <div style={labelStyle}>描述</div>
-                    <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="简要描述分身目标和用途" rows={2}
+                    <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="简要描述数字分身目标和用途" rows={2}
                       style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
                       onFocus={focusOn} onBlur={focusOff} />
                   </div>
@@ -168,84 +184,17 @@ export default function CreateExpertDialog({ open, onClose, onCreate, onCreateEx
                     <div style={labelStyle}>标签</div>
                     <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
                   </div>
-                </>
-              ) : (
-                <>
-                  {/* 名称 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}><span>名称 </span><span style={{ color: C.error }}>*</span></div>
-                    <input value={extName} onChange={(e) => setExtName(e.target.value)} placeholder="例如：我的自定义 Agent" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
-                  </div>
-                  {/* 来源平台 */}
-                  <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    <div style={labelStyle}><span>来源平台 </span><span style={{ color: C.error }}>*</span></div>
-                    <div style={{ flex: 1, display: "flex", gap: 12 }}>
-                      {PLATFORMS.map((p) => {
-                        const selected = platform === p.id;
-                        return (
-                          <div key={p.id} onClick={() => setPlatform(p.id)}
-                            style={{
-                              flex: 1, display: "flex", alignItems: "center", gap: 8,
-                              padding: "6px 12px", borderRadius: 8, cursor: "pointer", height: 32, boxSizing: "border-box",
-                              border: `1px solid ${selected ? "#7E9EFF" : C.border}`,
-                              background: selected ? "rgba(126,158,255,0.04)" : C.bgWhite,
-                              transition: "all 100ms",
-                            }}
-                          >
-                            <div style={{
-                              width: 14, height: 14, borderRadius: 7,
-                              border: `1.5px solid ${selected ? C.brandCyan : "#D6DBE3"}`,
-                              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                            }}>
-                              {selected && <div style={{ width: 7, height: 7, borderRadius: 4, background: C.brandCyan }} />}
-                            </div>
-                            <span style={{ fontSize: 12, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {/* API 地址 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}><span>API 地址 </span><span style={{ color: C.error }}>*</span></div>
-                    <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api.example.com/v1/claw" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
-                  </div>
-                  {/* IP 地址 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}>IP 地址</div>
-                    <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="192.168.1.1" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
-                  </div>
-                  {/* 端口 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}>端口</div>
-                    <input value={port} onChange={(e) => setPort(e.target.value)} placeholder="8080" style={{ ...fieldInputStyle, flex: "none", width: 120 }} onFocus={focusOn} onBlur={focusOff} />
-                  </div>
-                  {/* API Key */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}><span>API Key </span><span style={{ color: C.error }}>*</span></div>
-                    <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="输入 API Key 或 Token" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
-                  </div>
-                  {/* 标签 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}>标签</div>
-                    <input value={extTags} onChange={(e) => setExtTags(e.target.value)} placeholder="输入标签，多个用逗号分隔" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
-                  </div>
-                  {/* 描述 */}
-                  <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    <div style={labelStyle}>描述</div>
-                    <textarea value={extDesc} onChange={(e) => setExtDesc(e.target.value)} placeholder="简要描述该 Agent 的用途和能力" rows={2}
-                      style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
-                      onFocus={focusOn} onBlur={focusOff} />
-                  </div>
-                </>
-              )}
-            </div>
+                  {/* Agent 推荐 */}
+                  <AgentRecommendField />
+                </div>
 
-            {/* Footer */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgWhite, borderRadius: "0 0 16px 16px" }}>
-              <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-              <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
-            </div>
+                {/* Footer */}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgWhite, borderRadius: "0 0 16px 16px" }}>
+                  <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+                  <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
+                </div>
+              </>
+            )}
           </motion.div>
         </motion.div>
       )}
@@ -253,26 +202,80 @@ export default function CreateExpertDialog({ open, onClose, onCreate, onCreateEx
   );
 }
 
-// 双模式卡
-function ModeCard({ active, title, desc, onClick }: { active: boolean; title: string; desc: string; onClick: () => void }) {
+// Agent 推荐下拉字段
+function AgentRecommendField() {
+  const [value, setValue] = useState("每次询问");
+  const [dropOpen, setDropOpen] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const options = ["每次询问", "不再推荐"];
+
   return (
-    <div
-      onClick={onClick}
-      style={{
-        flex: 1,
-        padding: 12,
-        borderRadius: 8,
-        border: `1px solid ${active ? "#7E9EFF" : C.border}`,
-        background: active ? "rgba(126,158,255,0.04)" : C.bgWhite,
-        cursor: "pointer",
-        transition: "all 150ms",
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-      }}
-    >
-      <span style={{ fontSize: 13, fontWeight: 600, color: C.textPrimary }}>{title}</span>
-      <span style={{ fontSize: 12, color: C.textSecondary, lineHeight: "18px" }}>{desc}</span>
+    <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
+      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 90, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: 12, color: "rgba(0,0,0,0.7)" }}>Agent 推荐</span>
+        <div
+          style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
+          onMouseEnter={() => setTooltipVisible(true)}
+          onMouseLeave={() => setTooltipVisible(false)}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ cursor: "help", display: "block" }}>
+            <circle cx="7" cy="7" r="6" stroke="rgba(0,0,0,0.3)" strokeWidth="1" fill="none" />
+            <path d="M7 6V10M7 4.5V4" stroke="rgba(0,0,0,0.4)" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          {tooltipVisible && (
+            <div style={{
+              position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
+              padding: "6px 10px", borderRadius: 6, background: "rgba(0,0,0,0.85)", color: "#FFF",
+              fontSize: 12, lineHeight: "18px", whiteSpace: "nowrap", zIndex: 10,
+              pointerEvents: "none",
+            }}>
+              在对话中向你推荐能力匹配的Agent
+              <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid rgba(0,0,0,0.85)" }} />
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ flex: 1, position: "relative" }}>
+        <div
+          onClick={() => setDropOpen(!dropOpen)}
+          style={{
+            height: 32, padding: "0 12px", borderRadius: 8,
+            border: `1px solid ${dropOpen ? "#0052D9" : "#E6E9EF"}`,
+            background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "space-between",
+            cursor: "pointer", fontSize: 12, color: "rgba(0,0,0,0.9)",
+            fontFamily: "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          }}
+        >
+          <span style={{ color: "rgba(0,0,0,0.9)", fontSize: 12 }}>{value}</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: dropOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="rgba(0,0,0,0.5)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        {dropOpen && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+            background: "#FFFFFF", borderRadius: 8, border: "1px solid #E6E9EF",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)", zIndex: 10, overflow: "hidden",
+          }}>
+            {options.map((opt) => (
+              <div
+                key={opt}
+                onClick={() => { setValue(opt); setDropOpen(false); }}
+                style={{
+                  padding: "8px 12px", fontSize: 12, color: "rgba(0,0,0,0.9)", cursor: "pointer",
+                  background: value === opt ? "#F2F4F8" : "transparent",
+                }}
+                onMouseEnter={(e) => { if (value !== opt) (e.currentTarget as HTMLDivElement).style.background = "#F8F9FB"; }}
+                onMouseLeave={(e) => { if (value !== opt) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+              >
+                {opt}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+export { AgentRecommendField };

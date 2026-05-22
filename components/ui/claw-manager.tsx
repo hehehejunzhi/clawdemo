@@ -290,7 +290,7 @@ const PRESET_OPS_TEAM: CustomTeam = {
   members: [
     { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
     { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-    { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+    { id: "ops", name: "智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
   ],
   clusterImgs: [
@@ -303,7 +303,7 @@ const PRESET_OPS_TEAM: CustomTeam = {
 
 const ALL_AVAILABLE_MEMBERS: Omit<TeamMember, "role">[] = [
   { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-  { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+  { id: "ops", name: "智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
   { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
   { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", statusColor: "#FF7800" },
   { id: "lh", name: "Lighthouse", abbr: "LH", abbrBg: "#FFB834", category: "外部 Claw", statusColor: "#0CBF5B" },
@@ -382,8 +382,16 @@ export function TeamDetailModal({ team, onClose, onSave }: {
   const [formTags, setFormTags] = useState(
     team.members.length > 0 ? "运营, 数据分析, 日报" : ""
   );
+  const [nameError, setNameError] = useState("");
+
+  const NAME_REG = /^[\u4e00-\u9fa5a-zA-Z0-9_·]+$/;
+  const validateName = (v: string) => {
+    if (v.length > 0 && !NAME_REG.test(v)) setNameError("名称仅支持中文、英文、数字、下划线");
+    else setNameError("");
+  };
 
   const handleSave = () => {
+    if (nameError) return;
     onSave({ ...team, name: formName || team.name, desc: formDesc || team.desc });
   };
 
@@ -419,14 +427,17 @@ export function TeamDetailModal({ team, onClose, onSave }: {
         {/* Body */}
         <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
           {/* 团队名称 */}
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={labelStyle}>团队名称 <span style={{ color: "#F64041" }}>*</span></span>
-            <input value={formName} onChange={(e) => setFormName(e.target.value)}
-              placeholder="例如：大数据"
-              style={inputBase}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
-            />
+          <div style={{ display: "flex", alignItems: "flex-start" }}>
+            <span style={{ ...labelStyle, paddingTop: 8 }}>团队名称 <span style={{ color: "#F64041" }}>*</span></span>
+            <div style={{ flex: 1 }}>
+              <input value={formName} onChange={(e) => { setFormName(e.target.value); validateName(e.target.value); }}
+                placeholder="例如：大数据"
+                style={{ ...inputBase, borderColor: nameError ? "#F64041" : "#D6DBE3" }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = nameError ? "#F64041" : "#0052D9"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = nameError ? "#F64041" : "#D6DBE3"; }}
+              />
+              {nameError && <div style={{ fontSize: 12, color: "#F64041", marginTop: 4, lineHeight: "18px" }}>{nameError}</div>}
+            </div>
           </div>
 
           {/* 描述 */}
@@ -451,6 +462,9 @@ export function TeamDetailModal({ team, onClose, onSave }: {
               onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
             />
           </div>
+
+          {/* Agent 推荐 */}
+          <AgentRecommendSelect labelWidth={72} />
 
         </div>
 
@@ -572,66 +586,31 @@ function ExpertEditModal({ expert, onClose, onNavigateToSkillPlaza }: {
 export function DeleteConfirmModal({ teamName, onClose, onConfirm }: { teamName: string; onClose: () => void; onConfirm: () => void }) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 9000,
-        background: "rgba(0,0,0,0.35)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }} onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 12 }}
-        transition={{ duration: 0.2, ease: EASE }}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 420, background: C.bgWhite, borderRadius: 16,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
-          fontFamily: FONT, padding: "28px 28px 24px", position: "relative",
-        }}
+        initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 12 }}
+        transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
+        style={{ width: 480, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, padding: 24, display: "flex", flexDirection: "column", gap: 32 }}
       >
-        {/* 关闭按钮 */}
-        <div
-          onClick={onClose}
-          style={{
-            position: "absolute", top: 16, right: 16,
-            width: 28, height: 28, borderRadius: 8,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", transition: "background 100ms",
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+        {/* Header + 描述 */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary, lineHeight: "24px" }}>删除"{teamName}"</span>
+            <div onClick={onClose} style={{ width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M7.99994 8.94275L11.5354 12.4782L12.4782 11.5354L8.94275 7.99994L12.4782 4.46445L11.5354 3.52165L7.99994 7.05713L4.46429 3.52148L3.52148 4.46429L7.05713 7.99994L3.52155 11.5355L4.46436 12.4783L7.99994 8.94275Z" fill="rgba(0,0,0,0.9)" /></svg>
+            </div>
+          </div>
+          <span style={{ fontSize: 14, color: "rgba(0,0,0,0.9)", lineHeight: "22px" }}>
+            若删除该团队，相关的历史对话、远程连接等信息都将被删除，该操作不可逆。
+          </span>
         </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingRight: 32 }}>
-          <img src="/icons/detail/delete.svg" alt="" style={{ width: 20, height: 20 }} />
-          <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除团队 &quot;{teamName}&quot;</span>
-        </div>
-        <div style={{ fontSize: 14, color: C.textSecondary, lineHeight: "22px", marginBottom: 24 }}>
-          若删除该团队，相关的历史对话、远程连接等信息都将被删除，该操作不可逆。
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <button onClick={onClose} style={{
-            height: 36, padding: "0 24px", borderRadius: 100,
-            border: `1px solid ${C.border}`, background: C.bgWhite,
-            fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary,
-            cursor: "pointer", outline: "none",
-          }}>取消</button>
-          <button onClick={onConfirm} style={{
-            height: 36, padding: "0 24px", borderRadius: 100,
-            border: "none", background: C.error,
-            fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF",
-            cursor: "pointer", outline: "none",
-          }}>确认删除</button>
+        {/* Footer */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
+          <button onClick={onClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+          <button onClick={onConfirm} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: "#F64041", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>删除</button>
         </div>
       </motion.div>
     </motion.div>
@@ -896,17 +875,98 @@ function CreateExternalClawDialog({ open, onClose, onCreate }: {
   );
 }
 
+// ── Agent 推荐下拉字段 ──────────────────────────────────────
+function AgentRecommendSelect({ labelWidth = 90 }: { labelWidth?: number } = {}) {
+  const [value, setValue] = useState("每次询问");
+  const [dropOpen, setDropOpen] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const options = ["每次询问", "不再推荐"];
+  return (
+    <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
+      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: labelWidth, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+        <span>Agent 推荐</span>
+        <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }} onMouseEnter={() => setTooltipVisible(true)} onMouseLeave={() => setTooltipVisible(false)}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ cursor: "help", display: "block" }}>
+            <circle cx="7" cy="7" r="6" stroke="rgba(0,0,0,0.3)" strokeWidth="1" fill="none" />
+            <path d="M7 6V10M7 4.5V4" stroke="rgba(0,0,0,0.4)" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          {tooltipVisible && (
+            <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)", padding: "6px 10px", borderRadius: 6, background: "rgba(0,0,0,0.85)", color: "#FFF", fontSize: 12, lineHeight: "18px", whiteSpace: "nowrap", zIndex: 10, pointerEvents: "none" }}>
+              在对话中向你推荐能力匹配的Agent
+              <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid rgba(0,0,0,0.85)" }} />
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ flex: 1, position: "relative" }}>
+        <div onClick={() => setDropOpen(!dropOpen)} style={{ height: 32, padding: "0 12px", borderRadius: 8, border: `1px solid ${dropOpen ? C.brandCyan : C.border}`, background: C.bgWhite, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", fontSize: 12, color: C.textPrimary, fontFamily: FONT }}>
+          <span>{value}</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: dropOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}><path d="M3 4.5L6 7.5L9 4.5" stroke="rgba(0,0,0,0.5)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </div>
+        {dropOpen && (
+          <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: C.bgWhite, borderRadius: 8, border: `1px solid ${C.border}`, boxShadow: "0 4px 12px rgba(0,0,0,0.08)", zIndex: 10, overflow: "hidden" }}>
+            {options.map((opt) => (
+              <div key={opt} onClick={() => { setValue(opt); setDropOpen(false); }} style={{ padding: "8px 12px", fontSize: 12, color: C.textPrimary, cursor: "pointer", background: value === opt ? "#F2F4F8" : "transparent" }}
+                onMouseEnter={(e) => { if (value !== opt) (e.currentTarget as HTMLDivElement).style.background = "#F8F9FB"; }}
+                onMouseLeave={(e) => { if (value !== opt) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+              >{opt}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── 创建数字分身弹窗（与 CreateTeamDialog 对齐） ─────────────────
 function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClose: () => void; onCreate: (name: string, desc: string, tags: string) => void }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [tags, setTags] = useState("");
-  const isValid = name.trim().length > 0;
+  const [nameError, setNameError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  const handleCreate = () => { if (isValid) { onCreate(name.trim(), desc.trim(), tags.trim()); setName(""); setDesc(""); setTags(""); } };
-  const handleClose = () => { setName(""); setDesc(""); setTags(""); onClose(); };
+  const NAME_REG = /^[\u4e00-\u9fa5a-zA-Z0-9_·]+$/;
+  const validateName = (v: string) => {
+    if (v.length > 0 && !NAME_REG.test(v)) setNameError("名称仅支持中文、英文、数字、下划线");
+    else setNameError("");
+  };
 
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 72, paddingTop: 7 };
+  const isValid = name.trim().length > 0 && !nameError;
+
+  const handleCreate = () => {
+    if (!isValid) return;
+    setLoading(true);
+    setProgress(0);
+  };
+
+  // loading 进度动画
+  React.useEffect(() => {
+    if (!loading) return;
+    let frame: number;
+    let start: number | null = null;
+    const duration = 2000;
+    const animate = (ts: number) => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      setProgress(p);
+      if (p < 1) { frame = requestAnimationFrame(animate); }
+      else {
+        setTimeout(() => {
+          onCreate(name.trim(), desc.trim(), tags.trim());
+          setName(""); setDesc(""); setTags(""); setNameError(""); setLoading(false); setProgress(0);
+        }, 300);
+      }
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const handleClose = () => { if (loading) return; setName(""); setDesc(""); setTags(""); setNameError(""); onClose(); };
+
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 90, paddingTop: 7 };
   const fieldInputStyle: React.CSSProperties = {
     flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgWhite,
@@ -925,45 +985,69 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
           <motion.div
             initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
             transition={{ duration: 0.2, ease: EASE }}
-            style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column" }}
+            style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
           >
-            {/* Header */}
-            <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-              <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建自定义 Agent</span>
-              <div onClick={handleClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-              ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
-            </div>
+            {loading ? (
+              <div style={{ padding: "80px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+                <svg width="120" height="100" viewBox="0 0 120 100" fill="none">
+                  <path d="M60 20L90 50L60 40L30 50L60 20Z" fill="#D4D8E0" />
+                  <path d="M60 20L60 40L90 50L60 20Z" fill="#B8BEC8" />
+                  <path d="M60 40L60 60L90 50L60 40Z" fill="#C8CDD6" />
+                  <ellipse cx="60" cy="78" rx="30" ry="6" fill="rgba(0,0,0,0.06)" />
+                </svg>
+                <span style={{ fontSize: 18, fontWeight: 500, color: C.textPrimary }}>你自定义 Agent 正在创建，请稍等...</span>
+                <div style={{ width: "60%", height: 12, borderRadius: 6, background: "#E6E9EF", overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 6, background: C.textPrimary, width: `${progress * 100}%`, transition: "width 50ms linear" }} />
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div style={{ padding: "24px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                  <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>创建自定义 Agent</span>
+                  <div onClick={handleClose} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4 }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                  ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
+                </div>
 
-            {/* Body */}
-            <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* 名称 */}
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <div style={labelStyle}><span>名称 </span><span style={{ color: C.error }}>*</span></div>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：我的监控助手" style={fieldInputStyle}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-              </div>
-              {/* 描述 */}
-              <div style={{ display: "flex", alignItems: "flex-start" }}>
-                <div style={labelStyle}>描述</div>
-                <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="简要描述分身目标和用途" rows={2}
-                  style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-              </div>
-              {/* 标签 */}
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <div style={labelStyle}>标签</div>
-                <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化" style={fieldInputStyle}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-              </div>
-            </div>
+                {/* Body */}
+                <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* 名称 */}
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
+                    <div style={labelStyle}><span>名称 </span><span style={{ color: C.error }}>*</span></div>
+                    <div style={{ flex: 1 }}>
+                      <input value={name} onChange={(e) => { setName(e.target.value); validateName(e.target.value); }} placeholder="例如：我的监控助手"
+                        style={{ ...fieldInputStyle, borderColor: nameError ? C.error : C.border, width: "100%" }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = nameError ? C.error : C.brandCyan; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = nameError ? C.error : C.border; }} />
+                      {nameError && <div style={{ fontSize: 12, color: C.error, marginTop: 4, lineHeight: "18px" }}>{nameError}</div>}
+                    </div>
+                  </div>
+                  {/* 描述 */}
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
+                    <div style={labelStyle}>描述</div>
+                    <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="简要描述分身目标和用途" rows={2}
+                      style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
+                  </div>
+                  {/* 标签 */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={labelStyle}>标签</div>
+                    <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化" style={fieldInputStyle}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
+                  </div>
+                  {/* Agent 推荐 */}
+                  <AgentRecommendSelect />
+                </div>
 
-            {/* Footer */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgWhite, borderRadius: "0 0 16px 16px" }}>
-              <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-              <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
-            </div>
+                {/* Footer */}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgWhite, borderRadius: "0 0 16px 16px" }}>
+                  <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+                  <button onClick={handleCreate} disabled={!isValid} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
+                </div>
+              </>
+            )}
           </motion.div>
         </motion.div>
       )}
@@ -1058,22 +1142,24 @@ export function AvatarDeleteConfirm({ name, onCancel, onConfirm }: {
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 12 }}
         transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
-        style={{ width: 420, background: C.bgWhite, borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", fontFamily: FONT, padding: "28px 28px 24px", position: "relative" }}
+        style={{ width: 480, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, padding: 24, display: "flex", flexDirection: "column", gap: 32 }}
       >
-        <div onClick={onCancel} style={{ position: "absolute", top: 16, right: 16, width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 100ms" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-        ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingRight: 32 }}>
-          <img src="/icons/detail/delete.svg" alt="" style={{ width: 20, height: 20 }} />
-          <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除自定义 Agent &quot;{name}&quot;</span>
+        {/* Header + 描述 */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary, lineHeight: "24px" }}>删除"{name}"</span>
+            <div onClick={onCancel} style={{ width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M7.99994 8.94275L11.5354 12.4782L12.4782 11.5354L8.94275 7.99994L12.4782 4.46445L11.5354 3.52165L7.99994 7.05713L4.46429 3.52148L3.52148 4.46429L7.05713 7.99994L3.52155 11.5355L4.46436 12.4783L7.99994 8.94275Z" fill="rgba(0,0,0,0.9)" /></svg>
+            </div>
+          </div>
+          <span style={{ fontSize: 14, color: "rgba(0,0,0,0.9)", lineHeight: "22px" }}>
+            若删除该自定义 Agent，相关的历史对话、个人知识沉淀等信息都将被删除，该操作不可逆。
+          </span>
         </div>
-        <div style={{ fontSize: 14, color: C.textSecondary, lineHeight: "22px", marginBottom: 24 }}>
-          若删除该自定义 Agent，相关的历史对话、个人知识沉淀等信息都将被删除，该操作不可逆。
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <button onClick={onCancel} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: `1px solid ${C.border}`, background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-          <button onClick={onConfirm} style={{ height: 36, padding: "0 24px", borderRadius: 100, border: "none", background: C.error, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>确认删除</button>
+        {/* Footer */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
+          <button onClick={onCancel} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgWhite, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
+          <button onClick={onConfirm} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: "#F64041", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFF", cursor: "pointer", outline: "none" }}>删除</button>
         </div>
       </motion.div>
     </motion.div>
@@ -1086,10 +1172,17 @@ export function AvatarDetailModal({ data, onClose, onSave }: {
   const [formName, setFormName] = useState(data.name);
   const [formDesc, setFormDesc] = useState(data.desc);
   const [formTags, setFormTags] = useState(data.tags.join(", "));
+  const [nameError, setNameError] = useState("");
+
+  const NAME_REG = /^[\u4e00-\u9fa5a-zA-Z0-9_·]+$/;
+  const validateName = (v: string) => {
+    if (v.length > 0 && !NAME_REG.test(v)) setNameError("名称仅支持中文、英文、数字、下划线");
+    else setNameError("");
+  };
 
   const handleSave = () => {
+    if (nameError) return;
     const tags = formTags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean);
-    // 技能列表不在编辑弹窗内修改，沿用原值；头像同理
     onSave({ name: formName, desc: formDesc, tags, skills: data.skills, avatar: data.avatar });
   };
 
@@ -1129,13 +1222,16 @@ export function AvatarDetailModal({ data, onClose, onSave }: {
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 0", display: "flex", flexDirection: "column", gap: 20, scrollbarWidth: "none" }}>
           {/* 名称 */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={labelStyle}>名称 <span style={{ color: "#F64041" }}>*</span></span>
-            <input value={formName} onChange={(e) => setFormName(e.target.value)}
-              style={inputBase}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
-            />
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <span style={{ ...labelStyle, paddingTop: 8 }}>名称 <span style={{ color: "#F64041" }}>*</span></span>
+            <div style={{ flex: 1 }}>
+              <input value={formName} onChange={(e) => { setFormName(e.target.value); validateName(e.target.value); }}
+                style={{ ...inputBase, borderColor: nameError ? "#F64041" : "#D6DBE3" }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = nameError ? "#F64041" : "#0052D9"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = nameError ? "#F64041" : "#D6DBE3"; }}
+              />
+              {nameError && <div style={{ fontSize: 12, color: "#F64041", marginTop: 4, lineHeight: "18px" }}>{nameError}</div>}
+            </div>
           </div>
 
           {/* 描述 */}
@@ -1159,6 +1255,9 @@ export function AvatarDetailModal({ data, onClose, onSave }: {
               onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
             />
           </div>
+
+          {/* Agent 推荐 */}
+          <AgentRecommendSelect labelWidth={112} />
         </div>
 
         {/* Footer: 取消 + 保存 */}
@@ -1260,7 +1359,7 @@ export default function ClawManager({
     const defaultMembers: TeamMember[] = [
       { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "ops", name: "智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ];
     const newTeam: CustomTeam = { id: `team-${Date.now()}`, name, desc: desc || "自定义协作团队", members: defaultMembers };
     setCustomTeams((prev) => [...prev, newTeam]);
@@ -1346,7 +1445,7 @@ export default function ClawManager({
       members: [
         { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
         { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-        { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+        { id: "ops", name: "智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
       ],
     };
 

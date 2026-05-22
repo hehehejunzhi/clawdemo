@@ -629,7 +629,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求。正在检索相关记忆，匹配历史约定信息",
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "已检索到相关记忆：", muted: true },
           { text: "• 目标集群：emr-ccrnhw11（华东区）" },
@@ -772,7 +772,7 @@ const T16_MEMORY_PHASES: { prompt: string; replies: ExpertReplyDataType[] }[] = 
   {
     prompt: "展示「AI 自动沉淀记忆」",
     replies: [{
-      icon: "/agents/ops-expert.png", name: "数据运维专家",
+      icon: "/agents/ops-expert.png", name: "智能管家",
       lines: [
         { text: "我已自动将以下信息沉淀为记忆：", muted: true },
         { text: "\u2022 用户常用集群为 emr-ccrnhw11（华东区）" },
@@ -829,6 +829,7 @@ export default function Home() {
   const [createExpertOpen, setCreateExpertOpen] = useState(false);
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [memberManageOpen, setMemberManageOpen] = useState(false);
   const [teamMembers, setTeamMembers] = useState<string[]>(["dev", "analysis", "ops"]);
   const [showSkillPlaza, setShowSkillPlaza] = useState(false);
   const [showClawManager, setShowClawManager] = useState(false);
@@ -1431,19 +1432,7 @@ export default function Home() {
            详情页（AgentDetail / TeamDetail）下若 SecondaryNav 已收起，则完全隐藏窄栏，
            展开/新建对话入口由详情页 header 提供，避免左侧出现 68px 空白带 */}
       {targetView === "dataclaw" && !(detailView && isSecondaryCollapsed) && <SecondaryNav collapsed={isSecondaryCollapsed} onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); setDetailView(null); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); setDetailView(null); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); setDetailView(null); }} onTaskClick={(task) => { setDetailView(null); handleTaskClick(task); }} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
-        // 左栏点击 Section Header：
-        // - 团队 / 内置专家 / 自定义 Agent → 打开详情页
-        // - 外部 Agent → 维持原"召唤气泡"行为
-        const isTeam = registry.teams.some((t) => t.id === agentId);
-        const isExpert = registry.experts.some((e) => e.id === agentId);
-        const isAvatar = registry.avatars.some((a) => a.id === agentId);
-        if (isTeam || isExpert || isAvatar) {
-          setShowSkillPlaza(false);
-          setShowClawManager(false);
-          setDetailView({ type: isTeam ? "team" : "agent", id: agentId, from: "secondary-nav" });
-          return;
-        }
-        // 非团队/专家/自定义：保持原召唤逻辑
+      // 左栏点击 Section Header：回到聊天界面 + 召唤对应 banner
         setShowSkillPlaza(false);
         setShowClawManager(false);
         setDetailView(null);
@@ -1580,7 +1569,7 @@ export default function Home() {
                   chatInputRef.current?.setAgent(team.name);
                   handleSelectAgent(team.id);
                 }}
-                onMemberManage={() => { setDetailView(null); setShowClawManager(true); }}
+                onMemberManage={() => { setMemberManageOpen(true); }}
                 onMemberClick={(memberId) => {
                   setDetailView({ type: "agent", id: memberId, from: detailView.from, parentTeamId: team.id });
                 }}
@@ -2380,8 +2369,8 @@ export default function Home() {
                 if (!avatar && !external) return null;
                 const name = avatar?.name ?? external?.name ?? "";
                 const avatarItem = avatar
-                  ? { letter: avatar.letter, bg: avatar.bg }
-                  : { letter: external!.abbr, bg: external!.bg };
+                  ? (avatar.avatar ? avatar.avatar : { letter: avatar.letter, bg: avatar.bg })
+                  : (external!.avatar ? external!.avatar : { letter: external!.abbr, bg: external!.bg });
                 return (
                   <motion.div
                     key={`agent-banner-${selectedAgentId}`}
@@ -2404,7 +2393,7 @@ export default function Home() {
                       marginLeft: 20,
                       paddingBottom: 28,
                     }}>
-                      <AgentSummonBanner avatar={avatarItem} name={name} nameColor={avatarItem.bg} />
+                      <AgentSummonBanner avatar={avatarItem} name={name} nameColor={typeof avatarItem === "string" ? undefined : avatarItem.bg} />
                     </div>
                   </motion.div>
                 );
@@ -2757,7 +2746,7 @@ export default function Home() {
           setTeamMembers(ids);
         } else {
           // 单 agent 模式：创建新团队，以选中 agent 名称拼接为团队名
-          const MEMBER_NAMES: Record<string, string> = { dev: "Rigel·数据开发专家", analysis: "Vega·数据分析专家", ops: "Orion·数据运维专家", "my-ops": "运营助手", coze: "Coze" };
+          const MEMBER_NAMES: Record<string, string> = { dev: "Rigel·数据开发专家", analysis: "Vega·数据分析专家", ops: "Orion·智能管家", "my-ops": "运营助手", coze: "Coze" };
           const SHORT_NAMES: Record<string, string> = { dev: "Rigel", analysis: "Vega", ops: "Orion", "my-ops": "运营助手", coze: "Coze" };
           const teamName = ids.map(id => SHORT_NAMES[id] || id).join("+");
           const newTeamId = `team-${Date.now()}`;
@@ -2765,13 +2754,14 @@ export default function Home() {
             const nameMap: Record<string, { name: string; abbr: string; abbrBg: string; avatar?: string }> = {
               dev: { name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", avatar: "/agents/dev-expert.png" },
               analysis: { name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", avatar: "/agents/analysis-expert.png" },
-              ops: { name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", avatar: "/agents/ops-expert.png" },
-              "my-ops": { name: "运营助手", abbr: "营", abbrBg: "#4B79FF" },
+              ops: { name: "智能管家", abbr: "运", abbrBg: "#00DBB0", avatar: "/agents/ops-expert.png" },
+              "my-ops": { name: "运营助手", abbr: "营", abbrBg: "#4B79FF", avatar: "/agents/preset-avatars/avatar-01.png" },
               coze: { name: "Coze", abbr: "C", abbrBg: "#BE63FF" },
             };
             const m = nameMap[id] ?? { name: id, abbr: id.charAt(0), abbrBg: "#999" };
             return { id, name: m.name, abbr: m.abbr, abbrBg: m.abbrBg, category: "内置专家", role: "执行者" as const, statusColor: "#0CBF5B", avatar: m.avatar };
           });
+          const clusterImgs = members.map(m => m.avatar ? m.avatar : { letter: m.abbr, bg: m.abbrBg });
           setRegistry(prev => ({
             ...prev,
             teams: [{
@@ -2779,6 +2769,7 @@ export default function Home() {
               name: teamName,
               desc: `由 ${teamName} 组成的协作团队`,
               members,
+              clusterImgs,
             }, ...prev.teams],
             // 将当前任务移到新团队
             tasks: prev.tasks.map(task => task.id === activeTaskId ? { ...task, agentId: newTeamId } : task),
@@ -2797,6 +2788,45 @@ export default function Home() {
           if (joinNames && activeTaskId) setJoinTaskMessages(prev => ({ ...prev, [activeTaskId]: { text: `${joinNames} 加入任务`, avatars } }));
         }
       }} />
+
+      {/* 团队详情页 — 成员管理弹窗 */}
+      <AddMemberDialog
+        open={memberManageOpen}
+        onClose={() => setMemberManageOpen(false)}
+        title="成员管理"
+        isTeamChat={true}
+        currentMembers={(() => {
+          const team = detailView?.type === "team" ? registry.teams.find(t => t.id === detailView.id) : undefined;
+          if (!team) return ["dev", "analysis", "ops"];
+          // 直接使用 member.id，因为 ALL_MEMBERS 的 id 与 team.members 的 id 一致
+          const validIds = ["dev", "analysis", "ops", "my-ops", "coze"];
+          return team.members.map(m => {
+            // 兼容 analyst → analysis 的映射
+            if (m.id === "analyst") return "analysis";
+            return validIds.includes(m.id) ? m.id : m.id;
+          });
+        })()}
+        onConfirm={(ids) => {
+          const team = detailView?.type === "team" ? registry.teams.find(t => t.id === detailView.id) : undefined;
+          if (!team) return;
+          const nameMap: Record<string, { name: string; abbr: string; abbrBg: string; avatar?: string; category?: string }> = {
+            dev: { name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", avatar: "/agents/dev-expert.png", category: "数据工程" },
+            analysis: { name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", avatar: "/agents/analysis-expert.png", category: "数据分析" },
+            ops: { name: "智能管家", abbr: "运", abbrBg: "#00DBB0", avatar: "/agents/ops-expert.png", category: "智能管家" },
+            "my-ops": { name: "运营助手", abbr: "营", abbrBg: "#4B79FF", avatar: "/agents/preset-avatars/avatar-01.png", category: "个人定制运营助手，沉淀日常经验" },
+            coze: { name: "Coze", abbr: "C", abbrBg: "#BE63FF", category: "外部 Agent" },
+          };
+          const members = ids.map(id => {
+            const m = nameMap[id] ?? { name: id, abbr: id.charAt(0), abbrBg: "#999" };
+            return { id, name: m.name, abbr: m.abbr, abbrBg: m.abbrBg, category: m.category || "内置专家", role: "执行者" as const, statusColor: "#0CBF5B", avatar: m.avatar };
+          });
+          const clusterImgs = members.map(m => m.avatar ? m.avatar : { letter: m.abbr, bg: m.abbrBg });
+          setRegistry(prev => ({
+            ...prev,
+            teams: prev.teams.map(t => t.id === team.id ? { ...t, members, clusterImgs } : t),
+          }));
+        }}
+      />
 
       {/* 团队详情页 — 编辑弹窗 */}
       <AnimatePresence>

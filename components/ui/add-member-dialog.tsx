@@ -17,8 +17,8 @@ interface MemberItem {
 const ALL_MEMBERS: MemberItem[] = [
   { id: "dev", name: "Rigel·数据开发专家", desc: "负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。", avatar: "/agents/dev-expert.png" },
   { id: "analysis", name: "Vega·数据分析专家", desc: "从海量数据提取关键洞察，构建数据模型与可视化报告。", avatar: "/agents/analysis-expert.png" },
-  { id: "ops", name: "Orion·数据运维专家", desc: "负责集群监控、性能监测、故障排查与容量规划。", avatar: "/agents/ops-expert.png" },
-  { id: "my-ops", name: "运营助手", desc: "个人定制的运营分析助手，沉淀了日常运营经验。", avatar: "", letterAvatar: { letter: "运", bg: "#4B79FF" } },
+  { id: "ops", name: "Orion·智能管家", desc: "负责集群监控、性能监测、故障排查与容量规划。", avatar: "/agents/ops-expert.png" },
+  { id: "my-ops", name: "运营助手", desc: "个人定制运营助手，沉淀日常经验。", avatar: "/agents/preset-avatars/avatar-01.png" },
   { id: "coze", name: "Coze", desc: "外部 Agent · 已连接", avatar: "", letterAvatar: { letter: "C", bg: "#BE63FF" } },
 ];
 
@@ -29,6 +29,8 @@ interface AddMemberDialogProps {
   onConfirm?: (selectedIds: string[]) => void;
   /** 团队对话模式：启用人数 ≤ 2 限制 */
   isTeamChat?: boolean;
+  /** 自定义弹窗标题，默认 "添加成员" */
+  title?: string;
 }
 
 // ── MemberRow ──────────────────────────────────────────────────
@@ -47,7 +49,7 @@ function MemberRow({ member, isSelected, isLocked, lockTooltip, onToggle }: {
         display: "flex",
         alignItems: "center",
         height: 92,
-        padding: "0 20px",
+        padding: "0",
         borderRadius: 16,
         cursor: isLocked ? "default" : "pointer",
         background: "#FFFFFF",
@@ -127,7 +129,7 @@ function MemberRow({ member, isSelected, isLocked, lockTooltip, onToggle }: {
   );
 }
 
-export default function AddMemberDialog({ open, onClose, currentMembers = ["dev", "analysis", "ops"], onConfirm, isTeamChat = true }: AddMemberDialogProps) {
+export default function AddMemberDialog({ open, onClose, currentMembers = ["dev", "analysis", "ops"], onConfirm, isTeamChat = true, title = "添加成员" }: AddMemberDialogProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set(currentMembers));
   const [search, setSearch] = useState("");
 
@@ -210,7 +212,7 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
               flexShrink: 0,
             }}>
               <span style={{ fontSize: 16, fontWeight: 500, color: "rgba(0,0,0,0.9)", lineHeight: "24px" }}>
-                添加成员
+                {title}
               </span>
               <button
                 onClick={onClose}
@@ -261,7 +263,7 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
             <div style={{
               flex: 1,
               overflow: "auto",
-              padding: "16px 24px",
+              padding: "8px 24px 0",
               scrollbarWidth: "none",
             }}>
               <div style={{ display: "flex", flexDirection: "column", gap: -12 }}>
@@ -287,7 +289,7 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
             </div>
 
             {/* Divider */}
-            <div style={{ height: 1, background: "#E6E9F0", margin: "0 0", flexShrink: 0 }} />
+            <div style={{ height: 1, background: "#E6E9F0", margin: "0", flexShrink: 0 }} />
 
             {/* Footer */}
             <div style={{

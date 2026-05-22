@@ -17,7 +17,7 @@ const MEMBER_MAP: Record<string, { name: string; avatar: string; letterAvatar?: 
   dev: { name: "Rigel·数据开发专家", avatar: "/agents/dev-expert.png" },
   analysis: { name: "Vega·数据分析专家", avatar: "/agents/analysis-expert.png" },
   analyst: { name: "Vega·数据分析专家", avatar: "/agents/analysis-expert.png" },
-  ops: { name: "Orion·数据运维专家", avatar: "/agents/ops-expert.png" },
+  ops: { name: "Orion·智能管家", avatar: "/agents/ops-expert.png" },
   "my-ops": { name: "运营助手", avatar: "", letterAvatar: { letter: "运", bg: "#4B79FF" } },
   marketing: { name: "营销助手", avatar: "/agents/ops-expert.png" },
   coze: { name: "Coze", avatar: "", letterAvatar: { letter: "C", bg: "#BE63FF" } },

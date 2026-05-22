@@ -737,8 +737,11 @@ export default function TeamDetail({
     "ops-expert": "Lv. 35",      // A 阶
     "analysis-expert": "Lv. 88", // S 阶
   };
-  const memberCards = team.members.slice(0, 3).map((m) => {
-    const expert = experts.find((e) => e.fullName.includes(m.name.replace("大数据", "")) || m.name.includes(e.shortTitle));
+  const memberCards = team.members.map((m) => {
+    // 匹配内置专家：优先按 id 映射，然后按名称模糊匹配
+    const idToExpertId: Record<string, string> = { dev: "dev-expert", analysis: "analysis-expert", analyst: "analysis-expert", ops: "ops-expert" };
+    const expert = experts.find((e) => e.id === idToExpertId[m.id]) ||
+      experts.find((e) => e.fullName.includes(m.name.replace("大数据", "").replace("大", "")) || m.name.includes(e.shortTitle) || m.name.includes(e.codeName));
     return {
       id: m.id,
       /** 关联到内置专家 id（命中时存在），用于对外触发详情页 / 对话 */
@@ -754,7 +757,9 @@ export default function TeamDetail({
   // 头像 + 名称：按 team.members 顺序提取（同 index 关联）
   const memberAvatarPairs = team.members
     .map((m) => {
-      const expert = experts.find((e) => e.fullName.includes(m.name.replace("大数据", "")) || m.name.includes(e.shortTitle));
+      const idToExpertId2: Record<string, string> = { dev: "dev-expert", analysis: "analysis-expert", analyst: "analysis-expert", ops: "ops-expert" };
+      const expert = experts.find((e) => e.id === idToExpertId2[m.id]) ||
+        experts.find((e) => e.fullName.includes(m.name.replace("大数据", "").replace("大", "")) || m.name.includes(e.shortTitle) || m.name.includes(e.codeName));
       return { avatar: m.avatar, name: expert?.fullName ?? m.name };
     })
     .filter((p) => Boolean(p.avatar));
@@ -961,16 +966,18 @@ export default function TeamDetail({
                 <button
                   onClick={onMemberManage}
                   style={{
-                    height: 24, padding: "0 8px", borderRadius: 6, border: "none",
+                    height: 22, padding: "0 12px", borderRadius: 4, border: "none",
                     background: "transparent", cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 4,
-                    fontFamily: FONT, fontSize: 12, fontWeight: 400,
-                    color: C.brand,
+                    fontFamily: FONT, fontSize: 12, fontWeight: 500,
+                    color: "rgba(0,0,0,0.9)",
+                    lineHeight: "22px",
                     transition: "background 100ms",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
+                  <img src="/icons/detail/settings.svg" alt="" style={{ width: 16, height: 16, opacity: 0.9 }} />
                   成员管理
                 </button>
               )}

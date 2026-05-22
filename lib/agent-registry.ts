@@ -153,7 +153,7 @@ export const DEFAULT_TEAMS: Team[] = [
     members: [
       { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "ops", name: "智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ],
   },
   {
@@ -164,13 +164,13 @@ export const DEFAULT_TEAMS: Team[] = [
       "/agents/dev-expert.png",
       "/agents/analysis-expert.png",
       "/agents/ops-expert.png",
-      { letter: "运", bg: "#4B79FF" },
+      "/agents/preset-avatars/avatar-01.png",
     ],
     members: [
       { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
-      { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
+      { id: "ops", name: "智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "my-ops", name: "运营助手", abbr: "营", abbrBg: "#4B79FF", category: "个人定制运营助手，沉淀日常经验", role: "执行者", statusColor: "#FF7800", avatar: "/agents/preset-avatars/avatar-01.png" },
     ],
   },
 ];
