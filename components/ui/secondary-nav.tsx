@@ -438,10 +438,13 @@ interface SecondaryNavProps {
   registry?: import("@/lib/agent-registry").AgentRegistry;
   /** 点击左栏团队/专家/分身/外部 Agent 的 Section Header 时触发 */
   onAgentSelect?: (agentId: string, label: string) => void;
+  /** 底部设置浮层中的注销动作 */
+  onLogout?: () => void;
 }
 
-export default function SecondaryNav({ collapsed: collapsedProp, onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu, registry, onAgentSelect }: SecondaryNavProps) {
+export default function SecondaryNav({ collapsed: collapsedProp, onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu, registry, onAgentSelect, onLogout }: SecondaryNavProps) {
   const [collapsedState, setCollapsedState] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const collapsed = collapsedProp ?? collapsedState;
   const setCollapsed = (next: boolean) => {
     if (collapsedProp === undefined) setCollapsedState(next);
@@ -727,6 +730,105 @@ export default function SecondaryNav({ collapsed: collapsedProp, onCollapsedChan
             </>
           )}
 
+        </div>
+      </div>
+
+      {/* ── 底部设置入口 ── */}
+      <div
+        style={{
+          ...contentFade,
+          opacity: collapsed ? 0 : 1,
+          pointerEvents: collapsed ? "none" : "auto",
+          flexShrink: 0,
+          padding: collapsed ? 0 : "0 12px 18px",
+          position: "relative",
+        }}
+      >
+        {settingsOpen && (
+          <>
+            <div
+              style={{ position: "fixed", inset: 0, zIndex: 99 }}
+              onClick={() => setSettingsOpen(false)}
+            />
+            <div
+              style={{
+                position: "absolute",
+                left: collapsed ? 56 : 12,
+                bottom: 58,
+                zIndex: 100,
+                width: collapsed ? 32 : "calc(100% - 24px)",
+                boxSizing: "border-box",
+                padding: 8,
+                borderRadius: 16,
+                background: "#FFFFFF",
+                boxShadow: "0px 8px 12px rgba(0,0,0,0.05), 0px 8px 24px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+              }}
+            >
+              <div
+                onClick={() => {
+                  setSettingsOpen(false);
+                  onLogout?.();
+                }}
+                style={{
+                  height: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "3px 8px",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  gap: 12,
+                  transition: "background 0.15s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                  <path d="M6.2 3.2H4.3C3.58 3.2 3 3.78 3 4.5v7c0 .72.58 1.3 1.3 1.3h1.9" stroke="rgba(0,0,0,0.9)" strokeWidth="1.3" strokeLinecap="round" />
+                  <path d="M8.2 8h4.4M10.9 5.8 13.1 8l-2.2 2.2" stroke="rgba(0,0,0,0.9)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span style={{
+                  fontFamily: FONT, fontSize: 14, fontWeight: 400,
+                  lineHeight: "22px", color: C.textPrimary,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}>注销</span>
+              </div>
+            </div>
+          </>
+        )}
+        <div
+          onClick={() => setSettingsOpen((v) => !v)}
+          style={{
+            height: 34,
+            width: collapsed ? 32 : "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: collapsed ? "center" : "flex-start",
+            padding: collapsed ? 0 : "0 12px",
+            borderRadius: 20,
+            cursor: "pointer",
+            gap: 12,
+            backgroundColor: settingsOpen ? C.hoverBg : "transparent",
+            transition: "background 100ms",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = settingsOpen ? C.hoverBg : "transparent"; }}
+          title="设置"
+        >
+          <img src="/icons/detail/settings.svg" alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
+          {!collapsed && (
+            <span style={{
+              fontFamily: FONT, fontSize: 14, fontWeight: 400,
+              lineHeight: "22px", color: C.textPrimary,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              设置
+            </span>
+          )}
         </div>
       </div>
     </motion.div>

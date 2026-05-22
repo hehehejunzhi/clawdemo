@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Pencil, Trash2 } from "lucide-react";
 import { ClusterAvatar } from "@/components/ui/secondary-nav";
 import { IconAiNewChat } from "@/components/ui/wedata-icons";
 import { PillTabs } from "@/components/ui/skill-plaza";
@@ -839,17 +838,17 @@ export default function TeamDetail({
           lineHeight: "26px", color: C.textPrimary,
         }}>{team.name}（{team.members.length}）</span>
 
-        {/* 右上角操作（非 preset 团队展示编辑 / 删除） */}
-        {!team.preset && (onEdit || onDelete) && (
+        {/* 右上角操作（除默认大数据团队外，其他团队展示编辑 / 删除） */}
+        {team.id !== "bigdata-team" && (onEdit || onDelete) && (
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
             {onEdit && (
               <HeaderActionButton label="编辑" onClick={onEdit}>
-                <Pencil size={16} strokeWidth={1.5} color="rgba(0,0,0,0.9)" />
+                <img src="/icons/detail/edit.svg" alt="" style={{ width: 16, height: 16 }} />
               </HeaderActionButton>
             )}
             {onDelete && (
               <HeaderActionButton label="删除" onClick={onDelete}>
-                <Trash2 size={16} strokeWidth={1.5} color="rgba(0,0,0,0.9)" />
+                <img src="/icons/detail/delete.svg" alt="" style={{ width: 16, height: 16 }} />
               </HeaderActionButton>
             )}
           </div>

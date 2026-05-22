@@ -22,7 +22,7 @@ import ExpertReplies, { DispatchText, ConfirmCard, type ConfirmCardData, type Ex
 import CreateExpertDialog from "@/components/ui/create-expert-dialog";
 import CreateTeamDialog from "@/components/ui/create-team-dialog";
 import SkillPlaza from "@/components/ui/skill-plaza";
-import ClawManager, { AvatarDetailModal, AvatarDeleteConfirm, type AvatarData } from "@/components/ui/claw-manager";
+import ClawManager, { AvatarDetailModal, AvatarDeleteConfirm, TeamDetailModal, DeleteConfirmModal, type AvatarData, type CustomTeam } from "@/components/ui/claw-manager";
 import AgentDetail from "@/components/ui/agent-detail";
 import TeamDetail from "@/components/ui/team-detail";
 import { DEFAULT_REGISTRY, type AgentRegistry } from "@/lib/agent-registry";
@@ -620,9 +620,11 @@ export default function Home() {
     | { type: "agent" | "team"; id: string; from: "claw-manager" | "secondary-nav"; parentTeamId?: string }
     | null
   >(null);
-  // 自定义 Agent 详情页右上角"编辑/删除"操作的弹窗 state
+  // 自定义 Agent / 团队详情页右上角"编辑/删除"操作的弹窗 state
   const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
   const [deletingAvatarFromDetailId, setDeletingAvatarFromDetailId] = useState<string | null>(null);
+  const [editingTeamFromDetailId, setEditingTeamFromDetailId] = useState<string | null>(null);
+  const [deletingTeamFromDetailId, setDeletingTeamFromDetailId] = useState<string | null>(null);
   // 自定义 Agent 详情页"配置 Skill"全屏弹窗 state（保留 SkillPlaza 内容，外层加 modal 容器）
   const [showSkillPlazaModal, setShowSkillPlazaModal] = useState(false);
   // Agent Registry — Agent 广场/左侧工具栏/对话下拉共享的唯一数据源
@@ -1254,7 +1256,7 @@ export default function Home() {
                   }}
                   onEdit={isCustomAvatar ? () => setEditingAvatarId(detailView.id) : undefined}
                   onDelete={isCustomAvatar ? () => setDeletingAvatarFromDetailId(detailView.id) : undefined}
-                  onConfigSkill={isCustomAvatar ? () => setShowSkillPlazaModal(true) : undefined}
+                  onConfigSkill={() => setShowSkillPlazaModal(true)}
                 />
               );
             }
@@ -1278,8 +1280,8 @@ export default function Home() {
                 onMemberClick={(memberId) => {
                   setDetailView({ type: "agent", id: memberId, from: detailView.from, parentTeamId: team.id });
                 }}
-                onEdit={() => { setDetailView(null); setShowClawManager(true); }}
-                onDelete={() => { setDetailView(null); }}
+                onEdit={team.id !== "bigdata-team" ? () => setEditingTeamFromDetailId(team.id) : undefined}
+                onDelete={team.id !== "bigdata-team" ? () => setDeletingTeamFromDetailId(team.id) : undefined}
               />
             );
           })()}
@@ -2172,6 +2174,61 @@ export default function Home() {
       />
       <CreateTeamDialog open={createTeamOpen} onClose={() => setCreateTeamOpen(false)} />
 
+      {/* 团队详情页 — 编辑弹窗 */}
+      <AnimatePresence>
+        {editingTeamFromDetailId && (() => {
+          const team = registry.teams.find((t) => t.id === editingTeamFromDetailId);
+          if (!team || team.id === "bigdata-team") return null;
+          const teamData: CustomTeam = {
+            id: team.id,
+            name: team.name,
+            desc: team.desc,
+            members: team.members,
+            clusterImgs: team.clusterImgs,
+          };
+          return (
+            <TeamDetailModal
+              team={teamData}
+              onClose={() => setEditingTeamFromDetailId(null)}
+              onSave={(updated) => {
+                setRegistry((prev) => ({
+                  ...prev,
+                  teams: prev.teams.map((t) => t.id === editingTeamFromDetailId
+                    ? { ...t, name: updated.name, desc: updated.desc, members: updated.members, clusterImgs: undefined }
+                    : t
+                  ),
+                }));
+                setEditingTeamFromDetailId(null);
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* 团队详情页 — 删除二次确认 */}
+      <AnimatePresence>
+        {deletingTeamFromDetailId && (() => {
+          const team = registry.teams.find((t) => t.id === deletingTeamFromDetailId);
+          if (!team || team.id === "bigdata-team") return null;
+          return (
+            <DeleteConfirmModal
+              teamName={team.name}
+              onClose={() => setDeletingTeamFromDetailId(null)}
+              onConfirm={() => {
+                const idToDel = deletingTeamFromDetailId;
+                setRegistry((prev) => ({
+                  ...prev,
+                  teams: prev.teams.filter((t) => t.id !== idToDel),
+                }));
+                if (selectedTeamId === idToDel) setSelectedTeamId(null);
+                setDeletingTeamFromDetailId(null);
+                setDetailView(null);
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
       {/* 自定义 Agent 详情页 — 编辑弹窗 */}
       <AnimatePresence>
         {editingAvatarId && (() => {
@@ -2226,12 +2283,15 @@ export default function Home() {
         })()}
       </AnimatePresence>
 
-      {/* 自定义 Agent 详情页 —「配置 Skill」全屏弹窗（复用 SkillPlaza 内容；锁定到当前 Agent 不可切换） */}
+      {/* Agent 详情页 —「配置 Skill」全屏弹窗（复用 SkillPlaza 内容；锁定到当前 Agent 不可切换） */}
       <AnimatePresence>
         {showSkillPlazaModal && (() => {
           // 从 detailView 推断当前 Agent name；若 detailView 已退出则不渲染
-          const av = detailView ? registry.avatars.find((a) => a.id === detailView.id) : undefined;
-          if (!av) return null;
+          const lockedAgentName = detailView?.type === "agent"
+            ? (registry.avatars.find((a) => a.id === detailView.id)?.name
+              ?? registry.experts.find((e) => e.id === detailView.id)?.shortTitle)
+            : undefined;
+          if (!lockedAgentName) return null;
           return (
           <motion.div
             initial={{ opacity: 0 }}
@@ -2259,7 +2319,7 @@ export default function Home() {
                 position: "relative",
               }}
             >
-              <SkillPlaza onBack={() => setShowSkillPlazaModal(false)} registry={registry} lockedAgentName={av.name} />
+              <SkillPlaza onBack={() => setShowSkillPlazaModal(false)} registry={registry} lockedAgentName={lockedAgentName} />
             </motion.div>
           </motion.div>
           );

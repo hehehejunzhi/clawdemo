@@ -684,6 +684,11 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
     ? customAvatarSkills.filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
     : customAvatarSkills;
   const filteredHubSkills = kw ? HUB_SKILLS.filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw)) : HUB_SKILLS;
+  // 详情页锁定模式下，大数据 Agent 与自定义 Agent 使用同一套「配置 Skill」内容结构。
+  const useConfigLayout = !isBuiltin || Boolean(lockedAgentName);
+  const lockedBuiltinInstalledSkills = lockedAgentName && isBuiltin ? filteredSkills : [];
+  const installedCount = (lockedAgentName && isBuiltin ? skills.length : currentAvatarInstalledList.length) + installedList.length;
+  const presetInstallableSkills = lockedAgentName && isBuiltin ? [] : customUninstalledSkills;
 
   // Tab 列表：内置专家隐藏整条 tab 栏；自定义 Agent 显示双 tab
   const tabs = [
@@ -695,7 +700,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
     <div style={{
       width: "100%", height: "100%",
       display: "flex", flexDirection: "column",
-      fontFamily: FONT, background: C.bg,
+      fontFamily: FONT, background: lockedAgentName ? C.bgWhite : C.bg,
     }}>
       {/* 响应式卡片栅格：<1440 → 2 列；1440-1920 → 3 列；≥1920 → 4 列 */}
       <style>{`
@@ -718,10 +723,10 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 24px",
         borderBottom: `1px solid ${C.border}`,
-        background: C.bg,
+        background: lockedAgentName ? C.bgWhite : C.bg,
       }}>
         <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>
-          {lockedAgentName ? `配置 Skill · ${lockedAgentName}` : "技能广场"}
+          {lockedAgentName ? "配置 Skill" : "技能广场"}
         </span>
         {/* 锁定模式（详情页弹窗）下显示关闭按钮 */}
         {lockedAgentName && onBack && (
@@ -840,7 +845,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
             scrollbarWidth: "none", position: "relative",
           }}>
             <AnimatePresence mode="wait">
-              {isBuiltin ? (
+              {!useConfigLayout ? (
                 filteredSkills.length > 0 ? (
                   <motion.div
                     key={`preset-${activeCat}-${kw}`}
@@ -889,6 +894,18 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                 >
                   {/* ── 已安装区域 ── */}
                   <div className="skill-grid">
+                    {/* 锁定的大数据 Agent 已安装的内置 skill（使用自定义 Agent 同款卡片结构） */}
+                    {lockedBuiltinInstalledSkills.map((s) => (
+                      <SkillCard
+                        key={`locked-builtin-installed-${activeCat}-${s.title}`}
+                        icon={s.icon} iconBg={s.iconBg}
+                        title={s.title} desc={s.desc}
+                        sourceTag="内置 Skill"
+                        on={isOn(`locked-builtin-installed-${activeCat}-${s.title}`)}
+                        onToggle={() => toggle(`locked-builtin-installed-${activeCat}-${s.title}`)}
+                        onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                      />
+                    ))}
                     {/* 当前自定义 Agent 已安装的内置 skill（带 Toggle） */}
                     {currentAvatar && currentAvatarInstalledList
                       .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
@@ -956,7 +973,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
 
                   {/* ── 可安装区域：搜索时展示"为你找到 N 个结果"+合并列表；否则展示 Tab + 对应列表 ── */}
                   {kw ? (() => {
-                    const hitCustomUninstalled = customUninstalledSkills
+                    const hitCustomUninstalled = presetInstallableSkills
                       .filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
                     const hitHubUninstalled = HUB_SKILLS
                       .filter((s) => availableList.includes(s.title) && !installedList.includes(s.title))
@@ -1057,9 +1074,9 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                   </div>
                   {activeTab === "preset" ? (
                     /* 内置 Skill：展示尚未安装的 skill（HubCard 样式，含安装按钮） */
-                    customUninstalledSkills.length > 0 ? (
+                    presetInstallableSkills.length > 0 ? (
                       <div className="skill-grid">
-                        {customUninstalledSkills.map((s) => (
+                        {presetInstallableSkills.map((s) => (
                           <HubCard
                             key={`${activeCat}-preset-${s.title}`}
                             title={s.title} desc={s.desc}

@@ -262,8 +262,8 @@ function ConnectedBadge() {
 }
 
 // ── Main component ────────────────────────────────────────────
-type TeamMember = { id: string; name: string; abbr: string; abbrBg: string; category: string; role: "调度者" | "执行者" | "观察者"; statusColor: string; avatar?: string };
-type CustomTeam = {
+export type TeamMember = { id: string; name: string; abbr: string; abbrBg: string; category: string; role: "调度者" | "执行者" | "观察者"; statusColor: string; avatar?: string };
+export type CustomTeam = {
   id: string;
   name: string;
   desc: string;
@@ -374,7 +374,7 @@ function MoreMenu({ onManage, onDelete, visible = true }: { onManage: () => void
 
 
 // ── 编辑团队弹窗（全编辑态） ─────────────────────────────
-function TeamDetailModal({ team, onClose, onSave }: {
+export function TeamDetailModal({ team, onClose, onSave }: {
   team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void;
 }) {
   const [formName, setFormName] = useState(team.name);
@@ -382,23 +382,9 @@ function TeamDetailModal({ team, onClose, onSave }: {
   const [formTags, setFormTags] = useState(
     team.members.length > 0 ? "运营, 数据分析, 日报" : ""
   );
-  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
-    () => new Set(team.members.map((m) => m.id))
-  );
-
-  const toggleMember = (id: string) => {
-    setSelectedMembers((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
-      return n;
-    });
-  };
 
   const handleSave = () => {
-    const members = ALL_AVAILABLE_MEMBERS
-      .filter((m) => selectedMembers.has(m.id))
-      .map((m): TeamMember => ({ ...m, role: "执行者" }));
-    onSave({ ...team, name: formName || team.name, desc: formDesc || team.desc, members });
+    onSave({ ...team, name: formName || team.name, desc: formDesc || team.desc });
   };
 
   const inputBase: React.CSSProperties = {
@@ -466,30 +452,6 @@ function TeamDetailModal({ team, onClose, onSave }: {
             />
           </div>
 
-          {/* 成员 */}
-          <div style={{ display: "flex", alignItems: "flex-start" }}>
-            <span style={{ ...labelStyle, paddingTop: 2 }}>成员 <span style={{ color: "#F64041" }}>*</span></span>
-            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px 0" }}>
-              {ALL_AVAILABLE_MEMBERS.map((m) => {
-                const checked = selectedMembers.has(m.id);
-                return (
-                  <div key={m.id} onClick={() => toggleMember(m.id)}
-                    style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
-                    <div style={{
-                      width: 16, height: 16, borderRadius: 3, flexShrink: 0,
-                      border: `1.5px solid ${checked ? "#0052D9" : "#D6DBE3"}`,
-                      background: checked ? "#0052D9" : "transparent",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      transition: "all 100ms",
-                    }}>
-                      {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                    </div>
-                    <span style={{ fontSize: 14, color: "rgba(0,0,0,0.9)" }}>{m.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         {/* Footer: 取消 + 保存 */}
@@ -607,7 +569,7 @@ function ExpertEditModal({ expert, onClose, onNavigateToSkillPlaza }: {
 }
 
 // ── 删除确认弹窗 ──────────────────────────────────────────────
-function DeleteConfirmModal({ teamName, onClose, onConfirm }: { teamName: string; onClose: () => void; onConfirm: () => void }) {
+export function DeleteConfirmModal({ teamName, onClose, onConfirm }: { teamName: string; onClose: () => void; onConfirm: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -651,11 +613,7 @@ function DeleteConfirmModal({ teamName, onClose, onConfirm }: { teamName: string
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingRight: 32 }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="9" fill={C.error} />
-            <path d="M10 6v5" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="10" cy="14" r="0.75" fill="#FFF" />
-          </svg>
+          <img src="/icons/detail/delete.svg" alt="" style={{ width: 20, height: 20 }} />
           <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除团队 &quot;{teamName}&quot;</span>
         </div>
         <div style={{ fontSize: 14, color: C.textSecondary, lineHeight: "22px", marginBottom: 24 }}>
@@ -1107,7 +1065,7 @@ export function AvatarDeleteConfirm({ name, onCancel, onConfirm }: {
           onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
         ><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" /></svg></div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingRight: 32 }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill={C.error} /><path d="M10 6v5" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" /><circle cx="10" cy="14" r="0.75" fill="#FFF" /></svg>
+          <img src="/icons/detail/delete.svg" alt="" style={{ width: 20, height: 20 }} />
           <span style={{ fontSize: 16, fontWeight: 600, color: C.textPrimary }}>删除自定义 Agent &quot;{name}&quot;</span>
         </div>
         <div style={{ fontSize: 14, color: C.textSecondary, lineHeight: "22px", marginBottom: 24 }}>

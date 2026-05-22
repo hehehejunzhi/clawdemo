@@ -2,7 +2,6 @@
 
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Pencil, Trash2 } from "lucide-react";
 import { SkillDetailModal, PillTabs, type SkillDetail } from "@/components/ui/skill-plaza";
 import { IconAiNewChat } from "@/components/ui/wedata-icons";
 import type { BuiltinExpert } from "@/lib/agent-registry";
@@ -19,6 +18,7 @@ const C = {
   textSecondary: "rgba(0,0,0,0.7)",
   textTertiary: "rgba(0,0,0,0.5)",
   textQuaternary: "rgba(0,0,0,0.35)",
+  textDisabled: "rgba(0,0,0,0.3)",
   brand: "#00B6C3",
   brandLight: "#E6F7F9",
   green: "#00B96B",
@@ -1423,7 +1423,7 @@ export interface AgentDetailProps {
   onEdit?: () => void;
   /** 仅自定义 Agent 才会传入：右上角删除入口（弹出二次确认） */
   onDelete?: () => void;
-  /** 仅自定义 Agent 才会传入：「Agent 技能」右上角配置入口（打开 SkillPlaza 弹窗） */
+  /** 「Agent 技能」右上角配置入口（打开 SkillPlaza 弹窗） */
   onConfigSkill?: () => void;
 }
 
@@ -1520,12 +1520,12 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
             {onEdit && (
               <HeaderActionButton label="编辑" onClick={onEdit}>
-                <Pencil size={16} strokeWidth={1.5} color="rgba(0,0,0,0.9)" />
+                <img src="/icons/detail/edit.svg" alt="" style={{ width: 16, height: 16 }} />
               </HeaderActionButton>
             )}
             {onDelete && (
               <HeaderActionButton label="删除" onClick={onDelete}>
-                <Trash2 size={16} strokeWidth={1.5} color="rgba(0,0,0,0.9)" />
+                <img src="/icons/detail/delete.svg" alt="" style={{ width: 16, height: 16 }} />
               </HeaderActionButton>
             )}
           </div>
@@ -1650,15 +1650,14 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
             {/* 成长值进度条 */}
             <div>
               <div style={{
-                display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                fontFamily: FONT, fontSize: 13, fontWeight: 400, lineHeight: "20px",
-                color: C.textPrimary, marginBottom: 6,
+                display: "flex", alignItems: "center", gap: 4,
+                fontFamily: FONT, lineHeight: "22px", height: 22,
               }}>
-                <span>成长值</span>
-                <span>{profile.growth.current} / {profile.growth.next}</span>
+                <span style={{ fontSize: 13, fontWeight: 400, lineHeight: "20px", color: C.textSecondary }}>成长值</span>
+                <span style={{ fontSize: 12, fontWeight: 400, color: C.textDisabled }}>{profile.growth.current}/{profile.growth.next}</span>
               </div>
-              <div style={{ width: "100%", height: 6, borderRadius: 3, background: C.borderLight, overflow: "hidden" }}>
-                <div style={{ width: `${Math.min(100, Math.round((profile.growth.current / profile.growth.next) * 100))}%`, height: "100%", borderRadius: 3, background: tier.mainGradient }} />
+              <div style={{ width: "100%", height: 10, borderRadius: 5, background: "rgba(0,0,0,0.06)", overflow: "hidden", position: "relative" }}>
+                <div style={{ position: "absolute", left: 2, top: 2, width: `${Math.min(100, Math.round((profile.growth.current / profile.growth.next) * 100))}%`, height: 6, borderRadius: 3, background: tier.mainGradient }} />
               </div>
             </div>
 
@@ -1726,23 +1725,21 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
             <div style={{ flex: 1, minWidth: 0 }}>
               <Card
                 title={`Agent 技能 (${profile.skills.length})`}
-                extra={expert.id === "custom-avatar" && onConfigSkill ? (
+                extra={onConfigSkill ? (
                   <button
                     onClick={onConfigSkill}
                     style={{
-                      height: 24, padding: "0 8px", borderRadius: 6, border: "none",
+                      height: 24, padding: "0 6px", borderRadius: 6, border: "none",
                       background: "transparent", cursor: "pointer",
                       display: "flex", alignItems: "center", gap: 4,
-                      fontFamily: FONT, fontSize: 12, fontWeight: 400,
-                      color: C.brand,
+                      fontFamily: FONT, fontSize: 12, fontWeight: 500,
+                      lineHeight: "20px", color: C.textPrimary,
                       transition: "background 100ms",
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                   >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    </svg>
+                    <img src="/icons/detail/settings.svg" alt="" style={{ width: 16, height: 16 }} />
                     配置 Skill
                   </button>
                 ) : undefined}
