@@ -9,9 +9,9 @@ import type { ClusterAvatarItem } from "@/components/ui/secondary-nav";
 
 export interface BuiltinExpert {
   id: string;
-  /** 完整名称，用于 Agent 广场卡片标题，如 "Rigel·数据开发专家" */
+  /** 完整名称，用于 Agent 广场卡片标题，如 "Rigel·数据工程专家" */
   fullName: string;
-  /** 简短名称，用于对话下拉/左栏，如 "数据开发专家"（无前缀） */
+  /** 简短名称，用于对话下拉/左栏，如 "数据工程专家"（无前缀） */
   shortTitle: string;
   /** 英文代号，用于召唤气泡 */
   codeName: string;
@@ -55,6 +55,8 @@ export interface CustomAvatar {
   /** 色块+首字的颜色 */
   bg: string;
   letter: string;
+  /** 可选：圆形头像图片，传入时优先用图片，没有再回退到 bg+letter */
+  avatar?: string;
   /** 预置分身（例如"运营助手"），区别于用户自建 */
   preset?: boolean;
 }
@@ -69,6 +71,8 @@ export interface ExternalAgent {
   platformLabel: string;
   apiUrl?: string;
   state: ExternalAgentState;
+  /** 可选：圆形头像图片，传入时优先用图片 */
+  avatar?: string;
   preset?: boolean;
 }
 
@@ -99,8 +103,8 @@ export interface AgentRegistry {
 export const DEFAULT_EXPERTS: BuiltinExpert[] = [
   {
     id: "dev-expert",
-    fullName: "Rigel·数据开发专家",
-    shortTitle: "数据开发专家",
+    fullName: "Rigel·数据工程专家",
+    shortTitle: "数据工程专家",
     codeName: "Rigel",
     desc: "负责数据建模、调优执行，将原始数据转化为可分析的高质量数据资产。",
     avatar: "/agents/dev-expert.png",
@@ -123,8 +127,8 @@ export const DEFAULT_EXPERTS: BuiltinExpert[] = [
   },
   {
     id: "ops-expert",
-    fullName: "Orion·数据运维专家",
-    shortTitle: "数据运维专家",
+    fullName: "Orion·智能管家",
+    shortTitle: "智能管家",
     codeName: "Orion",
     desc: "负责集群监控、性能监测、故障排查与容量规划，确保数据平台高可用。",
     avatar: "/agents/ops-expert.png",
@@ -139,7 +143,7 @@ export const DEFAULT_TEAMS: Team[] = [
   {
     id: "bigdata-team",
     name: "大数据团队",
-    desc: "包含数据开发、分析、运维专家的协作团队",
+    desc: "数据开发、分析、运维协作团队",
     preset: true,
     clusterImgs: [
       "/agents/dev-expert.png",
@@ -147,9 +151,9 @@ export const DEFAULT_TEAMS: Team[] = [
       "/agents/ops-expert.png",
     ],
     members: [
-      { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+      { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
     ],
   },
   {
@@ -163,9 +167,9 @@ export const DEFAULT_TEAMS: Team[] = [
       { letter: "运", bg: "#4B79FF" },
     ],
     members: [
-      { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+      { id: "dev", name: "大数据工程专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
       { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
-      { id: "ops", name: "大数据运维专家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+      { id: "ops", name: "大智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
       { id: "my-ops", name: "我的运营助手", abbr: "营", abbrBg: "#4B79FF", category: "数字分身", role: "执行者", statusColor: "#FF7800" },
     ],
   },
@@ -184,6 +188,8 @@ export const DEFAULT_AVATARS: CustomAvatar[] = [
     ],
     bg: "#4B79FF",
     letter: "运",
+    // 预置头像合集（preset-avatars/avatar-01.png）；其它默认/新建头像统一来自该合集
+    avatar: "/agents/preset-avatars/avatar-01.png",
     preset: true,
   },
 ];
@@ -191,11 +197,12 @@ export const DEFAULT_AVATARS: CustomAvatar[] = [
 export const DEFAULT_EXTERNALS: ExternalAgent[] = [
   {
     id: "lh2",
-    name: "Coze",
-    abbr: "C",
+    name: "Lighthouse",
+    abbr: "L",
     bg: "#BE63FF",
-    platformLabel: "Coze",
+    platformLabel: "Lighthouse",
     state: "connected",
+    avatar: "/agents/preset-avatars/avatar-02.png",
     preset: true,
   },
 ];
@@ -212,13 +219,13 @@ export const DEFAULT_TASKS: AgentTask[] = [
   { id: "t14", title: "展示\u201C自进化-Skill\u201D", status: "check", agentId: "bigdata-team" },
   { id: "t16", title: "记忆功能", status: "check", agentId: "bigdata-team" },
   { id: "t15", title: "AI一键拉人", status: "check", agentId: "ops-team" },
-  // Rigel·数据开发专家
+  // Rigel·数据工程专家
   { id: "t7", title: "单 Agent 手动拉人", status: "loading", agentId: "dev-expert" },
   { id: "t8", title: "ODS 层数据接入验证", status: "check", agentId: "dev-expert" },
   // Vega·数据分析专家
   { id: "t9", title: "用户留存率趋势分析", status: "pending", agentId: "analysis-expert" },
   { id: "t10", title: "GMV 周报数据提取", status: "check", agentId: "analysis-expert" },
-  // Orion·数据运维专家
+  // Orion·智能管家
   { id: "t11", title: "元数据血缘扫描", status: "loading", agentId: "ops-expert" },
   // 运营协作团队
   { id: "t12", title: "运营周报看板搭建", status: "check", agentId: "ops-team" },

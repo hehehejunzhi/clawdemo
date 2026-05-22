@@ -294,12 +294,12 @@ export const getLetterTextColor = (bg?: string) => {
 
 export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; size?: number }) {
   const containerSize = size;
-  // 比例基准：size=32 时 sub=18, overlap=4, strokeW=1.2
+  // 比例基准：size=32 时 sub=18, overlap=4；中间缝隙保持固定 1.2px，不随 size 放大
   const sub = size * (18 / 32);
   const overlap = size * (4 / 32);
   const step = sub - overlap;
   const r = sub / 2;
-  const strokeW = size * (1.2 / 32);
+  const strokeW = 1.2;
   const rMask = r + strokeW;
 
   // 上排起点：让 (sub + step) 居中于 containerSize
@@ -395,7 +395,7 @@ export function ClusterAvatar({ imgs, size = 32 }: { imgs: ClusterAvatarItem[]; 
               <span style={{
                 fontFamily: FONT,
                 fontSize: size * (10 / 32),
-                fontWeight: 500,
+                fontWeight: 600,
                 color: getLetterTextColor(item.bg),
                 lineHeight: 1,
               }}>
@@ -433,6 +433,8 @@ function SingleAvatar({ src }: { src: string }) {
 interface SecondaryNavProps {
   onToggle?: () => void;
   onCollapsedChange?: (collapsed: boolean) => void;
+  /** 受控收起状态；传入时由父组件维护 collapsed，否则由内部 state 维护 */
+  collapsed?: boolean;
   onNewTask?: () => void;
   onSkillPlaza?: () => void;
   onClawManager?: () => void;
@@ -443,10 +445,18 @@ interface SecondaryNavProps {
   registry?: import("@/lib/agent-registry").AgentRegistry;
   /** 点击左栏团队/专家/分身/外部 Agent 的 Section Header 时触发 */
   onAgentSelect?: (agentId: string, label: string) => void;
+  /** 底部设置浮层中的注销动作 */
+  onLogout?: () => void;
 }
 
-export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu, registry, onAgentSelect }: SecondaryNavProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function SecondaryNav({ collapsed: collapsedProp, onCollapsedChange, onNewTask, onSkillPlaza, onClawManager, onTaskClick, activeTaskId, activeMenu, registry, onAgentSelect, onLogout }: SecondaryNavProps) {
+  const [collapsedState, setCollapsedState] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const collapsed = collapsedProp ?? collapsedState;
+  const setCollapsed = (next: boolean) => {
+    if (collapsedProp === undefined) setCollapsedState(next);
+    onCollapsedChange?.(next);
+  };
 
   const contentFade: React.CSSProperties = {
     transition: `opacity ${CONTENT_FADE}s ease`,
@@ -512,7 +522,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
               <ToolbarButton onClick={() => {}} title="搜索">
                 <img src="/icons/nav/2.svg" alt="" style={{ width: 16, height: 16 }} />
               </ToolbarButton>
-              <ToolbarButton onClick={() => { setCollapsed(true); onCollapsedChange?.(true); }} title="收起面板">
+              <ToolbarButton onClick={() => { setCollapsed(true); }} title="收起面板">
                 <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
               </ToolbarButton>
             </div>
@@ -527,7 +537,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           pointerEvents: collapsed ? "auto" : "none",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <ToolbarButton onClick={() => { setCollapsed(false); onCollapsedChange?.(false); }} title="展开面板">
+          <ToolbarButton onClick={() => { setCollapsed(false); }} title="展开面板">
             <img src="/icons/nav/3.svg" alt="" style={{ width: 16, height: 16 }} />
           </ToolbarButton>
         </div>
@@ -581,8 +591,7 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
           flexDirection: "column",
           gap: 2,
         }}>
-          <NavMenuItem icon="/icons/nav/5.svg" label="技能广场" active={activeMenu === "skill-plaza"} onClick={onSkillPlaza} />
-          <NavMenuItem icon="/icons/nav/6.svg" label="Agent 广场" active={activeMenu === "claw-manager"} onClick={onClawManager} />
+          <NavMenuItem icon="/icons/nav/5.svg" label="Agent 广场" active={activeMenu === "claw-manager"} onClick={onClawManager} />
         </div>
 
         {/* 下区：团队 & 专家列表（可折叠） */}
@@ -659,13 +668,16 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
                     onHeaderClick={() => onAgentSelect?.(av.id, av.name)}
                     header={(expanded) => (
                       <SectionHeader
-                        avatar={
-                          <div style={{
-                            width: 32, height: 32, borderRadius: 100, flexShrink: 0,
-                            background: av.bg, display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>
-                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: getLetterTextColor(av.bg), lineHeight: 1 }}>{av.letter}</span>
-                          </div>
+                        avatar={av.avatar
+                          ? <SingleAvatar src={av.avatar} />
+                          : (
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 100, flexShrink: 0,
+                              background: av.bg, display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: getLetterTextColor(av.bg), lineHeight: 1 }}>{av.letter}</span>
+                            </div>
+                          )
                         }
                         label={av.name}
                         expanded={expanded}
@@ -694,13 +706,16 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
                     onHeaderClick={() => onAgentSelect?.(ex.id, ex.name)}
                     header={(expanded) => (
                       <SectionHeader
-                        avatar={
-                          <div style={{
-                            width: 32, height: 32, borderRadius: 100, flexShrink: 0,
-                            background: ex.bg, display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>
-                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, color: getLetterTextColor(ex.bg), lineHeight: 1 }}>{ex.abbr}</span>
-                          </div>
+                        avatar={ex.avatar
+                          ? <SingleAvatar src={ex.avatar} />
+                          : (
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 100, flexShrink: 0,
+                              background: ex.bg, display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: getLetterTextColor(ex.bg), lineHeight: 1 }}>{ex.abbr}</span>
+                            </div>
+                          )
                         }
                         label={ex.name}
                         expanded={expanded}
@@ -722,6 +737,105 @@ export default function SecondaryNav({ onCollapsedChange, onNewTask, onSkillPlaz
             </>
           )}
 
+        </div>
+      </div>
+
+      {/* ── 底部设置入口 ── */}
+      <div
+        style={{
+          ...contentFade,
+          opacity: collapsed ? 0 : 1,
+          pointerEvents: collapsed ? "none" : "auto",
+          flexShrink: 0,
+          padding: collapsed ? 0 : "0 12px 18px",
+          position: "relative",
+        }}
+      >
+        {settingsOpen && (
+          <>
+            <div
+              style={{ position: "fixed", inset: 0, zIndex: 99 }}
+              onClick={() => setSettingsOpen(false)}
+            />
+            <div
+              style={{
+                position: "absolute",
+                left: collapsed ? 56 : 12,
+                bottom: 58,
+                zIndex: 100,
+                width: collapsed ? 32 : "calc(100% - 24px)",
+                boxSizing: "border-box",
+                padding: 8,
+                borderRadius: 16,
+                background: "#FFFFFF",
+                boxShadow: "0px 8px 12px rgba(0,0,0,0.05), 0px 8px 24px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+              }}
+            >
+              <div
+                onClick={() => {
+                  setSettingsOpen(false);
+                  onLogout?.();
+                }}
+                style={{
+                  height: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "3px 8px",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  gap: 12,
+                  transition: "background 0.15s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                  <path d="M6.2 3.2H4.3C3.58 3.2 3 3.78 3 4.5v7c0 .72.58 1.3 1.3 1.3h1.9" stroke="rgba(0,0,0,0.9)" strokeWidth="1.3" strokeLinecap="round" />
+                  <path d="M8.2 8h4.4M10.9 5.8 13.1 8l-2.2 2.2" stroke="rgba(0,0,0,0.9)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span style={{
+                  fontFamily: FONT, fontSize: 14, fontWeight: 400,
+                  lineHeight: "22px", color: C.textPrimary,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}>注销</span>
+              </div>
+            </div>
+          </>
+        )}
+        <div
+          onClick={() => setSettingsOpen((v) => !v)}
+          style={{
+            height: 34,
+            width: collapsed ? 32 : "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: collapsed ? "center" : "flex-start",
+            padding: collapsed ? 0 : "0 12px",
+            borderRadius: 20,
+            cursor: "pointer",
+            gap: 12,
+            backgroundColor: settingsOpen ? C.hoverBg : "transparent",
+            transition: "background 100ms",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = C.hoverBg; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = settingsOpen ? C.hoverBg : "transparent"; }}
+          title="设置"
+        >
+          <img src="/icons/detail/settings.svg" alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />
+          {!collapsed && (
+            <span style={{
+              fontFamily: FONT, fontSize: 14, fontWeight: 400,
+              lineHeight: "22px", color: C.textPrimary,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              设置
+            </span>
+          )}
         </div>
       </div>
     </motion.div>

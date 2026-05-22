@@ -64,7 +64,7 @@ interface ArtifactGroup {
 
 const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
   {
-    expert: "数据运维专家过程产物",
+    expert: "智能管家过程产物",
     icon: "/agents/ops-expert.png",
     items: [
       { id: "1", title: "2025 年 6 至 7 月各地区的复购率设计方案.html", description: "数据读取脚本 · 从源表读取原始数据" },
@@ -74,7 +74,7 @@ const MOCK_ARTIFACT_GROUPS: ArtifactGroup[] = [
     ],
   },
   {
-    expert: "数据开发专家过程产物",
+    expert: "数据工程专家过程产物",
     icon: "/agents/dev-expert.png",
     items: [
       { id: "5", title: "read_source_data.md", description: "数据读取脚本 · 从源表读取原始数据" },
@@ -225,7 +225,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                   <div style={{ display: "flex" }}>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 64, flexShrink: 0, whiteSpace: "nowrap" }}>执行 Agent</span>
-                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>{singleExpert ? "数据运维专家" : "大数据团队"}</span>
+                      <span style={{ fontSize: 12, color: TEXT_PRIMARY }}>{singleExpert ? "智能管家" : "大数据团队"}</span>
                     </div>
                     <div style={{ width: "50%", display: "flex", gap: 16 }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 64, flexShrink: 0, whiteSpace: "nowrap" }}>状态</span>
@@ -271,7 +271,7 @@ export default function ArtifactsPanel({ open, onClose, phase = 1, singleExpert 
                         <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
                           <div style={{ width: "60%" }}>
                             <ExpertCard
-                              name="数据运维专家"
+                              name="智能管家"
                               tasks={[
                                 { label: "资源监控", icon: "/icons/dag/9.svg", status: phase >= 1 ? "done" : "pending" },
                                 { label: "自动扩缩容", icon: "/icons/dag/10.svg", status: phase >= 2 ? "done" : "active" },
@@ -906,7 +906,7 @@ function DagCardRowWithMerge({ phase, setSelectedArtifact, allArtifacts }: {
         </div>
         <div ref={card2Ref} style={{ flex: 1, minWidth: 0 }}>
           <ExpertCard
-            name="数据开发专家"
+            name="数据工程专家"
             tasks={[
               { label: "HDFS 完整性检查", icon: "/icons/dag/12.svg", status: phase >= 2 ? "done" : phase >= 1.5 ? "active" : "pending" },
               { label: "血缘追踪", icon: "/icons/dag/13.svg", status: phase >= 2 ? "done" : phase >= 1.5 ? "active" : "pending" },
@@ -926,7 +926,7 @@ function DagCardRowWithMerge({ phase, setSelectedArtifact, allArtifacts }: {
         </div>
         <div ref={card3Ref} style={{ flex: 1, minWidth: 0 }}>
           <ExpertCard
-            name="数据运维专家"
+            name="智能管家"
             tasks={[
               { label: "资源监控", icon: "/icons/dag/9.svg", status: "pending" },
               { label: "自动扩缩容", icon: "/icons/dag/10.svg", status: "pending" },

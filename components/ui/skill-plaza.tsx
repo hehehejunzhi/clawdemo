@@ -21,7 +21,7 @@ const C = {
 } as const;
 
 // ── 内置专家列表（用于判断是否显示预置 Skill tab）──────────
-const BUILTIN_EXPERTS = new Set(["数据开发专家", "数据分析专家", "数据运维专家"]);
+const BUILTIN_EXPERTS = new Set(["数据工程专家", "数据分析专家", "智能管家"]);
 
 // ── Toast 组件（顶部展示，支持 success/error）─────────────────
 function Toast({ message, visible, type, onDone }: { message: string; visible: boolean; type?: "success" | "error"; onDone: () => void }) {
@@ -71,9 +71,9 @@ function Toast({ message, visible, type, onDone }: { message: string; visible: b
 }
 
 // ── Skill 详情弹窗 ──────────────────────────────────────────
-type SkillDetail = { title: string; desc: string; category: string; version: string; author: string };
+export type SkillDetail = { title: string; desc: string; category: string; version: string; author: string };
 
-function SkillDetailModal({ detail, onClose }: { detail: SkillDetail; onClose: () => void }) {
+export function SkillDetailModal({ detail, onClose }: { detail: SkillDetail; onClose: () => void }) {
   // 点击遮罩关闭
   return (
     <motion.div
@@ -144,6 +144,101 @@ function SkillDetailModal({ detail, onClose }: { detail: SkillDetail; onClose: (
         ))}
       </motion.div>
     </motion.div>
+  );
+}
+
+// ── 胶囊 Tab 组件（Figma 767_17327）─────────────────────────
+// 白色指示器跨 tab 滑动 + 双层文字（normal / semibold）交叉淡入。
+// 默认 layoutId 为 `pill-tabs-indicator`，多实例并存时通过 layoutId prop 区分。
+export interface PillTabItem<Id extends string = string> {
+  id: Id;
+  label: string;
+}
+
+export function PillTabs<Id extends string = string>({
+  tabs,
+  activeId,
+  onChange,
+  layoutId = "pill-tabs-indicator",
+  size = "md",
+}: {
+  tabs: ReadonlyArray<PillTabItem<Id>>;
+  activeId: Id;
+  onChange: (id: Id) => void;
+  /** 多实例并存时显式区分，避免 framer-motion layoutId 冲突 */
+  layoutId?: string;
+  /** md（默认 44/40，padding 16）/ sm（32/28，padding 12） */
+  size?: "md" | "sm";
+}) {
+  const outerH = size === "sm" ? 32 : 44;
+  const innerH = size === "sm" ? 28 : 40;
+  const padX = size === "sm" ? 12 : 16;
+  const fontSize = size === "sm" ? 13 : 14;
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center",
+      height: outerH, padding: 2,
+      borderRadius: 100,
+      background: "#F2F4F8",
+      boxShadow: "inset 0 2px 2px rgba(0,0,0,0.03)",
+      position: "relative",
+    }}>
+      {tabs.map((tab) => {
+        const selected = activeId === tab.id;
+        return (
+          <div
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            style={{
+              position: "relative",
+              height: innerH, padding: `0 ${padX}px`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              borderRadius: 100,
+              cursor: "pointer",
+              zIndex: 1,
+            }}
+          >
+            {selected && (
+              <motion.div
+                layoutId={layoutId}
+                style={{
+                  position: "absolute", inset: 0,
+                  borderRadius: 100,
+                  background: "rgba(255,255,255,0.90)",
+                  boxShadow: "0 6px 12px -6px rgba(0,0,0,0.04), 0 3px 6px -3px rgba(0,0,0,0.08)",
+                  zIndex: 0,
+                }}
+                transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.9 }}
+              />
+            )}
+            <span style={{
+              position: "relative", zIndex: 1,
+              display: "inline-grid",
+              gridTemplateAreas: "\"stack\"",
+              placeItems: "center",
+              whiteSpace: "nowrap",
+            }}>
+              <span style={{
+                gridArea: "stack",
+                fontFamily: FONT, fontSize, fontWeight: 400,
+                color: "rgba(0,0,0,0.70)",
+                opacity: selected ? 0 : 1,
+                textAlign: "center",
+                transition: "opacity 180ms ease",
+              }}>{tab.label}</span>
+              <span style={{
+                gridArea: "stack",
+                fontFamily: FONT, fontSize, fontWeight: 600,
+                color: "#000000",
+                opacity: selected ? 1 : 0,
+                textAlign: "center",
+                transition: "opacity 180ms ease",
+              }}>{tab.label}</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -421,12 +516,15 @@ interface SkillPlazaProps {
   onBack?: () => void;
   /** Agent 广场/左栏共享 registry；传入时按其动态渲染左侧分类 */
   registry?: AgentRegistry;
+  /** 锁定到指定 Agent（按 shortTitle / 自定义 Agent name 匹配）：隐藏左侧分类列、不可切换。
+   *  用于「Agent 详情页 → 配置 Skill」入口的弹窗复用场景。 */
+  lockedAgentName?: string;
 }
 
-export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
+export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillPlazaProps) {
   // ── 内置专家：固定来自 registry.experts（shortTitle） ──
   const builtinExperts = useMemo(
-    () => registry?.experts.map((e) => e.shortTitle) ?? ["数据开发专家", "数据分析专家", "数据运维专家"],
+    () => registry?.experts.map((e) => e.shortTitle) ?? ["数据工程专家", "数据分析专家", "智能管家"],
     [registry?.experts]
   );
   // 自定义分身：来自 registry.avatars（id + name，允许同名）
@@ -437,7 +535,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
   // 是否为内置专家（内置专家才有预置 Skill tab）
   const isBuiltinCat = useCallback((cat: string) => builtinExperts.includes(cat), [builtinExperts]);
 
-  const [activeCat, setActiveCat] = useState(builtinExperts[0] ?? "");
+  const [activeCat, setActiveCat] = useState(lockedAgentName ?? builtinExperts[0] ?? "");
   const [activeTab, setActiveTab] = useState<"preset" | "hub">("preset");
   const [toggleState, setToggleState] = useState<Record<string, boolean>>({});
   const [installedExpanded, setInstalledExpanded] = useState(false);
@@ -500,8 +598,16 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
     setActiveTab("preset");
   };
 
-  // 当 registry 变动导致当前 activeCat 失效（例如被删除），自动回退到第一个可用分类
+  // 当 registry 变动导致当前 activeCat 失效（例如被删除），自动回退到第一个可用分类。
+  // 锁定模式下：始终保持 activeCat = lockedAgentName，不切换。
   useEffect(() => {
+    if (lockedAgentName) {
+      if (activeCat !== lockedAgentName) {
+        setActiveCat(lockedAgentName);
+        setActiveTab("preset");
+      }
+      return;
+    }
     const allCats = [...builtinExperts, ...customAgents.map((a) => a.name)];
     if (allCats.length > 0 && !allCats.includes(activeCat)) {
       const next = builtinExperts[0] ?? customAgents[0]?.name;
@@ -510,11 +616,11 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
         setActiveTab("preset");
       }
     }
-  }, [builtinExperts, customAgents, activeCat]);
+  }, [builtinExperts, customAgents, activeCat, lockedAgentName]);
 
   // 按分类定义不同的技能（含详情弹窗需要的 category/version/author）
   const SKILLS_BY_CAT: Record<string, { icon: string; iconBg: string; title: string; desc: string; defaultTag?: boolean; category: string; version: string; author: string }[]> = {
-    "数据开发专家": [
+    "数据工程专家": [
       { icon: "E", iconBg: "#3BAFB9", title: "ETL 流水线编排", desc: "可视化拖拽构建数据加工 DAG，自动生成调度配置。", category: "数据开发", version: "1.0.0", author: "WeData Team" },
       { icon: "S", iconBg: "#4C8DEF", title: "Schema 变更检测", desc: "实时监控上游表结构变化，自动预警并生成迁移脚本。", category: "数据开发", version: "1.1.0", author: "WeData Team" },
       { icon: "血", iconBg: "#7B68EE", title: "血缘分析引擎", desc: "自动追踪字段级血缘，输出影响面评估报告。", defaultTag: true, category: "数据治理", version: "2.0.0", author: "WeData Team" },
@@ -525,7 +631,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
       { icon: "归", iconBg: "#E8524A", title: "异常归因分析", desc: "自动检测指标波动并定位根因维度。", category: "数据分析", version: "1.3.0", author: "WeData Team" },
       { icon: "预", iconBg: "#FF7800", title: "趋势预测", desc: "基于历史数据生成未来 7/14/30 天的趋势预测。", category: "数据分析", version: "1.0.0", author: "WeData Team" },
     ],
-    "数据运维专家": [
+    "智能管家": [
       { icon: "监", iconBg: "#FF7800", title: "集群健康监控", desc: "实时监控 HDFS/YARN/Spark 集群健康状态。", defaultTag: true, category: "运维", version: "2.1.0", author: "WeData Team" },
       { icon: "扩", iconBg: "#E8524A", title: "弹性扩缩容", desc: "根据负载自动触发节点扩缩容策略。", category: "运维", version: "1.2.0", author: "WeData Team" },
       { icon: "日", iconBg: "#4C8DEF", title: "日志智能分析", desc: "对 Executor 日志做聚类分析，快速定位故障模式。", category: "运维", version: "1.5.0", author: "WeData Team" },
@@ -578,6 +684,11 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
     ? customAvatarSkills.filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
     : customAvatarSkills;
   const filteredHubSkills = kw ? HUB_SKILLS.filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw)) : HUB_SKILLS;
+  // 详情页锁定模式下，大数据 Agent 与自定义 Agent 使用同一套「配置 Skill」内容结构。
+  const useConfigLayout = !isBuiltin || Boolean(lockedAgentName);
+  const lockedBuiltinInstalledSkills = lockedAgentName && isBuiltin ? filteredSkills : [];
+  const installedCount = (lockedAgentName && isBuiltin ? skills.length : currentAvatarInstalledList.length) + installedList.length;
+  const presetInstallableSkills = lockedAgentName && isBuiltin ? [] : customUninstalledSkills;
 
   // Tab 列表：内置专家隐藏整条 tab 栏；自定义 Agent 显示双 tab
   const tabs = [
@@ -589,7 +700,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
     <div style={{
       width: "100%", height: "100%",
       display: "flex", flexDirection: "column",
-      fontFamily: FONT, background: C.bg,
+      fontFamily: FONT, background: lockedAgentName ? C.bgWhite : C.bg,
     }}>
       {/* 响应式卡片栅格：<1440 → 2 列；1440-1920 → 3 列；≥1920 → 4 列 */}
       <style>{`
@@ -609,35 +720,57 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
       {/* 顶部标题栏 */}
       <div style={{
         height: 50, flexShrink: 0,
-        display: "flex", alignItems: "center",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 24px",
         borderBottom: `1px solid ${C.border}`,
-        background: C.bg,
+        background: lockedAgentName ? C.bgWhite : C.bg,
       }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>技能广场</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>
+          {lockedAgentName ? "配置 Skill" : "技能广场"}
+        </span>
+        {/* 锁定模式（详情页弹窗）下显示关闭按钮 */}
+        {lockedAgentName && onBack && (
+          <div
+            onClick={onBack}
+            aria-label="关闭"
+            style={{
+              width: 28, height: 28, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", flexShrink: 0, transition: "background 100ms",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 1l12 12M13 1L1 13" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* 内容区 */}
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        {/* 左侧分类导航 */}
-        <div style={{
-          width: 180, flexShrink: 0, borderRight: `1px solid ${C.border}`,
-          padding: "0 12px", overflowY: "auto", scrollbarWidth: "none",
-        }}>
-          <SectionLabel label="大数据 Agent" />
-          {builtinExperts.map((name) => (
-            <CatItem key={name} label={name} active={activeCat === name} onClick={() => handleCatChange(name)} />
-          ))}
+        {/* 左侧分类导航 —— 锁定模式（详情页弹窗）下隐藏 */}
+        {!lockedAgentName && (
+          <div style={{
+            width: 180, flexShrink: 0, borderRight: `1px solid ${C.border}`,
+            padding: "0 12px", overflowY: "auto", scrollbarWidth: "none",
+          }}>
+            <SectionLabel label="大数据 Agent" />
+            {builtinExperts.map((name) => (
+              <CatItem key={name} label={name} active={activeCat === name} onClick={() => handleCatChange(name)} />
+            ))}
 
-          {customAgents.length > 0 && (
-            <>
-              <SectionLabel label="自定义 Agent" />
-              {customAgents.map((a) => (
-                <CatItem key={a.id} label={a.name} active={activeCat === a.name} onClick={() => handleCatChange(a.name)} />
-              ))}
-            </>
-          )}
-        </div>
+            {customAgents.length > 0 && (
+              <>
+                <SectionLabel label="自定义 Agent" />
+                {customAgents.map((a) => (
+                  <CatItem key={a.id} label={a.name} active={activeCat === a.name} onClick={() => handleCatChange(a.name)} />
+                ))}
+              </>
+            )}
+          </div>
+        )}
 
         {/* 右侧内容 */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -712,7 +845,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
             scrollbarWidth: "none", position: "relative",
           }}>
             <AnimatePresence mode="wait">
-              {isBuiltin ? (
+              {!useConfigLayout ? (
                 filteredSkills.length > 0 ? (
                   <motion.div
                     key={`preset-${activeCat}-${kw}`}
@@ -761,6 +894,18 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                 >
                   {/* ── 已安装区域 ── */}
                   <div className="skill-grid">
+                    {/* 锁定的大数据 Agent 已安装的内置 skill（使用自定义 Agent 同款卡片结构） */}
+                    {lockedBuiltinInstalledSkills.map((s) => (
+                      <SkillCard
+                        key={`locked-builtin-installed-${activeCat}-${s.title}`}
+                        icon={s.icon} iconBg={s.iconBg}
+                        title={s.title} desc={s.desc}
+                        sourceTag="内置 Skill"
+                        on={isOn(`locked-builtin-installed-${activeCat}-${s.title}`)}
+                        onToggle={() => toggle(`locked-builtin-installed-${activeCat}-${s.title}`)}
+                        onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                      />
+                    ))}
                     {/* 当前自定义 Agent 已安装的内置 skill（带 Toggle） */}
                     {currentAvatar && currentAvatarInstalledList
                       .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
@@ -828,7 +973,7 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
 
                   {/* ── 可安装区域：搜索时展示"为你找到 N 个结果"+合并列表；否则展示 Tab + 对应列表 ── */}
                   {kw ? (() => {
-                    const hitCustomUninstalled = customUninstalledSkills
+                    const hitCustomUninstalled = presetInstallableSkills
                       .filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
                     const hitHubUninstalled = HUB_SKILLS
                       .filter((s) => availableList.includes(s.title) && !installedList.includes(s.title))
@@ -902,76 +1047,15 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                   })() : (<>
                   {/* ── 可安装区域：Tab（内置 Skill / SkillHub）+ 查看更多链接 ── */}
                   <div style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    {/* 胶囊 Tab（Figma 767_17327），切换时白色指示器滑动 + 字重交叉淡入 */}
-                    <div style={{
-                      display: "inline-flex", alignItems: "center",
-                      height: 44, padding: 2,
-                      borderRadius: 100,
-                      background: "#F2F4F8",
-                      boxShadow: "inset 0 2px 2px rgba(0,0,0,0.03)",
-                      position: "relative",
-                    }}>
-                      {[
-                        { id: "preset" as const, label: "内置 Skill" },
-                        { id: "hub" as const, label: "SkillHub" },
-                      ].map((tab) => {
-                        const selected = activeTab === tab.id;
-                        return (
-                          <div
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            style={{
-                              position: "relative",
-                              height: 40, padding: "0 16px",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              borderRadius: 100,
-                              cursor: "pointer",
-                              zIndex: 1,
-                            }}
-                          >
-                            {/* 白色指示器胶囊（只在选中 tab 里渲染，由 layoutId 跨 DOM 自动做位移动画） */}
-                            {selected && (
-                              <motion.div
-                                layoutId="skill-tab-indicator"
-                                style={{
-                                  position: "absolute", inset: 0,
-                                  borderRadius: 100,
-                                  background: "rgba(255,255,255,0.90)",
-                                  boxShadow: "0 6px 12px -6px rgba(0,0,0,0.04), 0 3px 6px -3px rgba(0,0,0,0.08)",
-                                  zIndex: 0,
-                                }}
-                                transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.9 }}
-                              />
-                            )}
-                            {/* 双层文字叠加：normal（400） 与 semibold（600） 交叉淡入，避免字重跳变 */}
-                            <span style={{
-                              position: "relative", zIndex: 1,
-                              display: "inline-grid",
-                              gridTemplateAreas: "\"stack\"",
-                              placeItems: "center",
-                              whiteSpace: "nowrap",
-                            }}>
-                              <span style={{
-                                gridArea: "stack",
-                                fontFamily: FONT, fontSize: 14, fontWeight: 400,
-                                color: "rgba(0,0,0,0.70)",
-                                opacity: selected ? 0 : 1,
-                                textAlign: "center",
-                                transition: "opacity 180ms ease",
-                              }}>{tab.label}</span>
-                              <span style={{
-                                gridArea: "stack",
-                                fontFamily: FONT, fontSize: 14, fontWeight: 600,
-                                color: "#000000",
-                                opacity: selected ? 1 : 0,
-                                textAlign: "center",
-                                transition: "opacity 180ms ease",
-                              }}>{tab.label}</span>
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <PillTabs
+                      tabs={[
+                        { id: "preset", label: "内置 Skill" },
+                        { id: "hub", label: "SkillHub" },
+                      ] as const}
+                      activeId={activeTab}
+                      onChange={(id) => setActiveTab(id as "preset" | "hub")}
+                      layoutId="skill-tab-indicator"
+                    />
                     {activeTab === "hub" && (
                       <a
                         href="https://skillhub.cn"
@@ -990,9 +1074,9 @@ export default function SkillPlaza({ onBack, registry }: SkillPlazaProps) {
                   </div>
                   {activeTab === "preset" ? (
                     /* 内置 Skill：展示尚未安装的 skill（HubCard 样式，含安装按钮） */
-                    customUninstalledSkills.length > 0 ? (
+                    presetInstallableSkills.length > 0 ? (
                       <div className="skill-grid">
-                        {customUninstalledSkills.map((s) => (
+                        {presetInstallableSkills.map((s) => (
                           <HubCard
                             key={`${activeCat}-preset-${s.title}`}
                             title={s.title} desc={s.desc}

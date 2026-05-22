@@ -253,7 +253,7 @@ export default function AiRunningBubble() {
               textOverflow: "ellipsis",
             }}
           >
-            数据运维专家
+            智能管家
           </span>
           <AnimatePresence mode="wait">
             <motion.span

@@ -23,8 +23,11 @@ import CreateExpertDialog from "@/components/ui/create-expert-dialog";
 import CreateTeamDialog from "@/components/ui/create-team-dialog";
 import AddMemberDialog from "@/components/ui/add-member-dialog";
 import SkillPlaza from "@/components/ui/skill-plaza";
-import ClawManager from "@/components/ui/claw-manager";
+import ClawManager, { AvatarDetailModal, AvatarDeleteConfirm, TeamDetailModal, DeleteConfirmModal, type AvatarData, type CustomTeam } from "@/components/ui/claw-manager";
+import AgentDetail from "@/components/ui/agent-detail";
+import TeamDetail from "@/components/ui/team-detail";
 import { DEFAULT_REGISTRY, type AgentRegistry } from "@/lib/agent-registry";
+import { pickRandomPresetAvatar } from "@/lib/preset-avatars";
 import TeamSummonBanner, { AgentSummonBanner } from "@/components/ui/team-summon-banner";
 
 // ── Design tokens ──────────────────────────────────────────────
@@ -111,7 +114,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到慢 SQL 检索与调优任务，我来作为调度者拆解任务并分派给团队成员",
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         overview: "已收到慢 SQL 检索任务，我将准备相关对应脚本和权限，分步执行",
         lines: [
           {
@@ -144,7 +147,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         delay: 6000,
         dividerBefore: true,
         overview: "数据齐全了，让我生成一个清晰的报告",
@@ -167,7 +170,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         delay: 10000,
         hideLabel: true,
         lines: [
@@ -246,7 +249,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "SQL 模板已沉淀到知识库，标签：多渠道支付、按天汇总、7日趋势。" },
           { text: "自动创建定时报表任务，每周一 09:00 自动推送到运营群。" },
@@ -260,7 +263,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调完成订单表数据源接入任务",
     replies: [
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "已通过 JDBC 探测到 MySQL 5.7 实例 db-order-prod，延迟 2.3ms。" },
           { text: "orders 表结构：38 个字段，主键 order_id (BIGINT)，日均新增约 42 万条。", tags: ["orders", "order_id", "MySQL 5.7"] },
@@ -282,7 +285,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调完成用户表数据源接入任务",
     replies: [
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "已探测到 MySQL 实例 db-user-prod，用户表 users 共 1,560 万条记录。" },
           { text: "表结构：25 个字段，包含 user_id、nickname、phone、register_time 等核心字段。", tags: ["users", "user_profile", "user_extend"] },
@@ -297,7 +300,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "数据源健康探针已部署，每 5 分钟检测连接可用性，异常自动切换备库。" },
         ],
@@ -333,7 +336,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来规划 T+1 数据调度的工作流编排方案",
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "工作流拓扑已生成：ODS 层采集 → DWD 清洗 → DWS 汇总 → ADS 应用，共 23 个节点。" },
           { text: "关键路径分析：最长执行链 ODS→DWD→DWS_user→ADS_retention，预估耗时 47 分钟。", tags: ["ods_sync", "dwd_clean", "dws_aggregate", "ads_report"] },
@@ -341,7 +344,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "资源编排：凌晨 2:00 启动，预分配 Spark 集群 16 CU，DWS 阶段动态扩容到 24 CU。" },
           { text: "SLA 兜底：若 06:00 前未完成，自动触发紧急扩容 + 告警通知值班人员。" },
@@ -363,7 +366,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     singleExpert: true,
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "数仓分层方案已设计：ODS（原始层）→ DWD（明细层）→ DWS（汇总层）→ ADS（应用层）。" },
           { text: "ODS 层：12 张业务源表镜像，保留原始字段，增加 ds 分区和 etl_time 审计字段。", tags: ["ODS", "DWD", "DWS", "ADS"] },
@@ -372,7 +375,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         delay: 3000,
         lines: [
           { text: "ADS 层指标体系已梳理：覆盖 DAU、GMV、客单价、留存率等 28 个核心指标。" },
@@ -390,14 +393,14 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     singleExpert: true,
     replies: [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "ODS 层 12 张表逐一对账：源端总行数 vs ODS 行数，误差率均 < 0.01%。" },
           { text: "字段级校验：抽样 10 万条做字段值 MD5 对比，一致率 100%。", tags: ["ods_orders", "ods_users", "ods_payments", "ods_products"] },
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         delay: 2500,
         lines: [
           { text: "增量同步验证：模拟业务写入 1000 条测试数据，T+1 后全部正确落入 ODS 对应分区。" },
@@ -451,7 +454,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "周报自动化任务已创建，每周日 20:00 自动生成并推送至管理层邮箱。" },
         ],
@@ -464,7 +467,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
     thinkingText: "收到需求，我来协调元数据血缘扫描和治理任务",
     replies: [
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "全量血缘扫描启动：覆盖 Hive 347 张表、Spark SQL 作业 128 个、调度任务 89 个。" },
           { text: "表级血缘图谱已生成：平均链路深度 4.2 层，最长链路 ODS→DWD→DWS→ADS→BI 共 7 层。", tags: ["hive_metastore", "spark_sql_lineage", "workflow_dag"] },
@@ -479,7 +482,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         lines: [
           { text: "血缘图谱已同步至数据目录平台，支持影响分析和变更评估。" },
           { text: "增量血缘捕获已开启，后续 SQL 变更将自动更新血缘关系。" },
@@ -508,7 +511,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
         ],
       },
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         lines: [
           { text: "权限配置：运营组全员可查看，数据导出权限仅限运营负责人。" },
           { text: "看板链接已生成，已推送至运营协作群。" },
@@ -647,7 +650,7 @@ const TASK_CONVERSATIONS: Record<string, TaskConversation> = {
 // ── 确认执行后的二阶段对话内容 ────────────────────────────────
 const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
   {
-    icon: "/agents/dev-expert.png", name: "数据开发专家",
+    icon: "/agents/dev-expert.png", name: "数据工程专家",
     delay: 800,
     overview: "好的，你选了 #1 — 最慢的那条 56.5 秒的 SQL。让我对它做深入调优分析。",
     lines: [
@@ -662,7 +665,7 @@ const CONFIRM_PHASE2_REPLIES: ExpertReplyDataType[] = [
     ],
   },
   {
-    icon: "/agents/dev-expert.png", name: "数据开发专家",
+    icon: "/agents/dev-expert.png", name: "数据工程专家",
     delay: 4000,
     dividerBefore: true,
     overview: "以下是报告核心结论",
@@ -829,6 +832,18 @@ export default function Home() {
   const [teamMembers, setTeamMembers] = useState<string[]>(["dev", "analysis", "ops"]);
   const [showSkillPlaza, setShowSkillPlaza] = useState(false);
   const [showClawManager, setShowClawManager] = useState(false);
+  // Agent / Team 详情页：null 时不显示。`from` 记录触发详情页的来源（用于返回时还原）
+  const [detailView, setDetailView] = useState<
+    | { type: "agent" | "team"; id: string; from: "claw-manager" | "secondary-nav"; parentTeamId?: string }
+    | null
+  >(null);
+  // 自定义 Agent / 团队详情页右上角"编辑/删除"操作的弹窗 state
+  const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
+  const [deletingAvatarFromDetailId, setDeletingAvatarFromDetailId] = useState<string | null>(null);
+  const [editingTeamFromDetailId, setEditingTeamFromDetailId] = useState<string | null>(null);
+  const [deletingTeamFromDetailId, setDeletingTeamFromDetailId] = useState<string | null>(null);
+  // 自定义 Agent 详情页"配置 Skill"全屏弹窗 state（保留 SkillPlaza 内容，外层加 modal 容器）
+  const [showSkillPlazaModal, setShowSkillPlazaModal] = useState(false);
   // Agent Registry — Agent 广场/左侧工具栏/对话下拉共享的唯一数据源
   const [registry, setRegistry] = useState<AgentRegistry>(DEFAULT_REGISTRY);
   // 选中的团队 id（非默认"大数据团队"时在 welcome 区显示 TeamSummonBanner）
@@ -1054,9 +1069,9 @@ export default function Home() {
 
   // ── 单专家回复数据：仅该专家一人回复 ──────────────────────────
   const SINGLE_EXPERT_REPLIES: Record<string, ExpertReplyDataType[]> = {
-    "数据运维专家": [
+    "智能管家": [
       {
-        icon: "/agents/ops-expert.png", name: "数据运维专家",
+        icon: "/agents/ops-expert.png", name: "智能管家",
         delay: 1200,
         lines: [
           { text: "正在检查华东区数据链路状态，扫描 ODS → DWD → DWS → ADS 全链路节点。" },
@@ -1079,9 +1094,9 @@ export default function Home() {
         ],
       },
     ],
-    "数据开发专家": [
+    "数据工程专家": [
       {
-        icon: "/agents/dev-expert.png", name: "数据开发专家",
+        icon: "/agents/dev-expert.png", name: "数据工程专家",
         delay: 1200,
         lines: [
           { text: "正在分析数仓分层模型需求，梳理业务数据源和目标架构。" },
@@ -1124,7 +1139,7 @@ export default function Home() {
     if (!summonedAgent) {
       setSummonedAgent({
         name: "Rigel",
-        title: "数据开发专家",
+        title: "数据工程专家",
         avatar: "/agents/dev-expert.png",
       });
     }
@@ -1284,7 +1299,7 @@ export default function Home() {
       setUserMessage(task.title);
       setSummonedAgent({
         name: "Rigel",
-        title: "数据运维专家",
+        title: "智能管家",
         avatar: "/agents/dev-expert.png",
       });
       setChatPhase("conversation");
@@ -1324,7 +1339,7 @@ export default function Home() {
     setUserMessage(conv?.userMsg ?? task.title);
     setSummonedAgent({
       name: "Rigel",
-      title: "数据运维专家",
+      title: "智能管家",
       avatar: "/agents/dev-expert.png",
     });
     setChatPhase("conversation");
@@ -1412,25 +1427,30 @@ export default function Home() {
       {/* ── 左侧一级导航 ── */}
       <PrimaryNav />
 
-      {/* ── 二级导航面板 ── */}
-      {targetView === "dataclaw" && <SecondaryNav onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); }} onTaskClick={handleTaskClick} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
+      {/* ── 二级导航面板 ──
+           详情页（AgentDetail / TeamDetail）下若 SecondaryNav 已收起，则完全隐藏窄栏，
+           展开/新建对话入口由详情页 header 提供，避免左侧出现 68px 空白带 */}
+      {targetView === "dataclaw" && !(detailView && isSecondaryCollapsed) && <SecondaryNav collapsed={isSecondaryCollapsed} onCollapsedChange={setIsSecondaryCollapsed} onNewTask={() => { setShowSkillPlaza(false); setShowClawManager(false); setDetailView(null); handleNewChat(); }} onSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); setDetailView(null); }} onClawManager={() => { setShowClawManager(true); setShowSkillPlaza(false); setDetailView(null); }} onTaskClick={(task) => { setDetailView(null); handleTaskClick(task); }} activeTaskId={activeTaskId} activeMenu={showSkillPlaza ? "skill-plaza" : showClawManager ? "claw-manager" : null} registry={registry} onAgentSelect={(agentId, label) => {
         // 左栏点击 Section Header：
-        // 1) 退出 Agent 广场/技能广场视图，回到聊天主界面
-        // 2) 同步输入框下拉选中
-        // 3) 如果是专家，召唤气泡；否则只选中（团队/分身/外部）
-        // 4) 若当前处于 conversation 阶段且点击的是"其他人物"，先重置回 welcome，
-        //    再召唤新人物的 banner；点"当前人物"则保持不动（不新开对话）。
+        // - 团队 / 内置专家 / 自定义 Agent → 打开详情页
+        // - 外部 Agent → 维持原"召唤气泡"行为
+        const isTeam = registry.teams.some((t) => t.id === agentId);
+        const isExpert = registry.experts.some((e) => e.id === agentId);
+        const isAvatar = registry.avatars.some((a) => a.id === agentId);
+        if (isTeam || isExpert || isAvatar) {
+          setShowSkillPlaza(false);
+          setShowClawManager(false);
+          setDetailView({ type: isTeam ? "team" : "agent", id: agentId, from: "secondary-nav" });
+          return;
+        }
+        // 非团队/专家/自定义：保持原召唤逻辑
         setShowSkillPlaza(false);
         setShowClawManager(false);
+        setDetailView(null);
         if (chatPhase === "conversation") {
-          // 判断点击的是否是当前 summoned 的同一人物
           const targetInfo = AGENT_MAP[agentId];
           const isSameAgent = targetInfo && summonedAgent && targetInfo.title === summonedAgent.title;
-          if (isSameAgent) {
-            // 同一人物：不触发任何切换，保持对话详情
-            return;
-          }
-          // 其他人物：回到 welcome，再召唤新 banner
+          if (isSameAgent) return;
           handleNewChat();
         }
         chatInputRef.current?.setAgent(label);
@@ -1459,7 +1479,12 @@ export default function Home() {
           transition={{ duration: 0.22, ease: EASE }}
           style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
         >
-          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} registry={registry} onRegistryChange={setRegistry} onAgentDialog={(agentId, label) => {
+          <ClawManager onNavigateToSkillPlaza={() => { setShowSkillPlaza(true); setShowClawManager(false); }} registry={registry} onRegistryChange={setRegistry} onAgentDetail={(kind, id) => {
+            // Agent 广场点击卡片本体 → 跳转详情页（记录 from 以便返回时回到 Agent 广场）
+            setShowSkillPlaza(false);
+            setShowClawManager(false);
+            setDetailView({ type: kind === "team" ? "team" : "agent", id, from: "claw-manager" });
+          }} onAgentDialog={(agentId, label) => {
             // 点卡片「对话」按钮：关闭 Agent 广场回到聊天主界面，并召唤对应 Agent banner
             setShowSkillPlaza(false);
             setShowClawManager(false);
@@ -1472,6 +1497,98 @@ export default function Home() {
             chatInputRef.current?.setAgent(label);
             handleSelectAgent(agentId);
           }} />
+        </motion.div>
+      ) : detailView ? (
+        <motion.div
+          key={`detail-${detailView.type}-${detailView.id}`}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22, ease: EASE }}
+          style={{ flex: 1, minWidth: 0, height: "100%", overflow: "hidden" }}
+        >
+          {(() => {
+            const goBackFromDetail = () => {
+              const from = detailView?.from;
+              const parentTeamId = detailView?.parentTeamId;
+              if (detailView?.type === "agent" && parentTeamId) {
+                setDetailView({ type: "team", id: parentTeamId, from: from ?? "secondary-nav" });
+                return;
+              }
+              setDetailView(null);
+              if (from === "claw-manager") setShowClawManager(true);
+            };
+            if (detailView.type === "agent") {
+              // 先按内置专家找；若是自定义 Agent（avatars），适配为伪 BuiltinExpert
+              let expert = registry.experts.find((e) => e.id === detailView.id);
+              if (!expert) {
+                const avatar = registry.avatars.find((a) => a.id === detailView.id);
+                if (avatar) {
+                  expert = {
+                    // 使用 sentinel id，让 AgentDetail 内部的 profile / hero 选用「自定义 Agent」分支
+                    id: "custom-avatar",
+                    fullName: avatar.name,
+                    shortTitle: avatar.name,
+                    codeName: avatar.name,
+                    desc: avatar.desc,
+                    avatar: avatar.avatar ?? "",
+                    skills: avatar.skills.map((s) => s.name),
+                    nameColor: avatar.bg,
+                    summonText: "",
+                  };
+                }
+              }
+              if (!expert) { setDetailView(null); return null; }
+              const expertForCallback = expert;
+              const isCustomAvatar = expertForCallback.id === "custom-avatar";
+              return (
+                <AgentDetail
+                  expert={expertForCallback}
+                  onBack={goBackFromDetail}
+                  secondaryCollapsed={isSecondaryCollapsed}
+                  onNewChat={() => { setDetailView(null); handleNewChat(); }}
+                  onExpandSecondary={() => setIsSecondaryCollapsed(false)}
+                  onDialog={() => {
+                    setDetailView(null);
+                    if (chatPhase === "conversation") {
+                      const targetInfo = AGENT_MAP[expertForCallback.id];
+                      const isSameAgent = targetInfo && summonedAgent && targetInfo.title === summonedAgent.title;
+                      if (!isSameAgent) handleNewChat();
+                    }
+                    chatInputRef.current?.setAgent(expertForCallback.shortTitle);
+                    handleSelectAgent(detailView.id);
+                  }}
+                  onEdit={isCustomAvatar ? () => setEditingAvatarId(detailView.id) : undefined}
+                  onDelete={isCustomAvatar ? () => setDeletingAvatarFromDetailId(detailView.id) : undefined}
+                  onConfigSkill={() => setShowSkillPlazaModal(true)}
+                />
+              );
+            }
+            const team = registry.teams.find((t) => t.id === detailView.id);
+            if (!team) { setDetailView(null); return null; }
+            return (
+              <TeamDetail
+                team={team}
+                experts={registry.experts}
+                onBack={goBackFromDetail}
+                secondaryCollapsed={isSecondaryCollapsed}
+                onNewChat={() => { setDetailView(null); handleNewChat(); }}
+                onExpandSecondary={() => setIsSecondaryCollapsed(false)}
+                onDialog={() => {
+                  setDetailView(null);
+                  if (chatPhase === "conversation") handleNewChat();
+                  chatInputRef.current?.setAgent(team.name);
+                  handleSelectAgent(team.id);
+                }}
+                onMemberManage={() => { setDetailView(null); setShowClawManager(true); }}
+                onMemberClick={(memberId) => {
+                  setDetailView({ type: "agent", id: memberId, from: detailView.from, parentTeamId: team.id });
+                }}
+                onEdit={team.id !== "bigdata-team" ? () => setEditingTeamFromDetailId(team.id) : undefined}
+                onDelete={team.id !== "bigdata-team" ? () => setDeletingTeamFromDetailId(team.id) : undefined}
+              />
+            );
+          })()}
         </motion.div>
       ) : (
       <motion.div
@@ -1725,7 +1842,7 @@ export default function Home() {
                             lineHeight: "40px",
                             color: "#000",
                             whiteSpace: "nowrap",
-                          }}>专家团随时待命</span>
+                          }}>自进化的数据专家团随时待命</span>
                         </div>
                         <div style={{ marginTop: -20 }}>
                           <MotionTargetOverlay
@@ -2593,6 +2710,7 @@ export default function Home() {
                 skills: [],
                 bg,
                 letter: name.charAt(0),
+                avatar: pickRandomPresetAvatar(),
               },
             ],
           }));
@@ -2618,6 +2736,7 @@ export default function Home() {
                 platformLabel: meta.label,
                 apiUrl: data.apiUrl,
                 state: "disconnected" as const,
+                avatar: pickRandomPresetAvatar(),
               },
             ],
           }));
@@ -2678,6 +2797,158 @@ export default function Home() {
           if (joinNames && activeTaskId) setJoinTaskMessages(prev => ({ ...prev, [activeTaskId]: { text: `${joinNames} 加入任务`, avatars } }));
         }
       }} />
+
+      {/* 团队详情页 — 编辑弹窗 */}
+      <AnimatePresence>
+        {editingTeamFromDetailId && (() => {
+          const team = registry.teams.find((t) => t.id === editingTeamFromDetailId);
+          if (!team || team.id === "bigdata-team") return null;
+          const teamData: CustomTeam = {
+            id: team.id,
+            name: team.name,
+            desc: team.desc,
+            members: team.members,
+            clusterImgs: team.clusterImgs,
+          };
+          return (
+            <TeamDetailModal
+              team={teamData}
+              onClose={() => setEditingTeamFromDetailId(null)}
+              onSave={(updated) => {
+                setRegistry((prev) => ({
+                  ...prev,
+                  teams: prev.teams.map((t) => t.id === editingTeamFromDetailId
+                    ? { ...t, name: updated.name, desc: updated.desc, members: updated.members, clusterImgs: undefined }
+                    : t
+                  ),
+                }));
+                setEditingTeamFromDetailId(null);
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* 团队详情页 — 删除二次确认 */}
+      <AnimatePresence>
+        {deletingTeamFromDetailId && (() => {
+          const team = registry.teams.find((t) => t.id === deletingTeamFromDetailId);
+          if (!team || team.id === "bigdata-team") return null;
+          return (
+            <DeleteConfirmModal
+              teamName={team.name}
+              onClose={() => setDeletingTeamFromDetailId(null)}
+              onConfirm={() => {
+                const idToDel = deletingTeamFromDetailId;
+                setRegistry((prev) => ({
+                  ...prev,
+                  teams: prev.teams.filter((t) => t.id !== idToDel),
+                }));
+                if (selectedTeamId === idToDel) setSelectedTeamId(null);
+                setDeletingTeamFromDetailId(null);
+                setDetailView(null);
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* 自定义 Agent 详情页 — 编辑弹窗 */}
+      <AnimatePresence>
+        {editingAvatarId && (() => {
+          const av = registry.avatars.find((a) => a.id === editingAvatarId);
+          if (!av) return null;
+          const data: AvatarData = {
+            name: av.name,
+            desc: av.desc,
+            tags: av.tags,
+            skills: av.skills.map((s) => ({ name: s.name, enabled: s.enabled })),
+            avatar: av.avatar,
+          };
+          return (
+            <AvatarDetailModal
+              data={data}
+              onClose={() => setEditingAvatarId(null)}
+              onSave={(d) => {
+                setRegistry((prev) => ({
+                  ...prev,
+                  avatars: prev.avatars.map((a) => a.id === editingAvatarId
+                    ? { ...a, name: d.name, desc: d.desc, tags: d.tags, skills: d.skills, avatar: d.avatar ?? a.avatar }
+                    : a
+                  ),
+                }));
+                setEditingAvatarId(null);
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* 自定义 Agent 详情页 — 删除二次确认 */}
+      <AnimatePresence>
+        {deletingAvatarFromDetailId && (() => {
+          const av = registry.avatars.find((a) => a.id === deletingAvatarFromDetailId);
+          if (!av) return null;
+          return (
+            <AvatarDeleteConfirm
+              name={av.name}
+              onCancel={() => setDeletingAvatarFromDetailId(null)}
+              onConfirm={() => {
+                const idToDel = deletingAvatarFromDetailId;
+                setRegistry((prev) => ({
+                  ...prev,
+                  avatars: prev.avatars.filter((a) => a.id !== idToDel),
+                }));
+                setDeletingAvatarFromDetailId(null);
+                setDetailView(null);
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* Agent 详情页 —「配置 Skill」全屏弹窗（复用 SkillPlaza 内容；锁定到当前 Agent 不可切换） */}
+      <AnimatePresence>
+        {showSkillPlazaModal && (() => {
+          // 从 detailView 推断当前 Agent name；若 detailView 已退出则不渲染
+          const lockedAgentName = detailView?.type === "agent"
+            ? (registry.avatars.find((a) => a.id === detailView.id)?.name
+              ?? registry.experts.find((e) => e.id === detailView.id)?.shortTitle)
+            : undefined;
+          if (!lockedAgentName) return null;
+          return (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 9100,
+              background: "rgba(0,0,0,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: 24,
+            }}
+            onClick={() => setShowSkillPlazaModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.2, ease: EASE }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(1280px, 100%)", height: "min(820px, 100%)",
+                background: "#FFFFFF", borderRadius: 16, overflow: "hidden",
+                boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1)",
+                position: "relative",
+              }}
+            >
+              <SkillPlaza onBack={() => setShowSkillPlazaModal(false)} registry={registry} lockedAgentName={lockedAgentName} />
+            </motion.div>
+          </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

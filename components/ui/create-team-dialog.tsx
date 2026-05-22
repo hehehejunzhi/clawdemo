@@ -21,9 +21,9 @@ const C = {
 const LABEL_W = 72;
 
 const ALL_MEMBERS = [
-  { id: "dev", name: "大数据开发专家" },
+  { id: "dev", name: "大数据工程专家" },
   { id: "analyst", name: "大数据分析专家" },
-  { id: "ops", name: "大数据运维专家" },
+  { id: "ops", name: "大智能管家" },
   { id: "my-ops", name: "运营助手" },
   { id: "lh", name: "Lighthouse" },
 ];
