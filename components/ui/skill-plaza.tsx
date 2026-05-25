@@ -295,6 +295,30 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle?: () => void }) {
   );
 }
 
+// ── Empty state（图 + 文字垂直居中） ────────────────────────
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div style={{
+      width: "100%",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      padding: "60px 0", gap: 12,
+    }}>
+      <img
+        src={encodeURI("/icons/暂无数据.png")}
+        alt=""
+        style={{ width: 160, height: 160, objectFit: "contain", opacity: 0.9 }}
+      />
+      <span style={{
+        fontFamily: FONT, fontSize: 14, fontWeight: 400,
+        color: "rgba(0,0,0,0.45)",
+      }}>
+        {text}
+      </span>
+    </div>
+  );
+}
+
 // ── Skill card ────────────────────────────────────────────────
 function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, sourceTag }: {
   icon?: string;
@@ -328,8 +352,12 @@ function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, 
         boxShadow: hovered ? "0 4px 12px rgba(0,0,0,0.06)" : "none",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+        <div style={{
+          flex: 1, minWidth: 0,
+          opacity: showToggle && !on ? 0.45 : 1,
+          transition: "opacity 150ms",
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
             <span style={{
               fontFamily: FONT, fontSize: 16, fontWeight: 500, color: C.textPrimary,
@@ -347,7 +375,7 @@ function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, 
               }}>{sourceTag}</span>
             )}
           </div>
-          <div style={{
+          <div className="skill-card-desc" style={{
             marginTop: 4, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textTertiary, lineHeight: "20px",
             whiteSpace: "nowrap",
             overflow: "hidden",
@@ -359,6 +387,7 @@ function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, 
         {showToggle && (
           <div style={{
             flexShrink: 0,
+            marginLeft: "auto",
             opacity: hovered ? 1 : 0,
             pointerEvents: hovered ? "auto" : "none",
             transition: "opacity 150ms",
@@ -435,7 +464,7 @@ function HubCard({ title, desc, willSucceed, onCardClick, onInstallResult, sourc
               }}>{sourceTag}</span>
             )}
           </div>
-          <div style={{ marginTop: 4, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textTertiary, lineHeight: "20px",
+          <div className="skill-card-desc" style={{ marginTop: 4, fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textTertiary, lineHeight: "20px",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
             {desc}
@@ -697,12 +726,16 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
   ];
 
   return (
-    <div style={{
-      width: "100%", height: "100%",
-      display: "flex", flexDirection: "column",
-      fontFamily: FONT, background: lockedAgentName ? C.bgWhite : C.bg,
-    }}>
+    <div
+      className={lockedAgentName ? "skill-plaza-locked" : undefined}
+      style={{
+        width: "100%", height: "100%",
+        display: "flex", flexDirection: "column",
+        fontFamily: FONT, background: lockedAgentName ? C.bgWhite : C.bg,
+      }}
+    >
       {/* 响应式卡片栅格：<1440 → 2 列；1440-1920 → 3 列；≥1920 → 4 列 */}
+      {/* 配置 Skill 弹窗（lockedAgentName）固定 3 列，匹配设计稿 1200 宽容器 */}
       <style>{`
         .skill-grid {
           display: grid;
@@ -716,16 +749,31 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
         @media (min-width: 1920px) {
           .skill-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
+        .skill-plaza-locked .skill-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+        .skill-plaza-locked .skill-card-desc {
+          white-space: normal !important;
+          overflow: visible !important;
+          text-overflow: clip !important;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+        }
       `}</style>
       {/* 顶部标题栏 */}
       <div style={{
         height: 50, flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 24px",
-        borderBottom: `1px solid ${C.border}`,
+        borderBottom: lockedAgentName ? "none" : `1px solid ${C.border}`,
         background: lockedAgentName ? C.bgWhite : C.bg,
       }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary }}>
+        <span style={{
+          fontSize: lockedAgentName ? 16 : 18,
+          fontWeight: lockedAgentName ? 500 : 600,
+          color: C.textPrimary,
+        }}>
           {lockedAgentName ? "配置 Skill" : "技能广场"}
         </span>
         {/* 锁定模式（详情页弹窗）下显示关闭按钮 */}
@@ -774,24 +822,33 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
 
         {/* 右侧内容 */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          {/* 详情页标题：内置 → 内置 Skill；自定义 → 已安装 Skill（N） + 搜索框 */}
+          {/* 详情页标题：锁定模式（内置/自定义统一）→ "已安装 (N)" + 搜索框；非锁定模式保持原有 */}
           <div style={{
             height: 56, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "0 24px", gap: 16,
           }}>
-            <span style={{
-              fontFamily: FONT, fontSize: 14, fontWeight: 600,
-              color: C.textPrimary,
-            }}>
-              {isBuiltin
-                ? `内置 Skill（${filteredSkills.length}）`
-                : `已安装 Skill（${currentAvatarInstalledList.length + installedList.length}）`}
-            </span>
-            {!isBuiltin && (
+            {lockedAgentName ? (
+              <span style={{
+                fontFamily: FONT, fontSize: 14, fontWeight: 500,
+                color: "rgba(0,0,0,0.7)", lineHeight: "22px",
+              }}>
+                {`已安装 (${installedCount})`}
+              </span>
+            ) : (
+              <span style={{
+                fontFamily: FONT, fontSize: 14, fontWeight: 600,
+                color: C.textPrimary,
+              }}>
+                {isBuiltin
+                  ? `内置 Skill（${filteredSkills.length}）`
+                  : `已安装 Skill（${currentAvatarInstalledList.length + installedList.length}）`}
+              </span>
+            )}
+            {(!isBuiltin || lockedAgentName) && (
               <div style={{
                 position: "relative",
-                width: 260, height: 32,
+                width: 240, height: 32,
                 display: "flex", alignItems: "center",
               }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
@@ -875,12 +932,8 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2, ease: EASE }}
-                    style={{
-                      marginTop: 300, textAlign: "center",
-                      fontFamily: FONT, fontSize: 14, color: C.textTertiary,
-                    }}
                   >
-                    未找到匹配的 Skill
+                    <EmptyState text="未找到匹配的 Skill" />
                   </motion.div>
                 )
               ) : (
@@ -890,86 +943,159 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.2, ease: EASE }}
-                  style={{ display: "flex", flexDirection: "column", gap: 0, paddingTop: 0, marginTop: 0 }}
+                  style={{ display: "flex", flexDirection: "column", gap: 0, paddingTop: 0, marginTop: 0, flex: 1, minHeight: 0 }}
                 >
-                  {/* ── 已安装区域 ── */}
-                  <div className="skill-grid">
-                    {/* 锁定的大数据 Agent 已安装的内置 skill（使用自定义 Agent 同款卡片结构） */}
-                    {lockedBuiltinInstalledSkills.map((s) => (
-                      <SkillCard
-                        key={`locked-builtin-installed-${activeCat}-${s.title}`}
-                        icon={s.icon} iconBg={s.iconBg}
-                        title={s.title} desc={s.desc}
-                        sourceTag="内置 Skill"
-                        on={isOn(`locked-builtin-installed-${activeCat}-${s.title}`)}
-                        onToggle={() => toggle(`locked-builtin-installed-${activeCat}-${s.title}`)}
-                        onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
-                      />
-                    ))}
-                    {/* 当前自定义 Agent 已安装的内置 skill（带 Toggle） */}
-                    {currentAvatar && currentAvatarInstalledList
+                  {(() => {
+                    if (!kw) return null;
+                    const hit = (s: { title: string; desc: string }) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw);
+                    const installedHits =
+                      lockedBuiltinInstalledSkills.filter(hit).length +
+                      (currentAvatar ? currentAvatarInstalledList.filter(hit).length : 0) +
+                      INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title)).filter(hit).length +
+                      HUB_SKILLS.filter((s) => installedList.includes(s.title) && !INSTALLED_HUB_SKILLS.some((i) => i.title === s.title)).filter(hit).length;
+                    const installableHits =
+                      presetInstallableSkills.filter(hit).length +
+                      HUB_SKILLS.filter((s) => availableList.includes(s.title) && !installedList.includes(s.title)).filter(hit).length;
+                    if (installedHits + installableHits > 0) return null;
+                    return (
+                      <div style={{
+                        position: "absolute",
+                        left: 24, right: 24, top: 0, bottom: 24,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <EmptyState text="未找到匹配的 Skill" />
+                      </div>
+                    );
+                  })()}
+                  {(() => {
+                    if (!kw) return false;
+                    const hit = (s: { title: string; desc: string }) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw);
+                    const installedHits =
+                      lockedBuiltinInstalledSkills.filter(hit).length +
+                      (currentAvatar ? currentAvatarInstalledList.filter(hit).length : 0) +
+                      INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title)).filter(hit).length +
+                      HUB_SKILLS.filter((s) => installedList.includes(s.title) && !INSTALLED_HUB_SKILLS.some((i) => i.title === s.title)).filter(hit).length;
+                    const installableHits =
+                      presetInstallableSkills.filter(hit).length +
+                      HUB_SKILLS.filter((s) => availableList.includes(s.title) && !installedList.includes(s.title)).filter(hit).length;
+                    return installedHits + installableHits === 0;
+                  })() ? null : (<>
+                  {/* ── 已安装区域（统一合并 4 个来源后按 6 张折叠） ── */}
+                  {(() => {
+                    type InstalledItem = {
+                      key: string;
+                      title: string;
+                      desc: string;
+                      sourceTag: "内置 Skill" | "SkillHub";
+                      on: boolean;
+                      onToggle: () => void;
+                      onCardClick: () => void;
+                    };
+                    const items: InstalledItem[] = [];
+
+                    // 1) 锁定的大数据 Agent 已安装的内置 skill
+                    lockedBuiltinInstalledSkills.forEach((s) => {
+                      const key = `locked-builtin-installed-${activeCat}-${s.title}`;
+                      items.push({
+                        key,
+                        title: s.title,
+                        desc: s.desc,
+                        sourceTag: "内置 Skill",
+                        on: isOn(key),
+                        onToggle: () => toggle(key),
+                        onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
+                      });
+                    });
+
+                    // 2) 当前自定义 Agent 已安装的内置 skill
+                    if (currentAvatar) {
+                      currentAvatarInstalledList
+                        .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
+                        .forEach((s) => {
+                          const key = `custom-installed-${currentAvatar.id}-${s.title}`;
+                          const on = key in toggleState ? toggleState[key] : s.enabled;
+                          items.push({
+                            key,
+                            title: s.title,
+                            desc: s.desc,
+                            sourceTag: "内置 Skill",
+                            on,
+                            onToggle: () => setToggleState((p) => ({ ...p, [key]: !on })),
+                            onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: "自定义", version: "1.0.0", author: activeCat }),
+                          });
+                        });
+                    }
+
+                    // 3) 预置 INSTALLED_HUB_SKILLS（前 2 个标"内置 Skill"，其余"SkillHub"，与设计稿一致）
+                    INSTALLED_HUB_SKILLS
+                      .filter((s) => installedList.includes(s.title))
                       .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
-                      .map((s) => {
-                        const key = `custom-installed-${currentAvatar.id}-${s.title}`;
-                        const on = key in toggleState ? toggleState[key] : s.enabled;
-                        return (
-                          <SkillCard
-                            key={key}
-                            title={s.title} desc={s.desc}
-                            sourceTag="内置 Skill"
-                            on={on}
-                            onToggle={() => setToggleState((p) => ({ ...p, [key]: !on }))}
-                            onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: "自定义", version: "1.0.0", author: activeCat })}
-                          />
-                        );
-                      })}
-                    {(() => {
-                      const installedSkills = INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title))
-                        .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
-                      const visibleInstalled = installedExpanded ? installedSkills : installedSkills.slice(0, INSTALLED_COLLAPSE_COUNT);
-                      return (
-                        <>
-                          {visibleInstalled.map((s, i) => (
+                      .forEach((s, i) => {
+                        items.push({
+                          key: `installed-${s.title}`,
+                          title: s.title,
+                          desc: s.desc,
+                          sourceTag: i < 2 ? "内置 Skill" : "SkillHub",
+                          on: isOn(`hub-installed-${s.title}`),
+                          onToggle: () => toggle(`hub-installed-${s.title}`),
+                          onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
+                        });
+                      });
+
+                    // 4) 新安装的 SkillHub skill
+                    HUB_SKILLS
+                      .filter((s) => installedList.includes(s.title) && !INSTALLED_HUB_SKILLS.some((i) => i.title === s.title))
+                      .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
+                      .forEach((s) => {
+                        items.push({
+                          key: `new-installed-${s.title}`,
+                          title: s.title,
+                          desc: s.desc,
+                          sourceTag: "SkillHub",
+                          on: isOn(`hub-installed-${s.title}`),
+                          onToggle: () => toggle(`hub-installed-${s.title}`),
+                          onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
+                        });
+                      });
+
+                    const visible = installedExpanded || kw ? items : items.slice(0, INSTALLED_COLLAPSE_COUNT);
+                    const showToggleMore = !kw && items.length > INSTALLED_COLLAPSE_COUNT;
+
+                    return (
+                      <>
+                        <div className="skill-grid">
+                          {visible.map((it) => (
                             <SkillCard
-                              key={`installed-${s.title}`}
-                              title={s.title} desc={s.desc}
-                              sourceTag={i < 2 ? "内置 Skill" : "SkillHub"}
-                              on={isOn(`hub-installed-${s.title}`)}
-                              onToggle={() => toggle(`hub-installed-${s.title}`)}
-                              onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
+                              key={it.key}
+                              title={it.title}
+                              desc={it.desc}
+                              sourceTag={it.sourceTag}
+                              on={it.on}
+                              onToggle={it.onToggle}
+                              onCardClick={it.onCardClick}
                             />
                           ))}
-                          {/* 新安装的 skill 也显示在这里 */}
-                          {HUB_SKILLS.filter((s) => installedList.includes(s.title) && !INSTALLED_HUB_SKILLS.some((i) => i.title === s.title))
-                            .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
-                            .map((s) => (
-                              <SkillCard
-                                key={`new-installed-${s.title}`}
-                                title={s.title} desc={s.desc}
-                                sourceTag="SkillHub"
-                                on={isOn(`hub-installed-${s.title}`)}
-                                onToggle={() => toggle(`hub-installed-${s.title}`)}
-                                onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
-                              />
-                            ))}
-                        </>
-                      );
-                    })()}
-                  </div>
-                  {/* 展开更多（搜索时隐藏） */}
-                  {!kw && INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title)).length > INSTALLED_COLLAPSE_COUNT && (
-                    <div
-                      onClick={() => setInstalledExpanded((v) => !v)}
-                      style={{ textAlign: "center", padding: "12px 0 4px", cursor: "pointer" }}
-                    >
-                      <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 400, color: "rgba(0,0,0,0.4)" }}>
-                        {installedExpanded ? "收起" : "显示更多"}
-                      </span>
-                    </div>
-                  )}
+                        </div>
+                        {/* 展开更多（搜索时隐藏） */}
+                        {showToggleMore && (
+                          <div
+                            onClick={() => setInstalledExpanded((v) => !v)}
+                            style={{ textAlign: "center", padding: "12px 0 4px", cursor: "pointer" }}
+                          >
+                            <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 400, color: "rgba(0,0,0,0.4)" }}>
+                              {installedExpanded ? "收起" : "显示更多"}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
-                  {/* ── 分割线 ── */}
-                  <div style={{ height: 1, background: C.border, margin: "16px 0" }} />
+                  {/* ── 分割线（配置 Skill 弹窗下不展示，按设计稿） ── */}
+                  {!lockedAgentName && (
+                    <div style={{ height: 1, background: C.border, margin: "16px 0" }} />
+                  )}
+                  {lockedAgentName && <div style={{ height: 16, flexShrink: 0 }} />}
 
                   {/* ── 可安装区域：搜索时展示"为你找到 N 个结果"+合并列表；否则展示 Tab + 对应列表 ── */}
                   {kw ? (() => {
@@ -1035,12 +1161,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                             ))}
                           </div>
                         ) : (
-                          <div style={{
-                            marginTop: 300, textAlign: "center",
-                            fontFamily: FONT, fontSize: 14, color: C.textTertiary,
-                          }}>
-                            未找到匹配的 Skill
-                          </div>
+                          <EmptyState text="未找到匹配的 Skill" />
                         )}
                       </>
                     );
@@ -1102,12 +1223,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                         ))}
                       </div>
                     ) : (
-                      <div style={{
-                        marginTop: 300, textAlign: "center",
-                        fontFamily: FONT, fontSize: 14, color: C.textTertiary,
-                      }}>
-                        暂无可安装的内置 Skill
-                      </div>
+                      <EmptyState text="暂无可安装的内置 Skill" />
                     )
                   ) : (
                     /* SkillHub：原可安装 HubCard 列表 */
@@ -1135,15 +1251,11 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                           ))}
                         </div>
                       ) : (
-                        <div style={{
-                          marginTop: 300, textAlign: "center",
-                          fontFamily: FONT, fontSize: 14, color: C.textTertiary,
-                        }}>
-                          暂无可安装的 Skill
-                        </div>
+                        <EmptyState text="暂无可安装的 Skill" />
                       );
                     })()
                   )}
+                  </>)}
                   </>)}
                 </motion.div>
               )}
