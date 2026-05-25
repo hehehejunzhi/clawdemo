@@ -1064,13 +1064,8 @@ function CreateAvatarDialog({ open, onClose, onCreate, existingNames = [] }: { o
             style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column" }}
           >
             {loading ? (
-              <div style={{ padding: "80px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
-                <svg width="120" height="100" viewBox="0 0 120 100" fill="none">
-                  <path d="M60 20L90 50L60 40L30 50L60 20Z" fill="#D4D8E0" />
-                  <path d="M60 20L60 40L90 50L60 20Z" fill="#B8BEC8" />
-                  <path d="M60 40L60 60L90 50L60 40Z" fill="#C8CDD6" />
-                  <ellipse cx="60" cy="78" rx="30" ry="6" fill="rgba(0,0,0,0.06)" />
-                </svg>
+              <div style={{ padding: "60px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+                <img src="/icons/paper-plane.png" alt="" style={{ width: 180, height: 180, objectFit: "contain" }} />
                 <span style={{ fontSize: 18, fontWeight: 500, color: C.textPrimary }}>你自定义 Agent 正在创建，请稍等...</span>
                 <div style={{ width: "60%", height: 12, borderRadius: 6, background: "#E6E9EF", overflow: "hidden" }}>
                   <div style={{ height: "100%", borderRadius: 6, background: C.textPrimary, width: `${progress * 100}%`, transition: "width 50ms linear" }} />

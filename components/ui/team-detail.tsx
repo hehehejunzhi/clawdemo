@@ -844,7 +844,7 @@ export default function TeamDetail({
         }}>{team.name}（{team.members.length}）</span>
 
         {/* 右上角操作（除默认大数据团队外，其他团队展示编辑 / 删除） */}
-        {team.id !== "bigdata-team" && (onEdit || onDelete) && (
+        {(onEdit || onDelete) && (
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
             {onEdit && (
               <HeaderActionButton label="编辑" onClick={onEdit}>
