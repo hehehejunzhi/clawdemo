@@ -496,17 +496,6 @@ export function TeamDetailModal({ team, onClose, onSave, existingNames = [] }: {
             />
           </div>
 
-          {/* 标签 */}
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={labelStyle}>标签</span>
-            <input value={formTags} onChange={(e) => setFormTags(e.target.value)}
-              placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化"
-              style={inputBase}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
-            />
-          </div>
-
           {/* 成员 */}
           <div style={{ display: "flex", alignItems: "flex-start" }}>
             <span style={{ ...labelStyle, paddingTop: 2 }}>成员 <span style={{ color: "#F64041" }}>*</span></span>
@@ -1088,12 +1077,6 @@ function CreateAvatarDialog({ open, onClose, onCreate, existingNames = [] }: { o
                       style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
                   </div>
-                  {/* 标签 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}>标签</div>
-                    <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化" style={fieldInputStyle}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-                  </div>
                   {/* Agent 推荐 */}
                   <AgentRecommendSelect />
                 </div>
@@ -1297,17 +1280,6 @@ export function AvatarDetailModal({ data, onClose, onSave }: {
             <textarea value={formDesc} onChange={(e) => setFormDesc(e.target.value)}
               rows={3}
               style={{ ...inputBase, resize: "none" }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
-            />
-          </div>
-
-          {/* 标签 */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={labelStyle}>标签</span>
-            <input value={formTags} onChange={(e) => setFormTags(e.target.value)}
-              placeholder="输入标签，多个用逗号分隔"
-              style={inputBase}
               onFocus={(e) => { e.currentTarget.style.borderColor = "#0052D9"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "#D6DBE3"; }}
             />

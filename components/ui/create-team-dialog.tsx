@@ -242,13 +242,6 @@ export default function CreateTeamDialog({ open, onClose, onCreate, existingName
                       onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
                   </div>
 
-                  {/* 标签 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}>标签</div>
-                    <input type="text" placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化" value={tags} onChange={(e) => setTags(e.target.value)} style={inputStyle}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = C.brandCyan; }} onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }} />
-                  </div>
-
                   {/* 成员 — checkbox 列表 */}
                   <div style={{ display: "flex", alignItems: "flex-start" }}>
                     <div style={labelStyle}><span>成员 </span><span style={{ color: C.error }}>*</span></div>

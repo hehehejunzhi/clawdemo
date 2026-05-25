@@ -179,11 +179,6 @@ export default function CreateExpertDialog({ open, onClose, onCreate, onCreateEx
                       style={{ ...fieldInputStyle, height: "auto", padding: "5px 12px", resize: "none" }}
                       onFocus={focusOn} onBlur={focusOff} />
                   </div>
-                  {/* 标签 */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={labelStyle}>标签</div>
-                    <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="输入标签，多个用逗号分隔，如：数据分析，报表生成，SQL 优化" style={fieldInputStyle} onFocus={focusOn} onBlur={focusOff} />
-                  </div>
                   {/* Agent 推荐 */}
                   <AgentRecommendField />
                 </div>
