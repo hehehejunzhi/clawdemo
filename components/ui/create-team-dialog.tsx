@@ -12,7 +12,7 @@ const C = {
   textTertiary: "rgba(0,0,0,0.5)",
   border: "#E6E9EF",
   bgCard: "#FFFFFF",
-  bgOverlay: "rgba(0,0,0,0.3)",
+  bgOverlay: "rgba(255,255,255,0.4)",
   error: "#F64041",
   hoverBg: "#F2F4F8",
   brandCyan: "#0052D9",
@@ -160,7 +160,7 @@ export default function CreateTeamDialog({ open, onClose, onCreate, existingName
     onClose();
   };
 
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: LABEL_W, paddingTop: 7 };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.5)", flexShrink: 0, width: LABEL_W, paddingTop: 7 };
   const inputStyle: React.CSSProperties = {
     flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgCard,
@@ -173,7 +173,7 @@ export default function CreateTeamDialog({ open, onClose, onCreate, existingName
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: C.bgOverlay }}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: C.bgOverlay, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
           <motion.div

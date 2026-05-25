@@ -371,6 +371,32 @@ function MoreMenu({ onManage, onDelete, visible = true }: { onManage: () => void
   );
 }
 
+// ── 仅编辑菜单（大数据团队用） ──────────────────────────────
+function EditOnlyMenu({ onEdit, visible = true }: { onEdit: () => void; visible?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const show = visible || open;
+  return (
+    <div style={{ position: "relative", opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none", transition: "opacity 120ms" }} onClick={(e) => e.stopPropagation()}>
+      <div onClick={() => setOpen((v) => !v)} style={{ width: 24, height: 24, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: open ? C.hoverBg : "transparent", transition: "background 100ms" }}
+        onMouseEnter={(e) => { if (!open) (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+        onMouseLeave={(e) => { if (!open) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1.5" fill="rgba(0,0,0,0.5)" /><circle cx="8" cy="8" r="1.5" fill="rgba(0,0,0,0.5)" /><circle cx="8" cy="13" r="1.5" fill="rgba(0,0,0,0.5)" /></svg>
+      </div>
+      {open && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setOpen(false)} />
+          <div style={{ position: "absolute", top: 28, right: 0, zIndex: 100, width: 100, background: C.bgWhite, borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", border: `1px solid ${C.border}`, padding: "4px 0", overflow: "hidden" }}>
+            <div onClick={() => { setOpen(false); onEdit(); }} style={{ padding: "8px 16px", cursor: "pointer", fontFamily: FONT, fontSize: 14, fontWeight: 400, color: C.textPrimary, transition: "background 100ms" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = C.hoverBg; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+            >编辑</div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 
 // ── 带tooltip的保存按钮 ──────────────────────────────────────
@@ -398,8 +424,8 @@ function SaveButtonWithTooltip({ canSave, onClick, showTooltip, tooltipText }: {
 }
 
 // ── 编辑团队弹窗（全编辑态） ─────────────────────────────
-export function TeamDetailModal({ team, onClose, onSave, existingNames = [] }: {
-  team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void; existingNames?: string[];
+export function TeamDetailModal({ team, onClose, onSave, existingNames = [], nameDisabled = false, lockedMembers = [] }: {
+  team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void; existingNames?: string[]; nameDisabled?: boolean; lockedMembers?: string[];
 }) {
   const [formName, setFormName] = useState(team.name);
   const [formDesc, setFormDesc] = useState(team.desc);
@@ -448,13 +474,13 @@ export function TeamDetailModal({ team, onClose, onSave, existingNames = [] }: {
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 14, color: "rgba(0,0,0,0.9)", fontWeight: 400,
-    width: 90, flexShrink: 0,
+    fontSize: 12, color: "rgba(0,0,0,0.5)", fontWeight: 400,
+    lineHeight: "20px", width: 90, flexShrink: 0,
   };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <motion.div initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.2, ease: EASE }} onClick={(e) => e.stopPropagation()}
         style={{ width: 560, background: "#FFFFFF", borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1)", fontFamily: FONT, display: "flex", flexDirection: "column" }}>
@@ -474,11 +500,12 @@ export function TeamDetailModal({ team, onClose, onSave, existingNames = [] }: {
           <div style={{ display: "flex", alignItems: "flex-start" }}>
             <span style={{ ...labelStyle, paddingTop: 8 }}>团队名称 <span style={{ color: "#F64041" }}>*</span></span>
             <div style={{ flex: 1 }}>
-              <input value={formName} onChange={(e) => { setFormName(e.target.value); validateName(e.target.value); }}
+              <input value={formName} onChange={(e) => { if (!nameDisabled) { setFormName(e.target.value); validateName(e.target.value); } }}
+                disabled={nameDisabled}
                 placeholder="例如：大数据"
-                style={{ ...inputBase, borderColor: nameError ? "#F64041" : "#D6DBE3" }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = nameError ? "#F64041" : "#0052D9"; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = nameError ? "#F64041" : "#D6DBE3"; }}
+                style={{ ...inputBase, borderColor: nameError ? "#F64041" : "#D6DBE3", background: nameDisabled ? "#F5F6F8" : "#FFFFFF", color: nameDisabled ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.9)", cursor: nameDisabled ? "not-allowed" : "text" }}
+                onFocus={(e) => { if (!nameDisabled) e.currentTarget.style.borderColor = nameError ? "#F64041" : "#0052D9"; }}
+                onBlur={(e) => { if (!nameDisabled) e.currentTarget.style.borderColor = nameError ? "#F64041" : "#D6DBE3"; }}
               />
               {nameError && <div style={{ fontSize: 12, color: "#F64041", marginTop: 4, lineHeight: "18px" }}>{nameError}</div>}
             </div>
@@ -500,14 +527,17 @@ export function TeamDetailModal({ team, onClose, onSave, existingNames = [] }: {
           <div style={{ display: "flex", alignItems: "flex-start" }}>
             <span style={{ ...labelStyle, paddingTop: 2 }}>成员 <span style={{ color: "#F64041" }}>*</span></span>
             <div style={{ flex: 1, display: "flex", flexWrap: "wrap", gap: "12px 12px" }}>
-              {EDIT_ALL_MEMBERS.map((m) => (
-                <div key={m.id} style={{ width: "calc(33.333% - 8px)", minWidth: 110, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }} onClick={() => toggleMember(m.id)}>
-                  <div style={{ width: 16, height: 16, borderRadius: 3, flexShrink: 0, border: `1.5px solid ${selectedMembers.has(m.id) ? "#0052D9" : "#D6DBE3"}`, background: selectedMembers.has(m.id) ? "#0052D9" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 100ms" }}>
+              {EDIT_ALL_MEMBERS.map((m) => {
+                const isLocked = lockedMembers.includes(m.id);
+                return (
+                <div key={m.id} style={{ width: "calc(33.333% - 8px)", minWidth: 110, display: "flex", alignItems: "center", gap: 8, cursor: isLocked ? "not-allowed" : "pointer", userSelect: "none" }} onClick={() => { if (!isLocked) toggleMember(m.id); }}>
+                  <div style={{ width: 16, height: 16, borderRadius: 3, flexShrink: 0, border: `1.5px solid ${selectedMembers.has(m.id) ? (isLocked ? "#A0A8B4" : "#0052D9") : "#D6DBE3"}`, background: selectedMembers.has(m.id) ? (isLocked ? "#A0A8B4" : "#0052D9") : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 100ms" }}>
                     {selectedMembers.has(m.id) && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                   </div>
                   <span style={{ fontSize: 14, color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{m.name}</span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -551,7 +581,7 @@ function ExpertEditModal({ expert, onClose, onNavigateToSkillPlaza }: {
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }} onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center" }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
@@ -633,7 +663,7 @@ export function DeleteConfirmModal({ teamName, onClose, onConfirm }: { teamName:
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }} onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center" }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -817,7 +847,7 @@ function CreateExternalClawDialog({ open, onClose, onCreate }: {
     onClose();
   };
 
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 72, paddingTop: 7 };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.5)", flexShrink: 0, width: 72, paddingTop: 7 };
   const fieldInputStyle: React.CSSProperties = {
     flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgWhite,
@@ -830,7 +860,7 @@ function CreateExternalClawDialog({ open, onClose, onCreate }: {
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
           <motion.div
@@ -928,7 +958,7 @@ function AgentRecommendSelect({ labelWidth = 90 }: { labelWidth?: number } = {})
   const options = ["每次询问", "不再推荐"];
   return (
     <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
-      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: labelWidth, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", flexShrink: 0, width: labelWidth, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
         <span>Agent 推荐</span>
         <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }} onMouseEnter={() => setTooltipVisible(true)} onMouseLeave={() => setTooltipVisible(false)}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ cursor: "help", display: "block" }}>
@@ -936,7 +966,7 @@ function AgentRecommendSelect({ labelWidth = 90 }: { labelWidth?: number } = {})
             <path d="M7 6V10M7 4.5V4" stroke="rgba(0,0,0,0.4)" strokeWidth="1.2" strokeLinecap="round" />
           </svg>
           {tooltipVisible && (
-            <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)", padding: "6px 10px", borderRadius: 6, background: "rgba(0,0,0,0.85)", color: "#FFF", fontSize: 12, lineHeight: "18px", whiteSpace: "nowrap", zIndex: 10, pointerEvents: "none" }}>
+            <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)", padding: "6px 10px", borderRadius: 6, background: "rgba(0,0,0,0.85)", color: "#FFF", fontSize: 12, lineHeight: "18px", whiteSpace: "nowrap", zIndex: 9999, pointerEvents: "none" }}>
               在对话中向你推荐能力匹配的Agent
               <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid rgba(0,0,0,0.85)" }} />
             </div>
@@ -1012,7 +1042,7 @@ function CreateAvatarDialog({ open, onClose, onCreate, existingNames = [] }: { o
 
   const handleClose = () => { if (loading) return; setName(""); setDesc(""); setTags(""); setNameError(""); onClose(); };
 
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 90, paddingTop: 7 };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.5)", flexShrink: 0, width: 90, paddingTop: 7 };
   const fieldInputStyle: React.CSSProperties = {
     flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgWhite,
@@ -1025,13 +1055,13 @@ function CreateAvatarDialog({ open, onClose, onCreate, existingNames = [] }: { o
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
             transition={{ duration: 0.2, ease: EASE }}
-            style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}
+            style={{ width: 640, background: C.bgWhite, borderRadius: 16, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.1), 0 8px 12px -8px rgba(0,0,0,0.05)", fontFamily: FONT, display: "flex", flexDirection: "column" }}
           >
             {loading ? (
               <div style={{ padding: "80px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
@@ -1177,7 +1207,7 @@ export function AvatarDeleteConfirm({ name, onCancel, onConfirm }: {
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }} onClick={onCancel}
-      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center" }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -1235,15 +1265,15 @@ export function AvatarDetailModal({ data, onClose, onSave }: {
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 14, color: "rgba(0,0,0,0.5)", fontWeight: 400,
-    width: 100, flexShrink: 0,
+    fontSize: 12, color: "rgba(0,0,0,0.5)", fontWeight: 400,
+    lineHeight: "20px", width: 100, flexShrink: 0,
   };
 
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }} onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center" }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 8 }}
@@ -1356,6 +1386,7 @@ export default function ClawManager({
 
   const [customTeams, setCustomTeams] = useState<CustomTeam[]>(initial?.customTeams ?? [PRESET_OPS_TEAM]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingBigdataTeam, setEditingBigdataTeam] = useState(false);
 
   // 成员管理弹窗
   const [managingTeamId, setManagingTeamId] = useState<string | null>(null);
@@ -1556,6 +1587,7 @@ export default function ClawManager({
             ]} />}
             name={<span style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>大数据团队 (3)</span>}
             desc="数据开发、分析、运维协作团队"
+            badge={(hovered) => <EditOnlyMenu visible={hovered} onEdit={() => setEditingBigdataTeam(true)} />}
             onDialog={() => onAgentDialog?.("bigdata-team", "大数据团队")}
             onCardClick={() => onAgentDetail?.("team", "bigdata-team")}
           />
@@ -1676,6 +1708,29 @@ export default function ClawManager({
       {/* 创建团队弹窗 */}
       <CreateTeamDialog open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreate} existingNames={[...customTeams.map(t => t.name), "大数据团队"]} />
 
+      {/* 大数据团队编辑弹窗 */}
+      <AnimatePresence>
+        {editingBigdataTeam && (
+          <TeamDetailModal
+            team={{
+              id: "bigdata-team",
+              name: "大数据团队",
+              desc: "数据开发、分析、运维协作团队",
+              members: [
+                { id: "dev", name: "大数据开发专家", abbr: "开", abbrBg: "#4B79FF", category: "内置专家", role: "调度者", statusColor: "#0CBF5B", avatar: "/agents/dev-expert.png" },
+                { id: "analyst", name: "大数据分析专家", abbr: "析", abbrBg: "#BE63FF", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/analysis-expert.png" },
+                { id: "ops", name: "智能管家", abbr: "运", abbrBg: "#00DBB0", category: "内置专家", role: "执行者", statusColor: "#0CBF5B", avatar: "/agents/ops-expert.png" },
+              ],
+            }}
+            onClose={() => setEditingBigdataTeam(false)}
+            existingNames={[...customTeams.map(t => t.name), "大数据团队"]}
+            nameDisabled
+            lockedMembers={["dev", "analyst", "ops"]}
+            onSave={(updated) => { setEditingBigdataTeam(false); showToast("团队信息已保存", "success"); }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* 团队详情弹窗 */}
       <AnimatePresence>
         {managingTeam && (
@@ -1772,7 +1827,7 @@ export default function ClawManager({
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }} onClick={() => setDeletingClawId(null)}
-            style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center" }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 12 }}

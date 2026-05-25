@@ -1573,7 +1573,7 @@ export default function Home() {
                 onMemberClick={(memberId) => {
                   setDetailView({ type: "agent", id: memberId, from: detailView.from, parentTeamId: team.id });
                 }}
-                onEdit={team.id !== "bigdata-team" ? () => setEditingTeamFromDetailId(team.id) : undefined}
+                onEdit={() => setEditingTeamFromDetailId(team.id)}
                 onDelete={team.id !== "bigdata-team" ? () => setDeletingTeamFromDetailId(team.id) : undefined}
               />
             );
@@ -2845,6 +2845,8 @@ export default function Home() {
               team={teamData}
               onClose={() => setEditingTeamFromDetailId(null)}
               existingNames={registry.teams.map(t => t.name)}
+              nameDisabled={editingTeamFromDetailId === "bigdata-team"}
+              lockedMembers={editingTeamFromDetailId === "bigdata-team" ? ["dev", "analyst", "ops"] : []}
               onSave={(updated) => {
                 setRegistry((prev) => ({
                   ...prev,

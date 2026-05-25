@@ -94,7 +94,7 @@ export default function CreateExpertDialog({ open, onClose, onCreate, onCreateEx
 
   const handleClose = () => { if (!loading) { resetAll(); onClose(); } };
 
-  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 90, paddingTop: 7 };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "rgba(0,0,0,0.5)", flexShrink: 0, width: 90, paddingTop: 7 };
   const fieldInputStyle: React.CSSProperties = {
     flex: 1, height: 32, padding: "0 12px", borderRadius: 8,
     border: `1px solid ${C.border}`, background: C.bgWhite,
@@ -112,7 +112,7 @@ export default function CreateExpertDialog({ open, onClose, onCreate, onCreateEx
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.4)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
           <motion.div
@@ -206,8 +206,8 @@ function AgentRecommendField() {
 
   return (
     <div style={{ display: "flex", alignItems: "center", minHeight: 32 }}>
-      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.7)", flexShrink: 0, width: 90, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
-        <span style={{ fontSize: 12, color: "rgba(0,0,0,0.7)" }}>Agent 推荐</span>
+      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", flexShrink: 0, width: 90, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>Agent 推荐</span>
         <div
           style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
           onMouseEnter={() => setTooltipVisible(true)}
