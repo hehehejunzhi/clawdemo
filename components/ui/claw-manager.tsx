@@ -373,9 +373,33 @@ function MoreMenu({ onManage, onDelete, visible = true }: { onManage: () => void
 
 
 
+// ── 带tooltip的保存按钮 ──────────────────────────────────────
+function SaveButtonWithTooltip({ canSave, onClick, showTooltip, tooltipText }: { canSave: boolean; onClick: () => void; showTooltip: boolean; tooltipText: string }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div style={{ position: "relative" }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+      {showTooltip && hovered && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          padding: "8px 12px", borderRadius: 8, background: "rgba(0,0,0,0.8)", color: "#FFF",
+          fontSize: 12, lineHeight: "18px", whiteSpace: "nowrap", zIndex: 10,
+          pointerEvents: "none", fontFamily: FONT,
+        }}>
+          {tooltipText}
+          <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: "6px solid rgba(0,0,0,0.8)" }} />
+        </div>
+      )}
+      <button disabled={!canSave} onClick={onClick}
+        style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "none", background: canSave ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFFFFF", cursor: canSave ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>
+        保存
+      </button>
+    </div>
+  );
+}
+
 // ── 编辑团队弹窗（全编辑态） ─────────────────────────────
-export function TeamDetailModal({ team, onClose, onSave }: {
-  team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void;
+export function TeamDetailModal({ team, onClose, onSave, existingNames = [] }: {
+  team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void; existingNames?: string[];
 }) {
   const [formName, setFormName] = useState(team.name);
   const [formDesc, setFormDesc] = useState(team.desc);
@@ -383,15 +407,35 @@ export function TeamDetailModal({ team, onClose, onSave }: {
     team.members.length > 0 ? "运营, 数据分析, 日报" : ""
   );
   const [nameError, setNameError] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
+    new Set(team.members.map(m => m.id))
+  );
+
+  const EDIT_ALL_MEMBERS = [
+    { id: "dev", name: "大数据开发专家" },
+    { id: "analyst", name: "大数据分析专家" },
+    { id: "ops", name: "智能管家" },
+    { id: "my-ops", name: "运营助手" },
+    { id: "lh", name: "Lighthouse" },
+  ];
+
+  const toggleMember = (id: string) => {
+    setSelectedMembers((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const NAME_REG = /^[\u4e00-\u9fa5a-zA-Z0-9_·]+$/;
   const validateName = (v: string) => {
     if (v.length > 0 && !NAME_REG.test(v)) setNameError("名称仅支持中文、英文、数字、下划线");
+    else if (v.trim().length > 0 && v.trim() !== team.name && existingNames.includes(v.trim())) setNameError("该名称已存在，请更换名称");
     else setNameError("");
   };
 
   const handleSave = () => {
-    if (nameError) return;
+    if (nameError || selectedMembers.size < 2) return;
     onSave({ ...team, name: formName || team.name, desc: formDesc || team.desc });
   };
 
@@ -405,7 +449,7 @@ export function TeamDetailModal({ team, onClose, onSave }: {
 
   const labelStyle: React.CSSProperties = {
     fontSize: 14, color: "rgba(0,0,0,0.9)", fontWeight: 400,
-    width: 72, flexShrink: 0,
+    width: 90, flexShrink: 0,
   };
 
   return (
@@ -463,8 +507,23 @@ export function TeamDetailModal({ team, onClose, onSave }: {
             />
           </div>
 
+          {/* 成员 */}
+          <div style={{ display: "flex", alignItems: "flex-start" }}>
+            <span style={{ ...labelStyle, paddingTop: 2 }}>成员 <span style={{ color: "#F64041" }}>*</span></span>
+            <div style={{ flex: 1, display: "flex", flexWrap: "wrap", gap: "12px 12px" }}>
+              {EDIT_ALL_MEMBERS.map((m) => (
+                <div key={m.id} style={{ width: "calc(33.333% - 8px)", minWidth: 110, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }} onClick={() => toggleMember(m.id)}>
+                  <div style={{ width: 16, height: 16, borderRadius: 3, flexShrink: 0, border: `1.5px solid ${selectedMembers.has(m.id) ? "#0052D9" : "#D6DBE3"}`, background: selectedMembers.has(m.id) ? "#0052D9" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 100ms" }}>
+                    {selectedMembers.has(m.id) && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                  </div>
+                  <span style={{ fontSize: 14, color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{m.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Agent 推荐 */}
-          <AgentRecommendSelect labelWidth={72} />
+          <AgentRecommendSelect labelWidth={90} />
 
         </div>
 
@@ -474,10 +533,7 @@ export function TeamDetailModal({ team, onClose, onSave }: {
             style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "1px solid #D6DBE3", background: "#FFFFFF", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(0,0,0,0.9)", cursor: "pointer", outline: "none" }}>
             取消
           </button>
-          <button onClick={handleSave}
-            style={{ height: 40, padding: "0 24px", borderRadius: 100, border: "none", background: "rgba(0,0,0,0.9)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "#FFFFFF", cursor: "pointer", outline: "none" }}>
-            保存
-          </button>
+          <SaveButtonWithTooltip canSave={!nameError && selectedMembers.size >= 2} onClick={handleSave} showTooltip={selectedMembers.size < 2} tooltipText="团队至少需要选择 2 个成员" />
         </div>
       </motion.div>
     </motion.div>
@@ -919,7 +975,7 @@ function AgentRecommendSelect({ labelWidth = 90 }: { labelWidth?: number } = {})
 }
 
 // ── 创建数字分身弹窗（与 CreateTeamDialog 对齐） ─────────────────
-function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClose: () => void; onCreate: (name: string, desc: string, tags: string) => void }) {
+function CreateAvatarDialog({ open, onClose, onCreate, existingNames = [] }: { open: boolean; onClose: () => void; onCreate: (name: string, desc: string, tags: string) => void; existingNames?: string[] }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [tags, setTags] = useState("");
@@ -930,6 +986,7 @@ function CreateAvatarDialog({ open, onClose, onCreate }: { open: boolean; onClos
   const NAME_REG = /^[\u4e00-\u9fa5a-zA-Z0-9_·]+$/;
   const validateName = (v: string) => {
     if (v.length > 0 && !NAME_REG.test(v)) setNameError("名称仅支持中文、英文、数字、下划线");
+    else if (v.trim().length > 0 && existingNames.includes(v.trim())) setNameError("该名称已存在，请更换名称");
     else setNameError("");
   };
 
@@ -1645,7 +1702,7 @@ export default function ClawManager({
       </div>
 
       {/* 创建团队弹窗 */}
-      <CreateTeamDialog open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreate} />
+      <CreateTeamDialog open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreate} existingNames={[...customTeams.map(t => t.name), "大数据团队"]} />
 
       {/* 团队详情弹窗 */}
       <AnimatePresence>
@@ -1653,6 +1710,7 @@ export default function ClawManager({
           <TeamDetailModal
             team={managingTeam}
             onClose={() => setManagingTeamId(null)}
+            existingNames={[...customTeams.map(t => t.name), "大数据团队"]}
             onSave={(updated) => { setCustomTeams((prev) => prev.map((t) => t.id === updated.id ? { ...updated, clusterImgs: undefined } : t)); setManagingTeamId(null); showToast("团队信息已保存", "success"); }}
           />
         )}
@@ -1684,6 +1742,7 @@ export default function ClawManager({
       <CreateAvatarDialog
         open={showCreateAvatar}
         onClose={() => setShowCreateAvatar(false)}
+        existingNames={[...customAvatars.map(a => a.name), avatarData.name, "Rigel·数据工程专家", "Vega·数据分析专家", "Orion·智能管家", "运营助手", "Lighthouse"]}
         onCreate={(name, desc, tags) => {
           setCustomAvatars((prev) => [...prev, { id: `avatar-${Date.now()}`, name, desc, tags: tags ? tags.split(/[,，、]/).map((s) => s.trim()).filter(Boolean) : [], skills: [], bg: pickAvatarBg(prev.length), avatar: pickRandomPresetAvatar() }]);
           setShowCreateAvatar(false);

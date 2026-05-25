@@ -60,14 +60,36 @@ function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: ()
   );
 }
 
+// ── 带tooltip的创建按钮 ──────────────────────────────────────
+function CreateButtonWithTooltip({ isValid, onClick, showTooltip, tooltipText }: { isValid: boolean; onClick: () => void; showTooltip: boolean; tooltipText: string }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div style={{ position: "relative" }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+      {showTooltip && hovered && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          padding: "8px 12px", borderRadius: 8, background: "rgba(0,0,0,0.8)", color: "#FFF",
+          fontSize: 12, lineHeight: "18px", whiteSpace: "nowrap", zIndex: 10,
+          pointerEvents: "none", fontFamily: FONT,
+        }}>
+          {tooltipText}
+          <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: "6px solid rgba(0,0,0,0.8)" }} />
+        </div>
+      )}
+      <button disabled={!isValid} onClick={onClick} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────
 interface CreateTeamDialogProps {
   open: boolean;
   onClose: () => void;
   onCreate?: (name: string, desc: string) => void;
+  existingNames?: string[];
 }
 
-export default function CreateTeamDialog({ open, onClose, onCreate }: CreateTeamDialogProps) {
+export default function CreateTeamDialog({ open, onClose, onCreate, existingNames = [] }: CreateTeamDialogProps) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [tags, setTags] = useState("");
@@ -79,12 +101,14 @@ export default function CreateTeamDialog({ open, onClose, onCreate }: CreateTeam
   const validateName = (v: string) => {
     if (v.length > 0 && !NAME_REG.test(v)) {
       setNameError("名称仅支持中文、英文、数字、下划线");
+    } else if (v.trim().length > 0 && existingNames.includes(v.trim())) {
+      setNameError("该名称已存在，请更换名称");
     } else {
       setNameError("");
     }
   };
 
-  const isValid = name.trim().length > 0 && !nameError && selectedMembers.size > 0;
+  const isValid = name.trim().length > 0 && !nameError && selectedMembers.size >= 2;
 
   const toggleMember = useCallback((id: string) => {
     setSelectedMembers((prev) => {
@@ -244,7 +268,7 @@ export default function CreateTeamDialog({ open, onClose, onCreate }: CreateTeam
                 {/* Footer */}
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, padding: "16px 24px", flexShrink: 0, background: C.bgCard, borderRadius: "0 0 16px 16px" }}>
                   <button onClick={handleClose} style={{ width: 92, height: 40, borderRadius: 32, border: "1px solid #D6DBE3", background: C.bgCard, fontFamily: FONT, fontSize: 14, fontWeight: 500, color: C.textPrimary, cursor: "pointer", outline: "none" }}>取消</button>
-                  <button disabled={!isValid} onClick={handleCreate} style={{ width: 92, height: 40, borderRadius: 32, border: "none", background: isValid ? C.textPrimary : "rgba(0,0,0,0.2)", fontFamily: FONT, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)", cursor: isValid ? "pointer" : "not-allowed", outline: "none", transition: "background 150ms" }}>创建</button>
+                  <CreateButtonWithTooltip isValid={isValid} onClick={handleCreate} showTooltip={!isValid && selectedMembers.size < 2} tooltipText="创建团队至少需要选择 2 个成员" />
                 </div>
               </>
             )}

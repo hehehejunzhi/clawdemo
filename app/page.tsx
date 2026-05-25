@@ -2844,6 +2844,7 @@ export default function Home() {
             <TeamDetailModal
               team={teamData}
               onClose={() => setEditingTeamFromDetailId(null)}
+              existingNames={registry.teams.map(t => t.name)}
               onSave={(updated) => {
                 setRegistry((prev) => ({
                   ...prev,
