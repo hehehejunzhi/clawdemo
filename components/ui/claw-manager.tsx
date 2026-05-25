@@ -1067,8 +1067,8 @@ function CreateAvatarDialog({ open, onClose, onCreate, existingNames = [] }: { o
               <div style={{ padding: "60px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
                 <img src="/icons/paper-plane.png" alt="" style={{ width: 180, height: 180, objectFit: "contain" }} />
                 <span style={{ fontSize: 18, fontWeight: 500, color: C.textPrimary }}>你自定义 Agent 正在创建，请稍等...</span>
-                <div style={{ width: "60%", height: 12, borderRadius: 6, background: "#E6E9EF", overflow: "hidden" }}>
-                  <div style={{ height: "100%", borderRadius: 6, background: C.textPrimary, width: `${progress * 100}%`, transition: "width 50ms linear" }} />
+                <div style={{ width: "60%", height: 10, borderRadius: 5, background: "#E6E9EF", overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 5, background: C.textPrimary, width: `${progress * 100}%`, transition: "width 50ms linear" }} />
                 </div>
               </div>
             ) : (

@@ -189,9 +189,9 @@ export default function CreateTeamDialog({ open, onClose, onCreate, existingName
                   你的专家团正在集结，请稍等...
                 </span>
                 {/* 进度条 */}
-                <div style={{ width: "60%", height: 12, borderRadius: 6, background: "#E6E9EF", overflow: "hidden" }}>
+                <div style={{ width: "60%", height: 10, borderRadius: 5, background: "#E6E9EF", overflow: "hidden" }}>
                   <div style={{
-                    height: "100%", borderRadius: 6, background: C.textPrimary,
+                    height: "100%", borderRadius: 5, background: C.textPrimary,
                     width: `${progress * 100}%`, transition: "width 50ms linear",
                   }} />
                 </div>

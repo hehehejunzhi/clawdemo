@@ -31,6 +31,10 @@ interface AddMemberDialogProps {
   isTeamChat?: boolean;
   /** 自定义弹窗标题，默认 "添加成员" */
   title?: string;
+  /** 强制锁定成员：始终勾选且禁用，无法取消（用于大数据团队核心成员） */
+  lockedMembers?: string[];
+  /** 锁定项 hover 时显示的提示文案 */
+  lockedTooltip?: string;
 }
 
 // ── MemberRow ──────────────────────────────────────────────────
@@ -129,8 +133,12 @@ function MemberRow({ member, isSelected, isLocked, lockTooltip, onToggle }: {
   );
 }
 
-export default function AddMemberDialog({ open, onClose, currentMembers = ["dev", "analysis", "ops"], onConfirm, isTeamChat = true, title = "添加成员" }: AddMemberDialogProps) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(currentMembers));
+export default function AddMemberDialog({ open, onClose, currentMembers = ["dev", "analysis", "ops"], onConfirm, isTeamChat = true, title = "添加成员", lockedMembers = [], lockedTooltip = "团队核心成员，不可移除" }: AddMemberDialogProps) {
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    const init = new Set(currentMembers);
+    lockedMembers.forEach((id) => init.add(id));
+    return init;
+  });
   const [search, setSearch] = useState("");
 
   const filteredMembers = ALL_MEMBERS.filter((m) =>
@@ -156,7 +164,9 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
 
   React.useEffect(() => {
     if (open) {
-      setSelected(new Set(currentMembers));
+      const init = new Set(currentMembers);
+      lockedMembers.forEach((id) => init.add(id));
+      setSelected(init);
       setSearch("");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -269,18 +279,22 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
               <div style={{ display: "flex", flexDirection: "column", gap: -12 }}>
                 {filteredMembers.map((member) => {
                   const isSelected = selected.has(member.id);
-                  // 团队模式：当只剩2个选中时，已选中的不可取消
-                  // 单 agent 模式：只有当前 agent（currentMembers 中的）不可取消
-                  const isLocked = isTeamChat
+                  // 优先级 1：lockedMembers（大数据团队核心成员）→ 强制选中且禁用
+                  const isHardLocked = lockedMembers.includes(member.id);
+                  // 优先级 2：团队模式下若只剩 2 个选中，已选中的不可取消
+                  // 优先级 3：单 agent 模式：当前 agent 不可取消
+                  const isSoftLocked = isTeamChat
                     ? (isSelected && selected.size <= 2)
                     : (isSelected && currentMembers.includes(member.id));
+                  const isLocked = isHardLocked || isSoftLocked;
+                  const tooltipText = isHardLocked ? lockedTooltip : (isTeamChat ? "团队人数不能小于 2 人" : undefined);
                   return (
                     <MemberRow
                       key={member.id}
                       member={member}
                       isSelected={isSelected}
                       isLocked={isLocked}
-                      lockTooltip={isTeamChat ? "团队人数不能小于 2 人" : undefined}
+                      lockTooltip={tooltipText}
                       onToggle={() => { if (!isLocked) toggle(member.id); }}
                     />
                   );

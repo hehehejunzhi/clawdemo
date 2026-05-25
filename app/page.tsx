@@ -2733,7 +2733,10 @@ export default function Home() {
         }}
       />
       <CreateTeamDialog open={createTeamOpen} onClose={() => setCreateTeamOpen(false)} />
-      <AddMemberDialog open={addMemberOpen} onClose={() => setAddMemberOpen(false)} isTeamChat={!!activeTaskId && registry.teams.some(t => registry.tasks.find(task => task.id === activeTaskId)?.agentId === t.id)} currentMembers={(() => {
+      <AddMemberDialog open={addMemberOpen} onClose={() => setAddMemberOpen(false)} isTeamChat={!!activeTaskId && registry.teams.some(t => registry.tasks.find(task => task.id === activeTaskId)?.agentId === t.id)} lockedMembers={(() => {
+        const currentTask = registry.tasks.find(t => t.id === activeTaskId);
+        return currentTask?.agentId === "bigdata-team" ? ["dev", "analysis", "ops"] : [];
+      })()} currentMembers={(() => {
         const isTeam = !!activeTaskId && registry.teams.some(t => registry.tasks.find(task => task.id === activeTaskId)?.agentId === t.id);
         if (isTeam) return teamMembers;
         const agentIdToMemberId: Record<string, string> = { "dev-expert": "dev", "analysis-expert": "analysis", "ops-expert": "ops" };
