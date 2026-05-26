@@ -845,6 +845,8 @@ export default function Home() {
   const [deletingTeamFromDetailId, setDeletingTeamFromDetailId] = useState<string | null>(null);
   // 自定义 Agent 详情页"配置 Skill"全屏弹窗 state（保留 SkillPlaza 内容，外层加 modal 容器）
   const [showSkillPlazaModal, setShowSkillPlazaModal] = useState(false);
+  // 当前选中的 agent 标签（受控传给 ClaudeChatInput.defaultAgentLabel，确保从 Agent 广场/详情页/左栏切入时选择器同步）
+  const [currentAgentLabel, setCurrentAgentLabel] = useState<string>("大数据团队");
   // Agent Registry — Agent 广场/左侧工具栏/对话下拉共享的唯一数据源
   const [registry, setRegistry] = useState<AgentRegistry>(DEFAULT_REGISTRY);
   // 选中的团队 id（非默认"大数据团队"时在 welcome 区显示 TeamSummonBanner）
@@ -1236,6 +1238,7 @@ export default function Home() {
       thinkingTimerRef.current = null;
     }
     setActiveConfirmCard(null);
+    setCurrentAgentLabel("大数据团队");
     chatInputRef.current?.resetAgent();
   }, []);
 
@@ -1442,6 +1445,8 @@ export default function Home() {
           if (isSameAgent) return;
           handleNewChat();
         }
+        // 受控同步 agent 选择器
+        setCurrentAgentLabel(label);
         chatInputRef.current?.setAgent(label);
         handleSelectAgent(agentId);
       }} />}
@@ -1483,6 +1488,8 @@ export default function Home() {
               if (isSameAgent) return;
               handleNewChat();
             }
+            // 受控同步 agent 选择器
+            setCurrentAgentLabel(label);
             chatInputRef.current?.setAgent(label);
             handleSelectAgent(agentId);
           }} />
@@ -1544,6 +1551,7 @@ export default function Home() {
                       const isSameAgent = targetInfo && summonedAgent && targetInfo.title === summonedAgent.title;
                       if (!isSameAgent) handleNewChat();
                     }
+                    setCurrentAgentLabel(expertForCallback.shortTitle);
                     chatInputRef.current?.setAgent(expertForCallback.shortTitle);
                     handleSelectAgent(detailView.id);
                   }}
@@ -1566,6 +1574,7 @@ export default function Home() {
                 onDialog={() => {
                   setDetailView(null);
                   if (chatPhase === "conversation") handleNewChat();
+                  setCurrentAgentLabel(team.name);
                   chatInputRef.current?.setAgent(team.name);
                   handleSelectAgent(team.id);
                 }}
@@ -2628,6 +2637,7 @@ export default function Home() {
                   onCreateTeam={() => setCreateTeamOpen(true)}
                   onSelectAgent={(agentId) => handleSelectAgent(agentId)}
                   agentOptions={agentOptions}
+                  defaultAgentLabel={currentAgentLabel}
                   disableAgentSelector={chatPhase === "conversation"}
                   isGenerating={isGenerating}
                   onStop={handleStop}
@@ -2779,6 +2789,7 @@ export default function Home() {
           }));
           setTeamMembers(ids);
           // 更新输入框 agent 选择器为新团队名
+          setCurrentAgentLabel(teamName);
           chatInputRef.current?.setAgent(teamName);
           // 显示"加入任务"提示（新增的成员）
           const agentIdToMemberId2: Record<string, string> = { "dev-expert": "dev", "analysis-expert": "analysis", "ops-expert": "ops" };
@@ -2835,7 +2846,7 @@ export default function Home() {
       <AnimatePresence>
         {editingTeamFromDetailId && (() => {
           const team = registry.teams.find((t) => t.id === editingTeamFromDetailId);
-          if (!team || team.id === "bigdata-team") return null;
+          if (!team) return null;
           const teamData: CustomTeam = {
             id: team.id,
             name: team.name,

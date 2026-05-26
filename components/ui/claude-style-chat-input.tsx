@@ -264,6 +264,12 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
   const [showModelMenu, setShowModelMenu] = useState(false);
   const defaultLabel = defaultAgentLabel ?? agentOptions?.[0]?.label ?? "大数据团队";
   const [selectedAgent, setSelectedAgent] = useState(defaultLabel);
+  // 让 defaultAgentLabel 受外部控制：变化时同步到 selectedAgent
+  useEffect(() => {
+    if (defaultAgentLabel !== undefined) {
+      setSelectedAgent(defaultAgentLabel);
+    }
+  }, [defaultAgentLabel]);
   const [selectedModel, setSelectedModel] = useState("Claude-Opus-4.6");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
