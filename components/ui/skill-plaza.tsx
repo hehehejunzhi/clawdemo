@@ -320,21 +320,33 @@ function EmptyState({ text }: { text: string }) {
 }
 
 // ── Skill card ────────────────────────────────────────────────
-function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, sourceTag }: {
+function SkillCard({ title, desc, onCardClick, sourceTag, onUninstall }: {
   icon?: string;
   iconBg?: string;
   title: string;
   desc: string;
   defaultTag?: boolean;
-  on: boolean;
-  onToggle?: () => void;
   onCardClick?: () => void;
-  /** 是否显示右侧 Toggle；大数据 Agent 详情页隐藏 */
-  showToggle?: boolean;
   /** 来源标签（如"内置 Skill" / "SkillHub"），跟随标题显示 */
   sourceTag?: string;
+  /** 卸载回调；传入则 hover 显示"卸载"按钮，点击进入 loading，结束后调用 */
+  onUninstall?: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const [uninstalling, setUninstalling] = useState(false);
+
+  const handleUninstall = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (uninstalling) return;
+    setUninstalling(true);
+    setTimeout(() => {
+      // 由父级把数据移回可安装区；本卡片随即被卸载
+      onUninstall?.();
+      // 防御：极端情况下卡片仍存在则恢复
+      setUninstalling(false);
+    }, 1200);
+  };
+
   return (
     <div
       onClick={onCardClick}
@@ -353,11 +365,7 @@ function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, 
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
-        <div style={{
-          flex: 1, minWidth: 0,
-          opacity: showToggle && !on ? 0.45 : 1,
-          transition: "opacity 150ms",
-        }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
             <span style={{
               fontFamily: FONT, fontSize: 16, fontWeight: 500, color: C.textPrimary,
@@ -366,12 +374,18 @@ function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, 
             {sourceTag && (
               <span style={{
                 flexShrink: 0,
-                display: "inline-flex", alignItems: "center",
-                height: 20, padding: "0 8px", borderRadius: 4,
-                background: sourceTag === "内置 Skill" ? "#E3ECFF" : "#F2F4F8",
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                height: 20, padding: "0 8px", borderRadius: 9999,
+                background: sourceTag === "内置 Skill" ? "#E3ECFF"
+                  : sourceTag === "SkillHub" ? "#F2F4F8"
+                  : sourceTag === "任务中补齐" ? "#FFF1E0"
+                  : "#F2F4F8",
                 fontFamily: FONT, fontSize: 12, fontWeight: 400,
-                color: sourceTag === "内置 Skill" ? "#0052D9" : "rgba(0,0,0,0.55)",
-                lineHeight: "20px",
+                color: sourceTag === "内置 Skill" ? "#0052D9"
+                  : sourceTag === "SkillHub" ? "rgba(0,0,0,0.7)"
+                  : sourceTag === "任务中补齐" ? "#B86A00"
+                  : "rgba(0,0,0,0.7)",
+                lineHeight: "20px", whiteSpace: "nowrap",
               }}>{sourceTag}</span>
             )}
           </div>
@@ -384,15 +398,40 @@ function SkillCard({ title, desc, on, onToggle, onCardClick, showToggle = true, 
             {desc}
           </div>
         </div>
-        {showToggle && (
+        {/* 右侧操作区：仅当传入 onUninstall 时 hover 显示「卸载」按钮，点击后进入 loading */}
+        {onUninstall && (
           <div style={{
             flexShrink: 0,
-            marginLeft: "auto",
-            opacity: hovered ? 1 : 0,
-            pointerEvents: hovered ? "auto" : "none",
-            transition: "opacity 150ms",
+            display: "flex", alignItems: "center", justifyContent: "flex-end",
+            opacity: uninstalling || hovered ? 1 : 0,
+            pointerEvents: uninstalling || hovered ? "auto" : "none",
+            maxWidth: uninstalling || hovered ? 100 : 0,
+            overflow: "hidden",
+            transition: "opacity 150ms, max-width 180ms ease",
           }}>
-            <Toggle on={on} onToggle={onToggle} />
+            {uninstalling ? (
+              <div style={{ width: 68, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <style>{`@keyframes hub-spin { to { transform: rotate(360deg); } }`}</style>
+                <svg width="20" height="20" viewBox="0 0 20 20" style={{ animation: "hub-spin 0.8s linear infinite" }}>
+                  <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.15)" strokeWidth="2.5" fill="none" />
+                  <path d="M10 2a8 8 0 0 1 8 8" stroke="rgba(0,0,0,0.7)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </div>
+            ) : (
+              <button
+                onClick={handleUninstall}
+                style={{
+                  height: 32, padding: "0 20px", borderRadius: 100,
+                  border: `1px solid ${C.border}`,
+                  background: C.bgWhite,
+                  fontFamily: FONT, fontSize: 14, fontWeight: 500,
+                  color: C.textPrimary,
+                  cursor: "pointer", outline: "none",
+                }}
+              >
+                卸载
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -455,12 +494,18 @@ function HubCard({ title, desc, willSucceed, onCardClick, onInstallResult, sourc
             {sourceTag && (
               <span style={{
                 flexShrink: 0,
-                display: "inline-flex", alignItems: "center",
-                height: 20, padding: "0 8px", borderRadius: 4,
-                background: sourceTag === "内置 Skill" ? "#E3ECFF" : "#F2F4F8",
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                height: 20, padding: "0 8px", borderRadius: 9999,
+                background: sourceTag === "内置 Skill" ? "#E3ECFF"
+                  : sourceTag === "SkillHub" ? "#F2F4F8"
+                  : sourceTag === "任务中补齐" ? "#FFF1E0"
+                  : "#F2F4F8",
                 fontFamily: FONT, fontSize: 12, fontWeight: 400,
-                color: sourceTag === "内置 Skill" ? "#0052D9" : "rgba(0,0,0,0.55)",
-                lineHeight: "20px",
+                color: sourceTag === "内置 Skill" ? "#0052D9"
+                  : sourceTag === "SkillHub" ? "rgba(0,0,0,0.7)"
+                  : sourceTag === "任务中补齐" ? "#B86A00"
+                  : "rgba(0,0,0,0.7)",
+                lineHeight: "20px", whiteSpace: "nowrap",
               }}>{sourceTag}</span>
             )}
           </div>
@@ -570,6 +615,9 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
   const [installedExpanded, setInstalledExpanded] = useState(false);
   const [installedList, setInstalledList] = useState(INSTALLED_HUB_SKILLS.map((s) => s.title));
   const [availableList, setAvailableList] = useState(HUB_SKILLS.map((s) => s.title));
+  // 从「已安装区」卸载下来的 hub skill 元数据池（来自 INSTALLED_HUB_SKILLS 但不在 HUB_SKILLS 中的项）
+  // 卸载后追加进此池，HUB_SKILLS 渲染时与之合并，实现"卸载后重新出现在 SkillHub 可安装区"
+  const [extraHubSkills, setExtraHubSkills] = useState<typeof HUB_SKILLS>([]);
   // 自定义 Agent 「已安装」的内置 skill：{ [avatarId]: Set<skillName> }
   // 初始化：全部默认未安装（与 SkillHub 展示一致，需用户在"内置 Skill" tab 手动安装）
   const [customInstalledSkills, setCustomInstalledSkills] = useState<Record<string, Set<string>>>(() => {
@@ -616,6 +664,36 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
   }, []);
   const hideToast = useCallback(() => setToastVisible(false), []);
 
+  // 合并 HUB pool：原 HUB_SKILLS + 从已安装区卸载下来的 INSTALLED_HUB_SKILLS 项
+  const allHubSkills = useMemo(() => [...HUB_SKILLS, ...extraHubSkills], [extraHubSkills]);
+
+  // 卸载 hub skill：从 installedList 移除 + 加回 availableList
+  // 若属于 INSTALLED_HUB_SKILLS（不在 HUB_SKILLS 中），则把其元数据加入 extraHubSkills 池
+  const uninstallHubSkill = useCallback((title: string) => {
+    setInstalledList((prev) => prev.filter((t) => t !== title));
+    setAvailableList((prev) => (prev.includes(title) ? prev : [...prev, title]));
+    const inOriginalHub = HUB_SKILLS.some((s) => s.title === title);
+    if (!inOriginalHub) {
+      const src = INSTALLED_HUB_SKILLS.find((s) => s.title === title);
+      if (src) {
+        setExtraHubSkills((prev) => prev.some((s) => s.title === title) ? prev : [
+          ...prev,
+          {
+            icon: "S",
+            iconBg: "#3BAFB9",
+            title: src.title,
+            desc: src.desc,
+            category: src.category,
+            version: src.version,
+            author: src.author,
+            willSucceed: true,
+          },
+        ]);
+      }
+    }
+    showToast("Skill 卸载成功", "success");
+  }, [showToast]);
+
   // 是否为内置专家（内置专家才有预置 Skill tab）
   const isBuiltin = isBuiltinCat(activeCat);
 
@@ -648,23 +726,43 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
   }, [builtinExperts, customAgents, activeCat, lockedAgentName]);
 
   // 按分类定义不同的技能（含详情弹窗需要的 category/version/author）
-  const SKILLS_BY_CAT: Record<string, { icon: string; iconBg: string; title: string; desc: string; defaultTag?: boolean; category: string; version: string; author: string }[]> = {
+  // 与档案（agent-detail.tsx PROFILE_DEV/ANALYSIS/OPS）保持一致：内容、版本、来源完全同步
+  // tag: builtin → "内置 Skill" 蓝；skillhub → "SkillHub" 灰；task → "任务中补齐" 橙
+  const SKILLS_BY_CAT: Record<string, { icon: string; iconBg: string; title: string; desc: string; tag: "builtin" | "skillhub" | "task"; category: string; version: string; author: string }[]> = {
     "数据工程专家": [
-      { icon: "E", iconBg: "#3BAFB9", title: "ETL 流水线编排", desc: "可视化拖拽构建数据加工 DAG，自动生成调度配置。", category: "数据开发", version: "1.0.0", author: "WeData Team" },
-      { icon: "S", iconBg: "#4C8DEF", title: "Schema 变更检测", desc: "实时监控上游表结构变化，自动预警并生成迁移脚本。", category: "数据开发", version: "1.1.0", author: "WeData Team" },
-      { icon: "血", iconBg: "#7B68EE", title: "血缘分析引擎", desc: "自动追踪字段级血缘，输出影响面评估报告。", defaultTag: true, category: "数据治理", version: "2.0.0", author: "WeData Team" },
+      { icon: "S", iconBg: "#E8524A", title: "Shuffle-Skew-Tuner", desc: "自动定位 Shuffle 倾斜热点 key，给出 cluster by / broadcast 重写方案", tag: "task", category: "性能调优", version: "2.1.0", author: "Rigel · 任务沉淀" },
+      { icon: "A", iconBg: "#3BAFB9", title: "Auto-DWH-Modeler", desc: "基于业务需求自动生成维度/事实模型 DDL，输出建表脚本", tag: "builtin", category: "数仓建模", version: "1.4.2", author: "WeData Team" },
+      { icon: "S", iconBg: "#4C8DEF", title: "Schedule-Composer", desc: "根据上下游依赖自动编排调度 DAG，识别关键路径与资源冲突", tag: "builtin", category: "调度治理", version: "1.6.0", author: "WeData Team" },
+      { icon: "Q", iconBg: "#7B68EE", title: "SQL-Profile-Reviewer", desc: "SQL 执行计划 review，给出 PPD / CBO / Hint 改写建议", tag: "skillhub", category: "性能调优", version: "0.9.0", author: "SkillHub · Community" },
+      { icon: "L", iconBg: "#FF7800", title: "Lineage-Maintainer", desc: "增量血缘维护，字段级影响分析与口径一致性检查", tag: "skillhub", category: "数据治理", version: "1.0.3", author: "SkillHub · Tencent" },
     ],
     "数据分析专家": [
-      { icon: "指", iconBg: "#7B68EE", title: "指标 SQL Copilot", desc: "自动生成指标查询 SQL 并做字段解释。", defaultTag: true, category: "数据分析", version: "3.0.1", author: "WeData Team" },
-      { icon: "B", iconBg: "#3BAFB9", title: "BI 图表生成", desc: "根据结果集输出趋势图、透视表和分析摘要。", defaultTag: true, category: "数据分析", version: "2.2.0", author: "WeData Team" },
-      { icon: "归", iconBg: "#E8524A", title: "异常归因分析", desc: "自动检测指标波动并定位根因维度。", category: "数据分析", version: "1.3.0", author: "WeData Team" },
-      { icon: "预", iconBg: "#FF7800", title: "趋势预测", desc: "基于历史数据生成未来 7/14/30 天的趋势预测。", category: "数据分析", version: "1.0.0", author: "WeData Team" },
+      { icon: "M", iconBg: "#7B68EE", title: "Metric-NLQ", desc: "自然语言指标取数：理解业务问题，自动生成 SQL + 解释", tag: "builtin", category: "指标洞察", version: "3.0.1", author: "WeData Team" },
+      { icon: "A", iconBg: "#3BAFB9", title: "Attribution-Shapley", desc: "多触点归因（Shapley 模型），量化各渠道贡献度", tag: "skillhub", category: "归因分析", version: "1.5.0", author: "SkillHub · Tencent" },
+      { icon: "T", iconBg: "#FF7800", title: "Trend-Forecaster", desc: "时间序列趋势预测，含季节性分解与异常检测", tag: "skillhub", category: "趋势预测", version: "2.0.0", author: "SkillHub · Community" },
+      { icon: "C", iconBg: "#4C8DEF", title: "Cohort-Retention", desc: "Cohort 留存矩阵 + 分群留存对比", tag: "builtin", category: "用户分析", version: "1.2.0", author: "WeData Team" },
+      { icon: "F", iconBg: "#E8524A", title: "Funnel-Analyzer", desc: "漏斗分析：识别核心流失节点 + 自动给出优化假设", tag: "task", category: "用户分析", version: "1.0.5", author: "Vega · 任务沉淀" },
+      { icon: "S", iconBg: "#A56EFF", title: "Smart-Dashboard", desc: "基于业务问题自动选图：趋势图 / 占比饼图 / 热力图 / 归因瀑布图", tag: "builtin", category: "可视化", version: "2.1.0", author: "WeData Team" },
+      { icon: "A", iconBg: "#E59858", title: "Anomaly-Detector", desc: "指标异常实时检测：多算法融合 + 自动给出根因维度下钻", tag: "skillhub", category: "异常检测", version: "1.3.0", author: "SkillHub · Tencent" },
+      { icon: "A", iconBg: "#0CBF5B", title: "AB-Test-Analyzer", desc: "A/B 实验显著性检验，自动输出置信区间与业务建议", tag: "builtin", category: "实验分析", version: "2.0.2", author: "WeData Team" },
+      { icon: "S", iconBg: "#E8524A", title: "Segment-Insight", desc: "用户分群洞察：基于行为/属性自动挖掘高价值人群特征", tag: "task", category: "用户分析", version: "1.1.0", author: "Vega · 任务沉淀" },
+      { icon: "R", iconBg: "#4C8DEF", title: "Report-Composer", desc: "结论先行式报告自动生成：核心结论 + 同环比 + 风险提示三段式", tag: "builtin", category: "报告生成", version: "1.4.0", author: "WeData Team" },
     ],
     "智能管家": [
-      { icon: "监", iconBg: "#FF7800", title: "集群健康监控", desc: "实时监控 HDFS/YARN/Spark 集群健康状态。", defaultTag: true, category: "运维", version: "2.1.0", author: "WeData Team" },
-      { icon: "扩", iconBg: "#E8524A", title: "弹性扩缩容", desc: "根据负载自动触发节点扩缩容策略。", category: "运维", version: "1.2.0", author: "WeData Team" },
-      { icon: "日", iconBg: "#4C8DEF", title: "日志智能分析", desc: "对 Executor 日志做聚类分析，快速定位故障模式。", category: "运维", version: "1.5.0", author: "WeData Team" },
+      { icon: "I", iconBg: "#E8524A", title: "incident-runbook-v2", desc: "基于历史故障经验沉淀的 runbook，覆盖 OOM、磁盘满、慢查询场景", tag: "task", category: "故障应急", version: "2.1.0", author: "Orion · 任务沉淀" },
+      { icon: "C", iconBg: "#3BAFB9", title: "Cluster-Health-Monitor", desc: "集群健康巡检，实时监控 CPU / 内存 / 磁盘 / 网络指标", tag: "builtin", category: "集群运维", version: "1.4.2", author: "WeData Team" },
+      { icon: "C", iconBg: "#FF7800", title: "Capacity-Forecaster", desc: "基于历史数据预测集群容量需求，辅助扩缩容决策", tag: "skillhub", category: "容量规划", version: "1.0.3", author: "SkillHub · Tencent" },
+      { icon: "S", iconBg: "#4C8DEF", title: "SLA-Sentinel", desc: "实时跟踪关键调度 SLA，超时自动升级与扩容", tag: "builtin", category: "调度运维", version: "2.0.0", author: "WeData Team" },
+      { icon: "P", iconBg: "#A56EFF", title: "Presto-Native-Executor", desc: "Presto 原生 C++ 算子加速，3-5x 性能提升", tag: "skillhub", category: "性能调优", version: "0.9.0", author: "SkillHub · Community" },
+      { icon: "S", iconBg: "#7B68EE", title: "Slow-Query-Analyzer", desc: "分析慢查询根因，给出执行计划与索引优化建议", tag: "skillhub", category: "性能调优", version: "1.2.0", author: "SkillHub · Community" },
     ],
+  };
+
+  // tag → SkillCard sourceTag 文案
+  const TAG_TO_SOURCE_TAG: Record<"builtin" | "skillhub" | "task", string> = {
+    builtin: "内置 Skill",
+    skillhub: "SkillHub",
+    task: "任务中补齐",
   };
 
   const skills = SKILLS_BY_CAT[activeCat] ?? [];
@@ -716,7 +814,24 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
   // 详情页锁定模式下，大数据 Agent 与自定义 Agent 使用同一套「配置 Skill」内容结构。
   const useConfigLayout = !isBuiltin || Boolean(lockedAgentName);
   const lockedBuiltinInstalledSkills = lockedAgentName && isBuiltin ? filteredSkills : [];
-  const installedCount = (lockedAgentName && isBuiltin ? skills.length : currentAvatarInstalledList.length) + installedList.length;
+  // 「已安装」数量：搜索时显示搜索命中的已安装数量；否则显示完整已安装数量
+  const installedCount = (() => {
+    if (lockedAgentName && isBuiltin) {
+      // 锁定大数据 Agent：filteredSkills 已经按 kw 过滤
+      return filteredSkills.length;
+    }
+    if (!kw) {
+      return currentAvatarInstalledList.length + installedList.length;
+    }
+    // 搜索状态：统计过滤后的已安装项
+    const hit = (s: { title: string; desc: string }) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw);
+    const customInstalledHits = currentAvatar ? currentAvatarInstalledList.filter(hit).length : 0;
+    const installedHubHits = INSTALLED_HUB_SKILLS.filter((s) => installedList.includes(s.title)).filter(hit).length;
+    const newInstalledHits = HUB_SKILLS
+      .filter((s) => installedList.includes(s.title) && !INSTALLED_HUB_SKILLS.some((i) => i.title === s.title))
+      .filter(hit).length;
+    return customInstalledHits + installedHubHits + newInstalledHits;
+  })();
   const presetInstallableSkills = lockedAgentName && isBuiltin ? [] : customUninstalledSkills;
 
   // Tab 列表：内置专家隐藏整条 tab 栏；自定义 Agent 显示双 tab
@@ -763,10 +878,11 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
       `}</style>
       {/* 顶部标题栏 */}
       <div style={{
-        height: 50, flexShrink: 0,
+        flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 24px",
-        borderBottom: lockedAgentName ? "none" : `1px solid ${C.border}`,
+        ...(lockedAgentName
+          ? { padding: "24px 24px 0 24px" }
+          : { height: 50, padding: "0 24px", borderBottom: `1px solid ${C.border}` }),
         background: lockedAgentName ? C.bgWhite : C.bg,
       }}>
         <span style={{
@@ -821,12 +937,17 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
         )}
 
         {/* 右侧内容 */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <div style={{
+          flex: 1, display: "flex", flexDirection: "column", minWidth: 0,
+          // 锁定模式（配置 Skill 弹窗）按设计稿：padding 24px 24px 0 24px + gap 24px
+          ...(lockedAgentName ? { padding: "24px 24px 0 24px", gap: 24 } : null),
+        }}>
           {/* 详情页标题：锁定模式（内置/自定义统一）→ "已安装 (N)" + 搜索框；非锁定模式保持原有 */}
           <div style={{
-            height: 56, flexShrink: 0,
+            flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "0 24px", gap: 16,
+            gap: 16,
+            ...(lockedAgentName ? null : { height: 56, padding: "0 24px" }),
           }}>
             {lockedAgentName ? (
               <span style={{
@@ -897,8 +1018,8 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
           {/* 技能卡片 */}
           <div style={{
             flex: 1, overflowY: "auto",
-            // 顶部紧贴标题（大数据 & 自定义 Agent 统一）
-            padding: "0 24px 24px",
+            // 非锁定模式保留原 padding；锁定模式由外层 padding(24) 提供
+            ...(lockedAgentName ? { paddingBottom: 24 } : { padding: "0 24px 24px" }),
             scrollbarWidth: "none", position: "relative",
           }}>
             <AnimatePresence mode="wait">
@@ -917,10 +1038,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                         key={`${activeCat}-${s.title}`}
                         icon={s.icon} iconBg={s.iconBg}
                         title={s.title} desc={s.desc}
-                        defaultTag={s.defaultTag}
-                        showToggle={false}
-                        on={isOn(`${activeCat}-${s.title}`)}
-                        onToggle={() => toggle(`${activeCat}-${s.title}`)}
+                        sourceTag={TAG_TO_SOURCE_TAG[s.tag]}
                         onCardClick={() => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author })}
                       />
                     ))}
@@ -960,7 +1078,9 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                     return (
                       <div style={{
                         position: "absolute",
-                        left: 24, right: 24, top: 0, bottom: 24,
+                        left: lockedAgentName ? 0 : 24,
+                        right: lockedAgentName ? 0 : 24,
+                        top: 0, bottom: lockedAgentName ? 0 : 24,
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
                         <EmptyState text="未找到匹配的 Skill" />
@@ -986,77 +1106,74 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                       key: string;
                       title: string;
                       desc: string;
-                      sourceTag: "内置 Skill" | "SkillHub";
-                      on: boolean;
-                      onToggle: () => void;
+                      sourceTag: "内置 Skill" | "SkillHub" | "任务中补齐";
                       onCardClick: () => void;
+                      /** 仅 SkillHub 项可卸载 */
+                      onUninstall?: () => void;
                     };
                     const items: InstalledItem[] = [];
 
-                    // 1) 锁定的大数据 Agent 已安装的内置 skill
+                    // 1) 锁定的大数据 Agent 已安装的内置 skill（档案数据，不可卸载）
                     lockedBuiltinInstalledSkills.forEach((s) => {
                       const key = `locked-builtin-installed-${activeCat}-${s.title}`;
                       items.push({
                         key,
                         title: s.title,
                         desc: s.desc,
-                        sourceTag: "内置 Skill",
-                        on: isOn(key),
-                        onToggle: () => toggle(key),
+                        sourceTag: TAG_TO_SOURCE_TAG[s.tag] as "内置 Skill" | "SkillHub" | "任务中补齐",
                         onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
                       });
                     });
 
-                    // 2) 当前自定义 Agent 已安装的内置 skill
+                    // 2) 当前自定义 Agent 已安装的内置 skill（档案数据，不可卸载）
                     if (currentAvatar) {
                       currentAvatarInstalledList
                         .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
                         .forEach((s) => {
                           const key = `custom-installed-${currentAvatar.id}-${s.title}`;
-                          const on = key in toggleState ? toggleState[key] : s.enabled;
                           items.push({
                             key,
                             title: s.title,
                             desc: s.desc,
                             sourceTag: "内置 Skill",
-                            on,
-                            onToggle: () => setToggleState((p) => ({ ...p, [key]: !on })),
                             onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: "自定义", version: "1.0.0", author: activeCat }),
                           });
                         });
                     }
 
-                    // 3) 预置 INSTALLED_HUB_SKILLS（前 2 个标"内置 Skill"，其余"SkillHub"，与设计稿一致）
-                    INSTALLED_HUB_SKILLS
-                      .filter((s) => installedList.includes(s.title))
-                      .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
-                      .forEach((s, i) => {
-                        items.push({
-                          key: `installed-${s.title}`,
-                          title: s.title,
-                          desc: s.desc,
-                          sourceTag: i < 2 ? "内置 Skill" : "SkillHub",
-                          on: isOn(`hub-installed-${s.title}`),
-                          onToggle: () => toggle(`hub-installed-${s.title}`),
-                          onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
+                    // 3) 预置 INSTALLED_HUB_SKILLS（前 2 个标"内置 Skill" 不可卸载；其余 SkillHub 可卸载）
+                    // 注：锁定的内置专家（如 Vega）只展示档案数据，跳过通用 hub skills
+                    if (!(lockedAgentName && isBuiltin)) {
+                      INSTALLED_HUB_SKILLS
+                        .filter((s) => installedList.includes(s.title))
+                        .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
+                        .forEach((s, i) => {
+                          const isBuiltinTag = i < 2;
+                          items.push({
+                            key: `installed-${s.title}`,
+                            title: s.title,
+                            desc: s.desc,
+                            sourceTag: isBuiltinTag ? "内置 Skill" : "SkillHub",
+                            onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
+                            onUninstall: isBuiltinTag ? undefined : () => uninstallHubSkill(s.title),
+                          });
                         });
-                      });
 
-                    // 4) 新安装的 SkillHub skill
-                    HUB_SKILLS
-                      .filter((s) => installedList.includes(s.title) && !INSTALLED_HUB_SKILLS.some((i) => i.title === s.title))
-                      .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
-                      .forEach((s) => {
-                        items.push({
-                          key: `new-installed-${s.title}`,
-                          title: s.title,
-                          desc: s.desc,
-                          sourceTag: "SkillHub",
-                          on: isOn(`hub-installed-${s.title}`),
-                          onToggle: () => toggle(`hub-installed-${s.title}`),
-                          onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
+                      // 4) 新安装的 SkillHub skill（可卸载）
+                      HUB_SKILLS
+                        .filter((s) => installedList.includes(s.title) && !INSTALLED_HUB_SKILLS.some((i) => i.title === s.title))
+                        .filter((s) => !kw || s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw))
+                        .forEach((s) => {
+                          items.push({
+                            key: `new-installed-${s.title}`,
+                            title: s.title,
+                            desc: s.desc,
+                            sourceTag: "SkillHub",
+                            onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
+                            onUninstall: () => uninstallHubSkill(s.title),
+                          });
                         });
-                      });
+                    }
 
                     const visible = installedExpanded || kw ? items : items.slice(0, INSTALLED_COLLAPSE_COUNT);
                     const showToggleMore = !kw && items.length > INSTALLED_COLLAPSE_COUNT;
@@ -1070,9 +1187,8 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                               title={it.title}
                               desc={it.desc}
                               sourceTag={it.sourceTag}
-                              on={it.on}
-                              onToggle={it.onToggle}
                               onCardClick={it.onCardClick}
+                              onUninstall={it.onUninstall}
                             />
                           ))}
                         </div>
@@ -1095,13 +1211,13 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                   {!lockedAgentName && (
                     <div style={{ height: 1, background: C.border, margin: "16px 0" }} />
                   )}
-                  {lockedAgentName && <div style={{ height: 16, flexShrink: 0 }} />}
+                  {lockedAgentName && <div style={{ height: 24, flexShrink: 0 }} />}
 
                   {/* ── 可安装区域：搜索时展示"为你找到 N 个结果"+合并列表；否则展示 Tab + 对应列表 ── */}
                   {kw ? (() => {
                     const hitCustomUninstalled = presetInstallableSkills
                       .filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
-                    const hitHubUninstalled = HUB_SKILLS
+                    const hitHubUninstalled = allHubSkills
                       .filter((s) => availableList.includes(s.title) && !installedList.includes(s.title))
                       .filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw));
                     const totalHits = hitCustomUninstalled.length + hitHubUninstalled.length;
@@ -1228,7 +1344,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                   ) : (
                     /* SkillHub：原可安装 HubCard 列表 */
                     (() => {
-                      const avail = HUB_SKILLS.filter((s) => availableList.includes(s.title) && !installedList.includes(s.title));
+                      const avail = allHubSkills.filter((s) => availableList.includes(s.title) && !installedList.includes(s.title));
                       return avail.length > 0 ? (
                         <div className="skill-grid">
                           {avail.map((s) => (

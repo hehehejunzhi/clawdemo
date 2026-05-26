@@ -140,6 +140,7 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
     return init;
   });
   const [search, setSearch] = useState("");
+  const [saveBtnHovered, setSaveBtnHovered] = useState(false);
 
   const filteredMembers = ALL_MEMBERS.filter((m) =>
     m.name.toLowerCase().includes(search.toLowerCase()) || m.desc.toLowerCase().includes(search.toLowerCase())
@@ -154,7 +155,7 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
     });
   };
 
-  const tooFew = isTeamChat && selected.size < 2;
+  const tooFew = selected.size < 2;
 
   const handleConfirm = () => {
     if (tooFew) return;
@@ -325,19 +326,54 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
                 >
                   取消
                 </button>
-                <button
-                  onClick={handleConfirm}
-                  style={{
-                    height: 40, padding: "0 24px", borderRadius: 32,
-                    border: "none",
-                    background: "rgba(0,0,0,0.9)",
-                    cursor: "pointer",
-                    fontFamily: FONT, fontSize: 14, fontWeight: 500,
-                    color: "#FFF",
-                  }}
+                <div
+                  style={{ position: "relative", display: "inline-block" }}
+                  onMouseEnter={() => setSaveBtnHovered(true)}
+                  onMouseLeave={() => setSaveBtnHovered(false)}
                 >
-                  {isTeamChat ? "保存" : "创建团队"}
-                </button>
+                  <button
+                    onClick={handleConfirm}
+                    disabled={tooFew}
+                    style={{
+                      height: 40, padding: "0 24px", borderRadius: 32,
+                      border: "none",
+                      background: tooFew ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.9)",
+                      cursor: tooFew ? "not-allowed" : "pointer",
+                      fontFamily: FONT, fontSize: 14, fontWeight: 500,
+                      color: "#FFF",
+                      transition: "background 150ms",
+                    }}
+                  >
+                    保存
+                  </button>
+                  {tooFew && saveBtnHovered && (
+                    <div style={{
+                      position: "absolute",
+                      bottom: "calc(100% + 8px)",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      display: "inline-flex", alignItems: "center",
+                      height: 28, padding: "0 12px", borderRadius: 6,
+                      background: "rgba(32,32,32,0.9)",
+                      fontFamily: FONT, fontSize: 12, fontWeight: 500,
+                      color: "rgba(255,255,255,0.95)",
+                      whiteSpace: "nowrap",
+                      pointerEvents: "none",
+                      zIndex: 10,
+                    }}>
+                      {isTeamChat ? "团队人数不能小于 2 人" : "至少添加 1 个成员"}
+                      <span style={{
+                        position: "absolute",
+                        top: "100%", left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 0, height: 0,
+                        borderLeft: "4px solid transparent",
+                        borderRight: "4px solid transparent",
+                        borderTop: "4px solid rgba(32,32,32,0.9)",
+                      }} />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>

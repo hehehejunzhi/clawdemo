@@ -111,7 +111,7 @@ export const DEFAULT_EXPERTS: BuiltinExpert[] = [
     heroAvatar: "/agents/rigel-bust.png",
     skills: ["需求转数据模型", "生成调度方案", "自动数仓开发", "检测管道异常", "接入数据源", "优化任务性能"],
     nameColor: "#2873FF",
-    summonText: "今天想开发什么数仓？",
+    summonText: "今天想处理哪些大数据任务？",
   },
   {
     id: "analysis-expert",
@@ -135,7 +135,7 @@ export const DEFAULT_EXPERTS: BuiltinExpert[] = [
     heroAvatar: "/agents/orion-bust.png",
     skills: ["监测数据质量", "智能血缘维护", "自动管理元数据", "识别口径冲突", "安全脱敏", "标签治理"],
     nameColor: "#CC6B3A",
-    summonText: "告诉我你想梳理哪条数据链路？",
+    summonText: "告诉我你想监控哪个集群健康？",
   },
 ];
 

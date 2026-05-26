@@ -36,7 +36,7 @@ const C = {
 
 // ── 公共小组件 ────────────────────────────────────────────────
 
-function Card({ title, extra, children, style }: { title?: string; extra?: React.ReactNode; children: React.ReactNode; style?: React.CSSProperties }) {
+function Card({ title, extra, children, style, sectionClassName }: { title?: string; extra?: React.ReactNode; children: React.ReactNode; style?: React.CSSProperties; sectionClassName?: string }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       {(title || extra) && (
@@ -52,13 +52,16 @@ function Card({ title, extra, children, style }: { title?: string; extra?: React
           {extra}
         </header>
       )}
-      <section style={{
-        background: C.cardBg,
-        border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        padding: 20,
-        ...style,
-      }}>
+      <section
+        className={sectionClassName}
+        style={{
+          background: C.cardBg,
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: 20,
+          ...style,
+        }}
+      >
         {children}
       </section>
     </div>
@@ -205,20 +208,24 @@ export function SimpleMarkdown({ source }: { source: string }) {
 }
 
 function Chip({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "warm" | "green" | "blue" }) {
-  const bg = tone === "warm" ? C.chipBgWarm
-    : tone === "green" ? C.chipBgGreen
-    : tone === "blue" ? C.chipBgBlue
+  // tone 与设计稿映射：
+  //   blue  → 内置 Skill：bg #E3ECFF / color #0052D9
+  //   green → SkillHub：bg #F2F4F8 / color rgba(0,0,0,0.7)（设计稿即用灰色 chip）
+  //   warm  → 任务中补齐：bg #FFF1E0 / color #B86A00
+  const bg = tone === "warm" ? "#FFF1E0"
+    : tone === "green" ? "#F2F4F8"
+    : tone === "blue" ? "#E3ECFF"
     : C.chipBg;
   const color = tone === "warm" ? "#B86A00"
-    : tone === "green" ? "#0E8A4A"
-    : tone === "blue" ? "#2873FF"
+    : tone === "green" ? "rgba(0,0,0,0.7)"
+    : tone === "blue" ? "#0052D9"
     : C.textTertiary;
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center",
-      height: 22, padding: "0 8px", borderRadius: 11,
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      height: 20, padding: "0 8px", borderRadius: 9999,
       background: bg, color, fontFamily: FONT, fontSize: 12,
-      fontWeight: 500, lineHeight: "22px", whiteSpace: "nowrap",
+      fontWeight: 400, lineHeight: "20px", whiteSpace: "nowrap",
     }}>
       {children}
     </span>
@@ -1163,7 +1170,6 @@ CLUSTER BY user_id;
     { value: "1247", label: "会话次数" },
     { value: "6", label: "进化" },
     { value: "24", label: "技能" },
-    { value: "27", label: "合并请求" },
   ],
 };
 
@@ -1272,7 +1278,6 @@ const PROFILE_OPS: AgentProfile = {
     { value: "2847", label: "会话次数" },
     { value: "14", label: "进化" },
     { value: "18", label: "技能" },
-    { value: "63", label: "合并请求" },
   ],
 };
 
@@ -1315,6 +1320,10 @@ const PROFILE_ANALYSIS: AgentProfile = {
     { name: "Cohort-Retention", desc: "Cohort 留存矩阵 + 分群留存对比", tag: "builtin", category: "用户分析", version: "1.2.0", author: "WeData Team" },
     { name: "Funnel-Analyzer", desc: "漏斗分析：识别核心流失节点 + 自动给出优化假设", tag: "task", category: "用户分析", version: "1.0.5", author: "Vega · 任务沉淀" },
     { name: "Smart-Dashboard", desc: "基于业务问题自动选图：趋势图 / 占比饼图 / 热力图 / 归因瀑布图", tag: "builtin", category: "可视化", version: "2.1.0", author: "WeData Team" },
+    { name: "Anomaly-Detector", desc: "指标异常实时检测：多算法融合 + 自动给出根因维度下钻", tag: "skillhub", category: "异常检测", version: "1.3.0", author: "SkillHub · Tencent" },
+    { name: "AB-Test-Analyzer", desc: "A/B 实验显著性检验，自动输出置信区间与业务建议", tag: "builtin", category: "实验分析", version: "2.0.2", author: "WeData Team" },
+    { name: "Segment-Insight", desc: "用户分群洞察：基于行为/属性自动挖掘高价值人群特征", tag: "task", category: "用户分析", version: "1.1.0", author: "Vega · 任务沉淀" },
+    { name: "Report-Composer", desc: "结论先行式报告自动生成：核心结论 + 同环比 + 风险提示三段式", tag: "builtin", category: "报告生成", version: "1.4.0", author: "WeData Team" },
   ],
   evolution: [
     { title: "新增记忆「春季焕新季归因 ROI 模型」", desc: "3 天前 · 来自实际活动复盘", date: "3 天前", level: "Lv.6", exp: "+600 经验" },
@@ -1384,7 +1393,6 @@ Push 推送   22%
     { value: "5219", label: "会话次数" },
     { value: "27", label: "进化" },
     { value: "21", label: "技能" },
-    { value: "112", label: "合并请求" },
   ],
 };
 
@@ -1451,6 +1459,10 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
       background: C.pageBg, overflow: "hidden",
       fontFamily: FONT,
     }}>
+      <style>{`
+        .agent-detail-noscrollbar::-webkit-scrollbar { display: none; }
+        .agent-detail-noscrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
       {/* ── 顶部标题栏 ── */}
       <header style={{
         height: 50, flexShrink: 0,
@@ -1743,7 +1755,8 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
                     配置 Skill
                   </button>
                 ) : undefined}
-                style={{ height: 320, overflowY: "auto", padding: "4px 20px 20px" }}
+                style={{ height: 320, overflowY: "auto", padding: "4px 20px 20px", scrollbarWidth: "none" }}
+                sectionClassName="agent-detail-noscrollbar"
               >
                 <SkillList items={profile.skills} onSkillClick={(s) => setSkillDetail({
                   title: s.name,
@@ -1756,7 +1769,7 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <Card title="Agent 自进化" style={{ height: 320, overflowY: "auto" }}>
+              <Card title="Agent 自进化" style={{ height: 320, overflowY: "auto", scrollbarWidth: "none" }} sectionClassName="agent-detail-noscrollbar">
                 <div style={{ marginBottom: 16 }}>
                   <PillTabs
                     tabs={[

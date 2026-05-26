@@ -556,9 +556,9 @@ const ic = "rgba(0,0,0,0.45)";
 // ── 预设数据：Rigel 名片 ────────────────────────────────────────
 export const RIGEL_DATA: AgentCardProps = {
   name: "Rigel",
-  title: "智能管家",
+  title: "数据工程专家",
   avatar: "/agents/1a.png",
-  summonText: "今天想开发什么数仓？",
+  summonText: "今天想处理哪些大数据任务？",
   description:
     "擅长数仓建模与全链路工程开发，能精准把业务需求转化为可落地的数据架构方案，从任务调度、日常运维到异常诊断与修复，数据工程的全流程一手包办。",
   stats: [
@@ -620,9 +620,9 @@ export const VEGA_DATA: AgentCardProps = {
 export const ORION_DATA: AgentCardProps = {
   name: "Orion",
   nameColor: "#CC6B3A",
-  title: "数据工程专家",
+  title: "智能管家",
   avatar: "/agents/3a.png",
-  summonText: "今天想治理哪些数据？",
+  summonText: "告诉我你想监控哪个集群健康？",
   description:
     "擅长数据质量监控与元数据管理，把混乱的数据资产梳理成有序可信的治理体系，血缘维护、口径统一、规则执行，一套不落",
   stats: [
