@@ -378,12 +378,12 @@ function SkillCard({ title, desc, onCardClick, sourceTag, onUninstall }: {
                 height: 20, padding: "0 8px", borderRadius: 9999,
                 background: sourceTag === "内置 Skill" ? "#E3ECFF"
                   : sourceTag === "SkillHub" ? "#F2F4F8"
-                  : sourceTag === "任务中补齐" ? "#FFF1E0"
+                  : sourceTag === "任务中创建" ? "#FFF1E0"
                   : "#F2F4F8",
                 fontFamily: FONT, fontSize: 12, fontWeight: 400,
                 color: sourceTag === "内置 Skill" ? "#0052D9"
                   : sourceTag === "SkillHub" ? "rgba(0,0,0,0.7)"
-                  : sourceTag === "任务中补齐" ? "#B86A00"
+                  : sourceTag === "任务中创建" ? "#B86A00"
                   : "rgba(0,0,0,0.7)",
                 lineHeight: "20px", whiteSpace: "nowrap",
               }}>{sourceTag}</span>
@@ -498,12 +498,12 @@ function HubCard({ title, desc, willSucceed, onCardClick, onInstallResult, sourc
                 height: 20, padding: "0 8px", borderRadius: 9999,
                 background: sourceTag === "内置 Skill" ? "#E3ECFF"
                   : sourceTag === "SkillHub" ? "#F2F4F8"
-                  : sourceTag === "任务中补齐" ? "#FFF1E0"
+                  : sourceTag === "任务中创建" ? "#FFF1E0"
                   : "#F2F4F8",
                 fontFamily: FONT, fontSize: 12, fontWeight: 400,
                 color: sourceTag === "内置 Skill" ? "#0052D9"
                   : sourceTag === "SkillHub" ? "rgba(0,0,0,0.7)"
-                  : sourceTag === "任务中补齐" ? "#B86A00"
+                  : sourceTag === "任务中创建" ? "#B86A00"
                   : "rgba(0,0,0,0.7)",
                 lineHeight: "20px", whiteSpace: "nowrap",
               }}>{sourceTag}</span>
@@ -615,9 +615,11 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
   const [installedExpanded, setInstalledExpanded] = useState(false);
   const [installedList, setInstalledList] = useState(INSTALLED_HUB_SKILLS.map((s) => s.title));
   const [availableList, setAvailableList] = useState(HUB_SKILLS.map((s) => s.title));
-  // 从「已安装区」卸载下来的 hub skill 元数据池（来自 INSTALLED_HUB_SKILLS 但不在 HUB_SKILLS 中的项）
+  // 从「已安装区」卸载下来的 hub skill 元数据池（来自 INSTALLED_HUB_SKILLS / 锁定 Agent 档案中 SkillHub 项）
   // 卸载后追加进此池，HUB_SKILLS 渲染时与之合并，实现"卸载后重新出现在 SkillHub 可安装区"
   const [extraHubSkills, setExtraHubSkills] = useState<typeof HUB_SKILLS>([]);
+  // 锁定大数据 Agent 档案中已被卸载的 skill title 集合（用于从档案视图中过滤掉）
+  const [uninstalledLockedSkills, setUninstalledLockedSkills] = useState<Set<string>>(new Set());
   // 自定义 Agent 「已安装」的内置 skill：{ [avatarId]: Set<skillName> }
   // 初始化：全部默认未安装（与 SkillHub 展示一致，需用户在"内置 Skill" tab 手动安装）
   const [customInstalledSkills, setCustomInstalledSkills] = useState<Record<string, Set<string>>>(() => {
@@ -694,6 +696,30 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
     showToast("Skill 卸载成功", "success");
   }, [showToast]);
 
+  // 卸载锁定大数据 Agent 档案中的 SkillHub 项：从档案视图移除 + 加入 SkillHub 可安装池
+  const uninstallLockedHubSkill = useCallback((src: { title: string; desc: string; category: string; version: string; author: string; iconBg?: string }) => {
+    setUninstalledLockedSkills((prev) => {
+      const next = new Set(prev);
+      next.add(src.title);
+      return next;
+    });
+    setAvailableList((prev) => (prev.includes(src.title) ? prev : [...prev, src.title]));
+    setExtraHubSkills((prev) => prev.some((s) => s.title === src.title) ? prev : [
+      ...prev,
+      {
+        icon: "S",
+        iconBg: src.iconBg ?? "#3BAFB9",
+        title: src.title,
+        desc: src.desc,
+        category: src.category,
+        version: src.version,
+        author: src.author,
+        willSucceed: true,
+      },
+    ]);
+    showToast("Skill 卸载成功", "success");
+  }, [showToast]);
+
   // 是否为内置专家（内置专家才有预置 Skill tab）
   const isBuiltin = isBuiltinCat(activeCat);
 
@@ -727,7 +753,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
 
   // 按分类定义不同的技能（含详情弹窗需要的 category/version/author）
   // 与档案（agent-detail.tsx PROFILE_DEV/ANALYSIS/OPS）保持一致：内容、版本、来源完全同步
-  // tag: builtin → "内置 Skill" 蓝；skillhub → "SkillHub" 灰；task → "任务中补齐" 橙
+  // tag: builtin → "内置 Skill" 蓝；skillhub → "SkillHub" 灰；task → "任务中创建" 橙
   const SKILLS_BY_CAT: Record<string, { icon: string; iconBg: string; title: string; desc: string; tag: "builtin" | "skillhub" | "task"; category: string; version: string; author: string }[]> = {
     "数据工程专家": [
       { icon: "S", iconBg: "#E8524A", title: "Shuffle-Skew-Tuner", desc: "自动定位 Shuffle 倾斜热点 key，给出 cluster by / broadcast 重写方案", tag: "task", category: "性能调优", version: "2.1.0", author: "Rigel · 任务沉淀" },
@@ -762,7 +788,7 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
   const TAG_TO_SOURCE_TAG: Record<"builtin" | "skillhub" | "task", string> = {
     builtin: "内置 Skill",
     skillhub: "SkillHub",
-    task: "任务中补齐",
+    task: "任务中创建",
   };
 
   const skills = SKILLS_BY_CAT[activeCat] ?? [];
@@ -813,12 +839,14 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
   const filteredHubSkills = kw ? HUB_SKILLS.filter((s) => s.title.toLowerCase().includes(kw) || s.desc.toLowerCase().includes(kw)) : HUB_SKILLS;
   // 详情页锁定模式下，大数据 Agent 与自定义 Agent 使用同一套「配置 Skill」内容结构。
   const useConfigLayout = !isBuiltin || Boolean(lockedAgentName);
-  const lockedBuiltinInstalledSkills = lockedAgentName && isBuiltin ? filteredSkills : [];
+  const lockedBuiltinInstalledSkills = lockedAgentName && isBuiltin
+    ? filteredSkills.filter((s) => !uninstalledLockedSkills.has(s.title))
+    : [];
   // 「已安装」数量：搜索时显示搜索命中的已安装数量；否则显示完整已安装数量
   const installedCount = (() => {
     if (lockedAgentName && isBuiltin) {
-      // 锁定大数据 Agent：filteredSkills 已经按 kw 过滤
-      return filteredSkills.length;
+      // 锁定大数据 Agent：lockedBuiltinInstalledSkills 已按 kw 过滤 + 已剔除被卸载的项
+      return lockedBuiltinInstalledSkills.length;
     }
     if (!kw) {
       return currentAvatarInstalledList.length + installedList.length;
@@ -1106,22 +1134,25 @@ export default function SkillPlaza({ onBack, registry, lockedAgentName }: SkillP
                       key: string;
                       title: string;
                       desc: string;
-                      sourceTag: "内置 Skill" | "SkillHub" | "任务中补齐";
+                      sourceTag: "内置 Skill" | "SkillHub" | "任务中创建";
                       onCardClick: () => void;
                       /** 仅 SkillHub 项可卸载 */
                       onUninstall?: () => void;
                     };
                     const items: InstalledItem[] = [];
 
-                    // 1) 锁定的大数据 Agent 已安装的内置 skill（档案数据，不可卸载）
+                    // 1) 锁定的大数据 Agent 已安装的档案 skill：内置 / 任务中创建 不可卸载；SkillHub 可卸载
                     lockedBuiltinInstalledSkills.forEach((s) => {
                       const key = `locked-builtin-installed-${activeCat}-${s.title}`;
                       items.push({
                         key,
                         title: s.title,
                         desc: s.desc,
-                        sourceTag: TAG_TO_SOURCE_TAG[s.tag] as "内置 Skill" | "SkillHub" | "任务中补齐",
+                        sourceTag: TAG_TO_SOURCE_TAG[s.tag] as "内置 Skill" | "SkillHub" | "任务中创建",
                         onCardClick: () => setDetailSkill({ title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author }),
+                        onUninstall: s.tag === "skillhub" ? () => uninstallLockedHubSkill({
+                          title: s.title, desc: s.desc, category: s.category, version: s.version, author: s.author, iconBg: s.iconBg,
+                        }) : undefined,
                       });
                     });
 

@@ -133,7 +133,7 @@ function MemberRow({ member, isSelected, isLocked, lockTooltip, onToggle }: {
   );
 }
 
-export default function AddMemberDialog({ open, onClose, currentMembers = ["dev", "analysis", "ops"], onConfirm, isTeamChat = true, title = "添加成员", lockedMembers = [], lockedTooltip = "团队核心成员，不可移除" }: AddMemberDialogProps) {
+export default function AddMemberDialog({ open, onClose, currentMembers = ["dev", "analysis", "ops"], onConfirm, isTeamChat = true, title = "添加成员", lockedMembers = [], lockedTooltip = "团队默认成员，不可移除" }: AddMemberDialogProps) {
   const [selected, setSelected] = useState<Set<string>>(() => {
     const init = new Set(currentMembers);
     lockedMembers.forEach((id) => init.add(id));
@@ -282,13 +282,11 @@ export default function AddMemberDialog({ open, onClose, currentMembers = ["dev"
                   const isSelected = selected.has(member.id);
                   // 优先级 1：lockedMembers（大数据团队核心成员）→ 强制选中且禁用
                   const isHardLocked = lockedMembers.includes(member.id);
-                  // 优先级 2：团队模式下若只剩 2 个选中，已选中的不可取消
-                  // 优先级 3：单 agent 模式：当前 agent 不可取消
-                  const isSoftLocked = isTeamChat
-                    ? (isSelected && selected.size <= 2)
-                    : (isSelected && currentMembers.includes(member.id));
+                  // 优先级 2：单 agent 模式：当前 agent 不可取消
+                  // 团队模式：允许取消到 1 个，靠主按钮置灰提示，不在此处锁定 checkbox
+                  const isSoftLocked = !isTeamChat && isSelected && currentMembers.includes(member.id);
                   const isLocked = isHardLocked || isSoftLocked;
-                  const tooltipText = isHardLocked ? lockedTooltip : (isTeamChat ? "团队人数不能小于 2 人" : undefined);
+                  const tooltipText = isHardLocked ? lockedTooltip : undefined;
                   return (
                     <MemberRow
                       key={member.id}

@@ -423,6 +423,65 @@ function SaveButtonWithTooltip({ canSave, onClick, showTooltip, tooltipText }: {
   );
 }
 
+// ── 成员复选框（编辑团队弹窗用，支持 locked tooltip） ────────
+function MemberCheckbox({ name, selected, isLocked, lockedTooltip, onClick }: {
+  name: string;
+  selected: boolean;
+  isLocked: boolean;
+  lockedTooltip?: string;
+  onClick: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "calc(33.333% - 8px)", minWidth: 110,
+        display: "flex", alignItems: "center", gap: 8,
+        cursor: isLocked ? "not-allowed" : "pointer", userSelect: "none",
+      }}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{
+        width: 16, height: 16, borderRadius: 3, flexShrink: 0,
+        border: `1.5px solid ${selected ? (isLocked ? "#A0A8B4" : "#0052D9") : "#D6DBE3"}`,
+        background: selected ? (isLocked ? "#A0A8B4" : "#0052D9") : "transparent",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        transition: "all 100ms",
+      }}>
+        {selected && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+      </div>
+      <span style={{ fontSize: 14, color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{name}</span>
+      {isLocked && hovered && lockedTooltip && (
+        <div style={{
+          position: "absolute",
+          bottom: "calc(100% + 6px)", left: 8,
+          transform: "translateX(-50%)",
+          display: "inline-flex", alignItems: "center",
+          height: 28, padding: "0 12px", borderRadius: 6,
+          background: "rgba(32,32,32,0.9)",
+          fontFamily: FONT, fontSize: 12, fontWeight: 500,
+          color: "rgba(255,255,255,0.95)",
+          whiteSpace: "nowrap", pointerEvents: "none", zIndex: 10,
+        }}>
+          {lockedTooltip}
+          <span style={{
+            position: "absolute",
+            top: "100%", left: "50%",
+            transform: "translateX(-50%)",
+            width: 0, height: 0,
+            borderLeft: "4px solid transparent",
+            borderRight: "4px solid transparent",
+            borderTop: "4px solid rgba(32,32,32,0.9)",
+          }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── 编辑团队弹窗（全编辑态） ─────────────────────────────
 export function TeamDetailModal({ team, onClose, onSave, existingNames = [], nameDisabled = false, lockedMembers = [] }: {
   team: CustomTeam; onClose: () => void; onSave: (t: CustomTeam) => void; existingNames?: string[]; nameDisabled?: boolean; lockedMembers?: string[];
@@ -530,12 +589,14 @@ export function TeamDetailModal({ team, onClose, onSave, existingNames = [], nam
               {EDIT_ALL_MEMBERS.map((m) => {
                 const isLocked = lockedMembers.includes(m.id);
                 return (
-                <div key={m.id} style={{ width: "calc(33.333% - 8px)", minWidth: 110, display: "flex", alignItems: "center", gap: 8, cursor: isLocked ? "not-allowed" : "pointer", userSelect: "none" }} onClick={() => { if (!isLocked) toggleMember(m.id); }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 3, flexShrink: 0, border: `1.5px solid ${selectedMembers.has(m.id) ? (isLocked ? "#A0A8B4" : "#0052D9") : "#D6DBE3"}`, background: selectedMembers.has(m.id) ? (isLocked ? "#A0A8B4" : "#0052D9") : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 100ms" }}>
-                    {selectedMembers.has(m.id) && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                  </div>
-                  <span style={{ fontSize: 14, color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{m.name}</span>
-                </div>
+                  <MemberCheckbox
+                    key={m.id}
+                    name={m.name}
+                    selected={selectedMembers.has(m.id)}
+                    isLocked={isLocked}
+                    lockedTooltip="团队默认成员，不可移除"
+                    onClick={() => { if (!isLocked) toggleMember(m.id); }}
+                  />
                 );
               })}
             </div>

@@ -211,7 +211,7 @@ function Chip({ children, tone = "neutral" }: { children: React.ReactNode; tone?
   // tone 与设计稿映射：
   //   blue  → 内置 Skill：bg #E3ECFF / color #0052D9
   //   green → SkillHub：bg #F2F4F8 / color rgba(0,0,0,0.7)（设计稿即用灰色 chip）
-  //   warm  → 任务中补齐：bg #FFF1E0 / color #B86A00
+  //   warm  → 任务中创建：bg #FFF1E0 / color #B86A00
   const bg = tone === "warm" ? "#FFF1E0"
     : tone === "green" ? "#F2F4F8"
     : tone === "blue" ? "#E3ECFF"
@@ -1023,7 +1023,7 @@ function SkillList({ items = DEFAULT_SKILLS, onSkillClick }: { items?: SkillItem
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               minWidth: 0,
             }}>{s.name}</span>
-            {s.tag === "task" && <Chip tone="warm">任务中补齐</Chip>}
+            {s.tag === "task" && <Chip tone="warm">任务中创建</Chip>}
             {s.tag === "builtin" && <Chip tone="blue">内置 Skill</Chip>}
             {s.tag === "skillhub" && <Chip tone="green">SkillHub</Chip>}
           </div>
