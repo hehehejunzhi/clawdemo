@@ -1717,7 +1717,6 @@ export default function AgentDetail({ expert, onBack, onDialog, secondaryCollaps
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <MetaRow icon="birth" label={profile.meta.birth} />
               <MetaRow icon="creator" label={profile.meta.creator} />
-              <MetaRow icon="tag" label={profile.meta.team} />
             </div>
           </div>
         </aside>

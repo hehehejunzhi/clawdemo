@@ -21,6 +21,85 @@ function SendIcon({ size = 16, color = "#FFFFFF" }: { size?: number; color?: str
 const FONT = "'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const SF_FONT = "'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
+// ── 模型 Logo（官方 SVG，来自 lobe-icons 开源图标集） ───────────
+// 黑底白字方案：GLM(Z.ai) / Kimi（单色 logo 用 mask 反白）
+// 原色方案：DeepSeek / Hunyuan（彩色 logo 直接展示）
+function ModelLogo({ model, size = 16 }: { model: string; size?: number }) {
+  const m = model.toLowerCase();
+  // GLM → Z.ai 黑色 logo（mask 反白后放黑色圆角底）
+  if (m.startsWith("glm")) {
+    return (
+      <div style={{
+        width: size, height: size, flexShrink: 0, borderRadius: 4,
+        background: "#0F0F14",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <div style={{
+          width: size * 0.75, height: size * 0.75,
+          background: "#FFFFFF",
+          WebkitMaskImage: `url(/icons/models/zai.svg)`,
+          maskImage: `url(/icons/models/zai.svg)`,
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+        }} />
+      </div>
+    );
+  }
+  // Kimi → 黑色圆角底 + 白色 K
+  if (m.startsWith("kimi")) {
+    return (
+      <div style={{
+        width: size, height: size, flexShrink: 0, borderRadius: 4,
+        background: "#0F0F14",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <div style={{
+          width: size * 0.7, height: size * 0.7,
+          background: "#FFFFFF",
+          WebkitMaskImage: `url(/icons/models/kimi.svg)`,
+          maskImage: `url(/icons/models/kimi.svg)`,
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+        }} />
+      </div>
+    );
+  }
+  // DeepSeek / Hunyuan → 直接用彩色官方 SVG
+  let src = "";
+  if (m.startsWith("deepseek")) src = "/icons/models/deepseek.svg";
+  else if (m.startsWith("hy") || m.startsWith("hunyuan")) src = "/icons/models/hunyuan.svg";
+
+  if (!src) {
+    return (
+      <div style={{
+        width: size, height: size, flexShrink: 0, borderRadius: 4,
+        background: "linear-gradient(135deg, #D9785C 0%, #C45A3E 100%)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 10 10" fill="none">
+          <path d="M5 0.5L6.2 3.8L9.5 5L6.2 6.2L5 9.5L3.8 6.2L0.5 5L3.8 3.8L5 0.5Z" fill="white" fillOpacity="0.95" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={model}
+      style={{ width: size, height: size, flexShrink: 0, display: "block" }}
+    />
+  );
+}
+
 // ── Types ──────────────────────────────────────────────────────
 interface AttachedFile {
   id: string;
@@ -270,7 +349,7 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
       setSelectedAgent(defaultAgentLabel);
     }
   }, [defaultAgentLabel]);
-  const [selectedModel, setSelectedModel] = useState("Claude-Opus-4.6");
+  const [selectedModel, setSelectedModel] = useState("DeepSeek-V4-Pro");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addBtnRef = useRef<HTMLDivElement>(null);
@@ -737,6 +816,104 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                             }}
                           >
                             <span style={{ fontSize: 14, fontWeight: 400, lineHeight: "22px", color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap" }}>{item.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>,
+                    document.body
+                  )}
+                </div>
+
+                {/* Model 按钮 + 菜单（参考 Ardot 节点 2397:22833） */}
+                <div style={{ position: "relative" }}>
+                  <div
+                    ref={modelBtnRef}
+                    className="ci-hover"
+                    onClick={(e) => { e.stopPropagation(); setShowModelMenu((v) => !v); setShowAgentMenu(false); setShowAddMenu(false); }}
+                    style={{
+                      display: "flex",
+                      gap: 4,
+                      height: 32,
+                      alignItems: "center",
+                      padding: "0 8px",
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {/* 模型 logo */}
+                    <ModelLogo model={selectedModel} size={16} />
+                    <span style={{
+                      fontSize: 14, fontWeight: 500, lineHeight: "22px",
+                      color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap",
+                      fontFamily: SF_FONT,
+                    }}>{selectedModel}</span>
+                    <div style={{ position: "relative", width: 14, height: 14, flexShrink: 0 }}>
+                      <div style={{ position: "absolute", top: "33.69%", right: "21.19%", bottom: "31.61%", left: "21.19%" }}>
+                        <img src="/icons/chevron-down.svg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} />
+                      </div>
+                    </div>
+                  </div>
+                  {showModelMenu && typeof document !== "undefined" && createPortal(
+                    <>
+                      <div
+                        style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+                        onClick={(e) => { e.stopPropagation(); setShowModelMenu(false); }}
+                        onMouseMove={(e) => e.stopPropagation()}
+                      />
+                      <div ref={modelMenuRef} style={{
+                        position: "fixed",
+                        bottom: modelBtnRef.current ? window.innerHeight - modelBtnRef.current.getBoundingClientRect().top + 8 : 60,
+                        left: modelBtnRef.current ? modelBtnRef.current.getBoundingClientRect().left : 0,
+                        backgroundColor: "#FFFFFF",
+                        borderRadius: 16,
+                        padding: 8,
+                        boxShadow: "0px 8px 24px -4px rgba(0,0,0,0.1), 0px 8px 12px -8px rgba(0,0,0,0.05)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                        zIndex: 9999,
+                        minWidth: 200,
+                        animation: "ci-menu-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
+                      }}>
+                        {[
+                          "GLM-5.1",
+                          "DeepSeek-V4-Flash",
+                          "DeepSeek-V4-Pro",
+                          "Hy3 preview",
+                          "Kimi-K2.6",
+                        ].map((m) => (
+                          <div
+                            key={m}
+                            className="ci-menu-item"
+                            onClick={(e) => { e.stopPropagation(); setSelectedModel(m); setShowModelMenu(false); }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 12,
+                              height: 32,
+                              padding: "0 8px",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                              transition: "background 0.15s ease",
+                              backgroundColor: selectedModel === m ? "#F2F4F8" : undefined,
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                              <ModelLogo model={m} size={16} />
+                              <span style={{
+                                fontSize: 14, fontWeight: 400, lineHeight: "22px",
+                                color: "rgba(0,0,0,0.9)", whiteSpace: "nowrap",
+                                fontFamily: SF_FONT,
+                              }}>{m}</span>
+                            </div>
+                            {selectedModel === m && (
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M2 7L5.5 10.5L12 4" stroke="#0052D9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
                           </div>
                         ))}
                       </div>
