@@ -115,17 +115,45 @@ function DialogBtn({ label, icon, onClick }: { label: string; icon?: boolean; on
   );
 }
 
-// ── Card shell (340 x 140, horizontal layout) ─────────────────
-function Card({ avatar, name, desc, badge, button, children, onDialog, onCardClick }: {
+// ── 底部操作按钮（48 高 × 50% 宽，flex 1） ─────────────────────
+function ActionBtn({ label, iconSrc, onClick, isLast = false }: { label: string; iconSrc: string; onClick?: () => void; isLast?: boolean }) {
+  const [h, setH] = useState(false);
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
+      style={{
+        flex: 1,
+        height: 48,
+        padding: 0,
+        border: "none",
+        borderLeft: isLast ? `1px solid ${C.border}` : "none",
+        background: h ? "#F2F4F8" : "transparent",
+        fontFamily: FONT, fontSize: 14, fontWeight: 500,
+        color: C.textPrimary, cursor: "pointer", outline: "none",
+        transition: "background 100ms",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+      }}
+    >
+      <img src={iconSrc} alt="" style={{ width: 16, height: 16 }} />
+      {label}
+    </button>
+  );
+}
+
+// ── Card shell (340 x 140, 上 92 内容 + 下 48 操作) ─────────────
+function Card({ avatar, name, desc, badge, button, onDialog, onDetail, onCardClick }: {
   avatar: React.ReactNode;
   name: React.ReactNode;
   desc: string;
   /** 支持函数形式以感知卡片 hover 态（用于「三点菜单默认隐藏、hover 显示」） */
   badge?: React.ReactNode | ((hovered: boolean) => React.ReactNode);
+  /** 自定义底部按钮区（覆盖默认对话+详情）。常用于外部 Agent 等特殊状态 */
   button?: React.ReactNode;
-  children?: React.ReactNode;
   /** 点击默认「对话」按钮时触发（仅当未传 button 覆写时有效） */
   onDialog?: () => void;
+  /** 点击默认「详情」按钮时触发（仅当未传 button 覆写时有效） */
+  onDetail?: () => void;
   /** 点击卡片本体（非按钮/菜单区域）时触发 —— 用于下钻到详情页 */
   onCardClick?: () => void;
 }) {
@@ -135,15 +163,16 @@ function Card({ avatar, name, desc, badge, button, children, onDialog, onCardCli
       onClick={onCardClick}
       onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
       style={{
-        width: 340, minHeight: 140, background: C.bgWhite, borderRadius: 16,
-        border: `1px solid ${C.border}`, padding: 20,
-        display: "flex", flexDirection: "column", gap: 12,
+        width: 340, height: 140, background: C.bgWhite, borderRadius: 16,
+        border: `1px solid ${C.border}`,
+        display: "flex", flexDirection: "column",
         cursor: "pointer", transition: "box-shadow 150ms",
         boxShadow: h ? C.hoverShadow : "none",
+        overflow: "hidden",
       }}
     >
-      {/* Top: avatar + info */}
-      <div style={{ display: "flex", gap: 12 }}>
+      {/* 上：内容区（92px） */}
+      <div style={{ flex: 1, padding: 20, display: "flex", gap: 12, minHeight: 0 }}>
         {avatar}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, justifyContent: "space-between" }}>
@@ -156,13 +185,21 @@ function Card({ avatar, name, desc, badge, button, children, onDialog, onCardCli
           }}>{desc}</div>
         </div>
       </div>
-      {children}
-      {/* Bottom: action button */}
+      {/* 下：操作按钮区（48px，顶部分割线） */}
       <div
-        style={{ display: "flex", justifyContent: "flex-end" }}
+        style={{
+          height: 48,
+          display: "flex",
+          borderTop: `1px solid ${C.border}`,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {button ?? <DialogBtn label="对话" onClick={onDialog} />}
+        {button ?? (
+          <>
+            <ActionBtn label="对话" iconSrc="/icons/claw-mgr/dialog-icon.svg" onClick={onDialog} />
+            <ActionBtn label="详情" iconSrc="/icons/claw-mgr/detail-icon.svg" onClick={onDetail ?? onCardClick} isLast />
+          </>
+        )}
       </div>
     </div>
   );
@@ -753,14 +790,15 @@ export function DeleteConfirmModal({ teamName, onClose, onConfirm }: { teamName:
   );
 }
 
-// ── 外部 Claw 卡片（按 Figma 设计稿 340×168） ────────────────
-function ExternalClawCard({ avatar, name, desc, connected, buttonLabel, onButtonClick, onDisconnect, onDelete }: {
+// ── 外部 Claw 卡片（按 Figma 设计稿 340×140，与 Card 双按钮布局对齐） ──
+function ExternalClawCard({ avatar, name, desc, connected, buttonLabel, onButtonClick, onDetail, onDisconnect, onDelete }: {
   avatar: React.ReactNode;
   name: string;
   desc: string;
   connected: boolean;
   buttonLabel: string;
   onButtonClick?: () => void;
+  onDetail?: () => void;
   onDisconnect?: () => void;
   onDelete?: () => void;
 }) {
@@ -771,15 +809,15 @@ function ExternalClawCard({ avatar, name, desc, connected, buttonLabel, onButton
       onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
       style={{
         width: 340, height: 140, background: C.bgWhite, borderRadius: 16,
-        border: `1px solid ${C.border}`, padding: 20,
+        border: `1px solid ${C.border}`,
         display: "flex", flexDirection: "column",
         cursor: "default", transition: "box-shadow 150ms",
         boxShadow: h ? C.hoverShadow : "none",
         overflow: "hidden", position: "relative",
       }}
     >
-      {/* Top row: avatar + info */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+      {/* 上：内容区（92px） */}
+      <div style={{ flex: 1, padding: 20, display: "flex", gap: 12, minHeight: 0 }}>
         {avatar}
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Name row */}
@@ -848,30 +886,25 @@ function ExternalClawCard({ avatar, name, desc, connected, buttonLabel, onButton
         </div>
       </div>
 
-      {/* Button: aligned with text area (offset 60px = 48 avatar + 12 gap) */}
-      <div style={{ marginLeft: 60 }}>
-        <button
+      {/* 下：操作按钮区（48px，顶部分割线，对话+详情） */}
+      <div
+        style={{
+          height: 48,
+          display: "flex",
+          borderTop: `1px solid ${C.border}`,
+        }}
+      >
+        <ActionBtn
+          label={connected ? "对话" : buttonLabel}
+          iconSrc="/icons/claw-mgr/dialog-icon.svg"
           onClick={onButtonClick}
-          style={{
-            width: 240, height: 40, borderRadius: 100,
-            border: "1px solid #E9EBF0",
-            background: "transparent",
-            fontFamily: FONT, fontSize: 14, fontWeight: 500,
-            color: C.textPrimary,
-            cursor: "pointer", outline: "none",
-            transition: "background 100ms",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = C.hoverBg; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-        >
-          {connected && (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3.55 13.75L4.2 13.63L3.55 13.75ZM2.4 12L1.9 12.45L2.4 12ZM3.28 13.05L2.71 13.39L3.28 13.05ZM4.28 15.06L4.61 15.64L4.28 15.06ZM3.89 15.24L3.89 14.57L3.89 15.24ZM3.62 15.08L4.2 14.75L3.62 15.08ZM7.43 14.44L7.38 15.11L7.43 14.44ZM5.7 14.38L5.58 13.73L5.7 14.38ZM4.43 14.97L4.1 14.39L4.43 14.97ZM5.5 14.43L5.32 13.79L5.5 14.43ZM8 1V1.67C11.68 1.67 14.59 4.43 14.59 7.73H15.25H15.92C15.92 3.6 12.32 0.34 8 0.34V1ZM15.25 7.73H14.59C14.59 11.04 11.68 13.8 8 13.8V14.46V15.13C12.32 15.13 15.92 11.86 15.92 7.73H15.25ZM8 14.46V13.8C7.82 13.8 7.65 13.79 7.48 13.78L7.43 14.44L7.38 15.11C7.58 15.12 7.79 15.13 8 15.13V14.46ZM2.4 12L2.9 11.56C1.97 10.51 1.42 9.18 1.42 7.73H0.75H0.09C0.09 9.53 0.77 11.17 1.9 12.45L2.4 12ZM0.75 7.73H1.42C1.42 4.43 4.32 1.67 8 1.67V1V0.34C3.68 0.34 0.09 3.6 0.09 7.73H0.75ZM5 7.5V8.17H8V7.5V6.84H5V7.5ZM8 7.5V8.17H11V7.5V6.84H8V7.5ZM8 4.5H7.34V7.5H8H8.67V4.5H8ZM8 7.5H7.34V10.5H8H8.67V7.5H8Z" fill="rgba(0,0,0,0.9)"/>
-            </svg>
-          )}
-          {connected ? "对话" : buttonLabel}
-        </button>
+        />
+        <ActionBtn
+          label="详情"
+          iconSrc="/icons/claw-mgr/detail-icon.svg"
+          onClick={onDetail}
+          isLast
+        />
       </div>
     </div>
   );

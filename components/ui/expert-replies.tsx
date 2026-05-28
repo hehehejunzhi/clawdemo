@@ -784,7 +784,7 @@ function ArtifactsSection({ data, onArtifactClick }: { data: ArtifactsSectionDat
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {/* Header — checkmark icon + "任务产生制品 (N)" */}
+      {/* Header — checkmark icon + "任务产生产物 (N)" */}
       <div style={{ display: "flex", alignItems: "center", height: 28, gap: 4 }}>
         <div style={{ width: 16, height: 28, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -795,7 +795,7 @@ function ArtifactsSection({ data, onArtifactClick }: { data: ArtifactsSectionDat
           fontFamily: FONT, fontSize: 16, fontWeight: 400,
           lineHeight: "28px", color: T.primary,
         }}>
-          任务产生制品 ({data.count})
+          任务产生产物 ({data.count})
         </span>
       </div>
 

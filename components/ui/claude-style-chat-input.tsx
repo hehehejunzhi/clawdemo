@@ -909,11 +909,6 @@ export const ClaudeChatInput = forwardRef<ChatInputHandle, ChatInputProps>(funct
                                 fontFamily: SF_FONT,
                               }}>{m}</span>
                             </div>
-                            {selectedModel === m && (
-                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                <path d="M2 7L5.5 10.5L12 4" stroke="#0052D9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
                           </div>
                         ))}
                       </div>
